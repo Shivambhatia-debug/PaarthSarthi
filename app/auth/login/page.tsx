@@ -124,9 +124,11 @@ export default function AuthPage() {
             {/* Logo & Welcome */}
             <div className="text-center lg:text-left">
               <div className="flex items-center justify-center lg:justify-start gap-3 mb-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-green-600 rounded-xl flex items-center justify-center">
-                  <User className="w-6 h-6 text-white" />
-                </div>
+                <img 
+                  src="/ps-logo.png" 
+                  alt="Paarth Sarthi" 
+                  className="w-12 h-12 object-contain"
+                />
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
                   Parth Sarthi
                 </h1>

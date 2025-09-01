@@ -107,9 +107,11 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-            <User className="w-4 h-4 text-white" />
-          </div>
+          <img 
+            src="/ps-logo.png" 
+            alt="Paarth Sarthi" 
+            className="w-10 h-10 object-contain"
+          />
           <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
             Parth Sarthi
           </span>
@@ -221,9 +223,11 @@ export function Header() {
               <div className="flex flex-col gap-6 py-6">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-3" onClick={() => setIsOpen(false)}>
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-                    <User className="w-4 h-4 text-white" />
-                  </div>
+                  <img 
+                    src="/ps-logo.png" 
+                    alt="Paarth Sarthi" 
+                    className="w-10 h-10 object-contain"
+                  />
                   <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
                     Parth Sarthi
                   </span>
