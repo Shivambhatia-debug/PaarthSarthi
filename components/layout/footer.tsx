@@ -1,124 +1,64 @@
 import Link from "next/link"
-import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin, Globe } from "lucide-react"
+import { Mail, Phone, MapPin, Shield, Instagram } from "lucide-react"
 
 export function Footer() {
   return (
-    <footer className="bg-gray-900 dark:bg-gray-950 text-white transition-colors">
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Company Info */}
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-green-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">PS</span>
-              </div>
-              <span className="font-bold text-xl">Parth Sarthi</span>
+    <footer className="bg-[#080b12] text-gray-500 border-t border-white/5">
+      <div className="container mx-auto px-4 py-10">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="col-span-2 md:col-span-1">
+            <div className="flex items-center gap-2 mb-3">
+              <img src="/logo.png" alt="PS" className="w-7 h-7 object-contain" />
+              <span className="font-bold text-white text-sm">ParthSarthi</span>
             </div>
-            <p className="text-gray-400">
-              Your personalized guide to career, confidence & clarity. Empowering students across India with expert
-              mentorship.
+            <p className="text-[11px] leading-relaxed mb-3">
+              ParthSarthi Knowledge Hub Pvt. Ltd.<br />
+              India&apos;s career guidance platform.
             </p>
-            <div className="flex space-x-4">
-              <Facebook className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-              <Twitter className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-              <Instagram className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
-              <Linkedin className="w-5 h-5 text-gray-400 hover:text-white cursor-pointer transition-colors" />
+            <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-0.5 text-[10px] text-emerald-400">
+              <Shield className="w-3 h-3" /> DPIIT Certified
             </div>
           </div>
 
-          {/* Quick Links */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Quick Links</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/mentorship" className="text-gray-400 hover:text-white transition-colors">
-                  Find Mentors
-                </Link>
-              </li>
-              <li>
-                <Link href="/courses" className="text-gray-400 hover:text-white transition-colors">
-                  Courses & Webinars
-                </Link>
-              </li>
-              <li>
-                <Link href="/wellness" className="text-gray-400 hover:text-white transition-colors">
-                  Mental Wellness
-                </Link>
-              </li>
-              <li>
-                <Link href="/career" className="text-gray-400 hover:text-white transition-colors">
-                  Career Tools
-                </Link>
-              </li>
-              <li>
-                <Link href="/institutions" className="text-gray-400 hover:text-white transition-colors">
-                  For Institutions
-                </Link>
-              </li>
+            <h4 className="text-white font-semibold text-[11px] mb-3 uppercase tracking-wider">Platform</h4>
+            <ul className="space-y-1.5 text-[11px]">
+              <li><Link href="/mentorship" className="hover:text-white transition-colors">Find Mentors</Link></li>
+              <li><Link href="/alumni" className="hover:text-white transition-colors">Alumni Network</Link></li>
+              <li><Link href="/courses" className="hover:text-white transition-colors">Courses</Link></li>
+              <li><Link href="/startups" className="hover:text-white transition-colors">Startups</Link></li>
             </ul>
           </div>
 
-          {/* Support */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Support</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/help" className="text-gray-400 hover:text-white transition-colors">
-                  Help Center
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
-                  Contact Us
-                </Link>
-              </li>
-              <li>
-                <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
-                  Terms of Service
-                </Link>
-              </li>
-              <li>
-                <Link href="/refund" className="text-gray-400 hover:text-white transition-colors">
-                  Refund Policy
-                </Link>
-              </li>
+            <h4 className="text-white font-semibold text-[11px] mb-3 uppercase tracking-wider">Company</h4>
+            <ul className="space-y-1.5 text-[11px]">
+              <li><Link href="/auth/login" className="hover:text-white transition-colors">Login</Link></li>
+              <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
+              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
+              <li><Link href="/terms" className="hover:text-white transition-colors">Terms</Link></li>
             </ul>
           </div>
 
-          {/* Contact Info */}
           <div>
-            <h3 className="font-semibold text-lg mb-4">Contact Info</h3>
-            <div className="space-y-3">
-              <div className="flex items-center space-x-3">
-                <Mail className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-400">support@parthsarthi.in</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <Phone className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-400">+91 98765 43210</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <MapPin className="w-5 h-5 text-blue-400" />
-                <span className="text-gray-400">Mumbai, India</span>
-              </div>
-            </div>
-            <div className="mt-4">
-              <p className="text-sm text-gray-400 mb-2">Available in:</p>
-              <div className="flex items-center gap-2">
-                <Globe className="w-4 h-4 text-blue-400" />
-                <span className="text-sm text-blue-400">Hindi • English • Maithili • Bhojpuri</span>
-              </div>
+            <h4 className="text-white font-semibold text-[11px] mb-3 uppercase tracking-wider">Contact</h4>
+            <div className="space-y-1.5 text-[11px]">
+              <a href="mailto:parthsarthi0325@gmail.com" className="flex items-center gap-2 hover:text-white transition-colors">
+                <Mail className="w-3 h-3 shrink-0" /><span>parthsarthi0325@gmail.com</span>
+              </a>
+              <a href="tel:+917545996960" className="flex items-center gap-2 hover:text-white transition-colors">
+                <Phone className="w-3 h-3 shrink-0" /><span>+91 75459 96960</span>
+              </a>
+              <div className="flex items-center gap-2"><MapPin className="w-3 h-3 shrink-0" /><span>Darbhanga</span></div>
+              <a href="https://www.instagram.com/parthsarthi250425?igsh=MWdxejQyNzQwbXlvYw==" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white transition-colors">
+                <Instagram className="w-3 h-3 shrink-0" /><span>Instagram</span>
+              </a>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-          <p className="text-gray-400">© 2024 Parth Sarthi. All rights reserved. Made with ❤️ for Indian students.</p>
+        <div className="border-t border-white/5 mt-8 pt-6 text-center text-[10px] text-gray-600">
+          <p>&copy; {new Date().getFullYear()} ParthSarthi Knowledge Hub Pvt. Ltd. All rights reserved.</p>
         </div>
       </div>
     </footer>

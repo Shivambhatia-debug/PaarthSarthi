@@ -3,16 +3,15 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Header } from "@/components/layout/header"
-import { Footer } from "@/components/layout/footer"
-import { ThemeProvider } from "@/components/theme-provider"
+import { ConditionalFooter } from "@/components/layout/conditional-footer"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Parth Sarthi - Personalized Career Mentorship & Wellness Platform",
+  title: "ParthSarthi Knowledge Hub - Career Mentorship & Guidance",
   description:
-    "Connect with expert mentors, access career tools, and unlock your potential with personalized guidance in your preferred language.",
-    generator: 'v0.app'
+    "DPIIT Certified startup. Connect with expert mentors, alumni network, access courses, and build your career with personalized guidance.",
+  generator: 'v0.app'
 }
 
 export default function RootLayout({
@@ -21,13 +20,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="dark">
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Header />
-          <main>{children}</main>
-          <Footer />
-        </ThemeProvider>
+        <Header />
+        <main>{children}</main>
+        <ConditionalFooter />
       </body>
     </html>
   )

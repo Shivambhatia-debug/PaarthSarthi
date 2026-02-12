@@ -1,530 +1,343 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-  Calendar,
-  Target,
-  BookOpen,
-  MessageCircle,
-  Award,
-  Video,
-  Star,
-  Bell,
-  Brain,
-  Zap,
-  Trophy,
-  Gift,
-  ChevronRight,
-  Play,
+  Calendar, BookOpen, Users, Rocket, Bell, ChevronRight,
+  GraduationCap, Loader2, Clock, LogOut, ExternalLink, Video, Mic, MapPin
 } from "lucide-react"
-import Image from "next/image"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { meetingAPI, mentorAPI, alumniAPI, courseAPI, notificationAPI } from "@/lib/api"
 
 export default function StudentDashboard() {
-  const [currentStreak, setCurrentStreak] = useState(15)
-  const [totalPoints, setTotalPoints] = useState(2450)
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [meetings, setMeetings] = useState<any[]>([])
+  const [mentors, setMentors] = useState<any[]>([])
+  const [alumni, setAlumni] = useState<any[]>([])
+  const [courses, setCourses] = useState<any[]>([])
+  const [notifications, setNotifications] = useState<any[]>([])
 
-  const studentData = {
-    name: "Arjun Kumar",
-    avatar: "/placeholder.svg?height=80&width=80",
-    level: "Advanced Learner",
-    nextLevel: "Expert",
-    progressToNext: 75,
-    joinDate: "March 2024",
+  useEffect(() => {
+    const token = localStorage.getItem("ps_token")
+    const userData = localStorage.getItem("ps_user")
+    if (!token || !userData) { router.push("/auth/login"); return }
+    try { setUser(JSON.parse(userData)) } catch { router.push("/auth/login"); return }
+    fetchData()
+  }, [])
+
+  const fetchData = async () => {
+    try {
+      const [meetingsRes, mentorsRes, alumniRes, coursesRes, notifRes] = await Promise.allSettled([
+        meetingAPI.getMyMeetings(),
+        mentorAPI.getAll("limit=3"),
+        alumniAPI.getAll("limit=3"),
+        courseAPI.getAll("limit=4"),
+        notificationAPI.getAll("limit=5"),
+      ])
+      if (meetingsRes.status === "fulfilled") setMeetings(meetingsRes.value.meetings || [])
+      if (mentorsRes.status === "fulfilled") setMentors(mentorsRes.value.mentors || [])
+      if (alumniRes.status === "fulfilled") setAlumni(alumniRes.value.alumni || [])
+      if (coursesRes.status === "fulfilled") setCourses(coursesRes.value.courses || [])
+      if (notifRes.status === "fulfilled") setNotifications(notifRes.value.notifications || [])
+    } catch {} finally { setLoading(false) }
   }
 
-  const upcomingSessions = [
-    {
-      id: 1,
-      mentor: "Dr. Priya Sharma",
-      topic: "Resume Review & Interview Prep",
-      date: "Today, 4:00 PM",
-      type: "video",
-      duration: "60 min",
-      image: "/placeholder.svg?height=40&width=40",
-      status: "confirmed",
-    },
-    {
-      id: 2,
-      mentor: "Rahul Kumar",
-      topic: "Data Science Career Path",
-      date: "Tomorrow, 2:00 PM",
-      type: "chat",
-      duration: "45 min",
-      image: "/placeholder.svg?height=40&width=40",
-      status: "pending",
-    },
-  ]
+  const handleLogout = () => {
+    localStorage.removeItem("ps_token")
+    localStorage.removeItem("ps_user")
+    window.dispatchEvent(new Event("authChange"))
+    router.push("/")
+  }
 
-  const goals = [
-    {
-      id: 1,
-      title: "Complete Python Course",
-      progress: 75,
-      deadline: "Dec 31, 2024",
-      status: "In Progress",
-      priority: "high",
-    },
-    {
-      id: 2,
-      title: "Land Software Engineer Role",
-      progress: 40,
-      deadline: "Mar 15, 2025",
-      status: "In Progress",
-      priority: "high",
-    },
-    {
-      id: 3,
-      title: "Improve Communication Skills",
-      progress: 60,
-      deadline: "Jan 30, 2025",
-      status: "In Progress",
-      priority: "medium",
-    },
-  ]
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#060a13]"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+  }
 
-  const recentAchievements = [
-    {
-      id: 1,
-      title: "First Session Complete",
-      description: "Completed your first mentorship session",
-      icon: Video,
-      color: "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-400",
-      points: 50,
-      date: "2 days ago",
-    },
-    {
-      id: 2,
-      title: "Goal Achiever",
-      description: "Completed 3 career goals this month",
-      icon: Target,
-      color: "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-400",
-      points: 100,
-      date: "1 week ago",
-    },
-    {
-      id: 3,
-      title: "Streak Master",
-      description: "Maintained 15-day learning streak",
-      icon: Zap,
-      color: "bg-yellow-100 text-yellow-600 dark:bg-yellow-900 dark:text-yellow-400",
-      points: 75,
-      date: "Today",
-    },
-  ]
+  const cardClass = "bg-white/[0.02] border border-white/[0.06] rounded-xl"
 
-  const aiSuggestions = [
-    {
-      id: 1,
-      mentor: "Dr. Rajesh Patel",
-      specialization: "Software Engineering",
-      matchScore: 95,
-      reason: "Perfect match for your Python learning goals",
-      image: "/placeholder.svg?height=50&width=50",
-      rating: 4.9,
-      sessions: 150,
-    },
-    {
-      id: 2,
-      mentor: "Priya Singh",
-      specialization: "Career Transition",
-      matchScore: 88,
-      reason: "Expertise in tech career transitions",
-      image: "/placeholder.svg?height=50&width=50",
-      rating: 4.8,
-      sessions: 200,
-    },
-  ]
-
-  const psychometricResults = [
-    {
-      test: "Personality Assessment",
-      result: "INTJ - The Architect",
-      score: "85%",
-      date: "Dec 15, 2024",
-      insights: "Strong analytical and strategic thinking",
-    },
-    {
-      test: "Career Interest Inventory",
-      result: "Technology & Innovation",
-      score: "92%",
-      date: "Dec 10, 2024",
-      insights: "High affinity for technical problem-solving",
-    },
-  ]
+  const upcomingMeetings = meetings.filter(m => m.status === "confirmed" || m.status === "pending")
+  const completedMeetings = meetings.filter(m => m.status === "completed")
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="container mx-auto px-4 py-8">
-        {/* Welcome Header */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16 border-4 border-gradient-to-r from-blue-500 to-green-500">
-                <AvatarImage src={studentData.avatar || "/placeholder.svg"} alt={studentData.name} />
-                <AvatarFallback className="text-lg font-bold bg-gradient-to-r from-blue-500 to-green-500 text-white">
-                  {studentData.name
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white">
-                  Welcome back, {studentData.name}! 👋
-                </h1>
-                <p className="text-gray-600 dark:text-gray-300 mt-1">Continue your learning journey</p>
-                <div className="flex items-center gap-4 mt-2">
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                    {studentData.level}
-                  </Badge>
-                  <div className="flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400">
-                    <Zap className="w-4 h-4 text-yellow-500" />
-                    <span>{currentStreak} day streak</span>
+    <div className="min-h-screen bg-[#060a13]">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
+        {/* Welcome */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 lg:mb-8">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 font-bold text-lg ring-2 ring-blue-500/20">
+              {user?.name?.charAt(0)?.toUpperCase() || "U"}
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Welcome, {user?.name?.split(" ")[0] || "User"}</h1>
+              <p className="text-xs text-gray-400">Your personal dashboard</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-white/[0.06] text-gray-300 border-0 text-xs capitalize">{user?.role}</Badge>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-xs text-gray-400 h-7 hover:bg-white/[0.04]">
+              <LogOut className="w-3 h-3 mr-1" /> Logout
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
+          {[
+            { label: "My Meetings", value: meetings.length, icon: Calendar, color: "text-blue-500", bgColor: "bg-blue-500/10" },
+            { label: "Upcoming", value: upcomingMeetings.length, icon: Clock, color: "text-yellow-500", bgColor: "bg-yellow-500/10" },
+            { label: "Completed", value: completedMeetings.length, icon: GraduationCap, color: "text-green-500", bgColor: "bg-green-500/10" },
+            { label: "Notifications", value: notifications.length, icon: Bell, color: "text-violet-500", bgColor: "bg-violet-500/10" },
+          ].map((s) => (
+            <div key={s.label} className={cardClass}>
+              <div className="p-3 flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-full ${s.bgColor} flex items-center justify-center shrink-0`}>
+                  <s.icon className={`w-5 h-5 ${s.color}`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-white">{s.value}</p>
+                  <p className="text-[10px] text-gray-400">{s.label}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4 lg:gap-5">
+          {/* Left - Main Content */}
+          <div className="md:col-span-2 space-y-4">
+            {/* Upcoming Meetings */}
+            <div className={cardClass}>
+              <div className="px-4 pt-4">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 mb-3">
+                  <div className="text-white text-sm flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-500" /> My Meetings
                   </div>
+                  <Link href="/mentorship" className="text-xs text-blue-400 hover:underline">Book New</Link>
                 </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="outline" size="sm" className="dark:border-gray-600 bg-transparent">
-                <Bell className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Notifications</span>
-              </Button>
-              <div className="text-right">
-                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{totalPoints}</div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">Total Points</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Level Progress */}
-          <div className="mt-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-900/20 dark:to-green-900/20 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium dark:text-gray-300">Progress to {studentData.nextLevel}</span>
-              <span className="text-sm text-gray-600 dark:text-gray-400">{studentData.progressToNext}%</span>
-            </div>
-            <Progress value={studentData.progressToNext} className="h-2" />
-          </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Sessions</p>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">24</p>
-                </div>
-                <Video className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Courses</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">8</p>
-                </div>
-                <BookOpen className="w-8 h-8 text-green-600 dark:text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Goals Achieved</p>
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">12</p>
-                </div>
-                <Target className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="dark:bg-gray-800 dark:border-gray-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Achievements</p>
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">15</p>
-                </div>
-                <Trophy className="w-8 h-8 text-orange-600 dark:text-orange-400" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* AI Mentor Suggestions */}
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-white">
-                  <Brain className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  AI Recommended Mentors
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {aiSuggestions.map((suggestion) => (
-                    <div
-                      key={suggestion.id}
-                      className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={suggestion.image || "/placeholder.svg"}
-                          alt={suggestion.mentor}
-                          width={50}
-                          height={50}
-                          className="rounded-full"
-                        />
-                        <div>
-                          <p className="font-medium dark:text-white">{suggestion.mentor}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">{suggestion.specialization}</p>
-                          <p className="text-xs text-purple-600 dark:text-purple-400">{suggestion.reason}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="flex items-center gap-1">
-                              <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-                              <span className="text-xs">{suggestion.rating}</span>
+              <div className="px-4 pb-4">
+                {meetings.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Calendar className="w-10 h-10 mx-auto text-gray-500/30 mb-2" />
+                    <p className="text-xs text-gray-400 mb-2">No meetings yet</p>
+                    <Button size="sm" className="h-7 text-xs bg-white text-black" asChild>
+                      <Link href="/mentorship">Book a Session</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {meetings.slice(0, 5).map((m) => (
+                      <div key={m._id} className={`p-3 rounded-lg border ${m.status === "confirmed" ? "bg-emerald-500/5 border-emerald-500/10" : "bg-white/[0.03] border-transparent"}`}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-medium truncate text-white">
+                              {m.meetingPersonName || "Meeting"}
+                            </p>
+                            <p className="text-[11px] text-gray-400">{m.subject}</p>
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1.5">
+                              <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(m.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                              </span>
+                              {m.timeSlot && (
+                                <span className="text-[10px] text-gray-400 flex items-center gap-0.5">
+                                  <Clock className="w-3 h-3" />
+                                  {m.timeSlot.startTime} - {m.timeSlot.endTime}
+                                </span>
+                              )}
+                              <Badge className="text-[9px] bg-white/[0.06] text-gray-400 border-0 capitalize px-1.5 py-0">
+                                {m.meetingType === "video" && <Video className="w-2.5 h-2.5 mr-0.5 inline" />}
+                                {m.meetingType === "audio" && <Mic className="w-2.5 h-2.5 mr-0.5 inline" />}
+                                {m.meetingType === "in-person" && <MapPin className="w-2.5 h-2.5 mr-0.5 inline" />}
+                                {m.meetingWith}
+                              </Badge>
                             </div>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">•</span>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {suggestion.sessions} sessions
-                            </span>
+                            {/* Meeting link for confirmed meetings */}
+                            {m.status === "confirmed" && m.meetingLink && (
+                              <a
+                                href={m.meetingLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 mt-2 px-3 py-1.5 bg-emerald-500/20 text-emerald-400 text-xs font-medium rounded-lg hover:bg-emerald-500/30 transition-colors"
+                              >
+                                <Video className="w-3 h-3" />
+                                Join Meeting
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            )}
                           </div>
+                          <Badge
+                            className={`text-[10px] shrink-0 border-0 ${
+                              m.status === "confirmed" ? "bg-emerald-500/10 text-emerald-400" :
+                              m.status === "pending" ? "bg-yellow-500/10 text-yellow-400" :
+                              m.status === "completed" ? "bg-blue-500/10 text-blue-400" :
+                              "bg-red-500/10 text-red-400"
+                            }`}
+                          >
+                            {m.status}
+                          </Badge>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200 mb-2">
-                          {suggestion.matchScore}% match
-                        </Badge>
-                        <Button
-                          size="sm"
-                          className="block bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700"
-                        >
-                          Connect
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
-            {/* Upcoming Sessions */}
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-white">
-                  <Calendar className="w-5 h-5" />
-                  Upcoming Sessions
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {upcomingSessions.map((session) => (
-                    <div
-                      key={session.id}
-                      className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Image
-                          src={session.image || "/placeholder.svg"}
-                          alt={session.mentor}
-                          width={40}
-                          height={40}
-                          className="rounded-full"
-                        />
-                        <div>
-                          <p className="font-medium dark:text-white">{session.mentor}</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">{session.topic}</p>
-                          <p className="text-sm text-blue-600 dark:text-blue-400">{session.date}</p>
+            {/* Recommended Mentors */}
+            <div className={cardClass}>
+              <div className="px-4 pt-4">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 mb-3">
+                  <div className="text-white text-sm flex items-center gap-2">
+                    <Users className="w-4 h-4 text-emerald-500" /> Recommended Mentors
+                  </div>
+                  <Link href="/mentorship" className="text-xs text-blue-400 hover:underline flex items-center gap-0.5">
+                    View All <ChevronRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                {mentors.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-6">No mentors yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {mentors.map((m) => (
+                      <div key={m._id} className="flex items-center gap-3 p-2.5 bg-white/[0.03] rounded-lg">
+                        <div className="w-9 h-9 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs font-bold shrink-0">
+                          {m.name?.charAt(0)?.toUpperCase()}
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant={session.type === "video" ? "default" : "secondary"}>
-                          {session.type === "video" ? (
-                            <Video className="w-3 h-3 mr-1" />
-                          ) : (
-                            <MessageCircle className="w-3 h-3 mr-1" />
-                          )}
-                          {session.type}
-                        </Badge>
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700">
-                          <Play className="w-3 h-3 mr-1" />
-                          Join
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate text-white">{m.name}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{m.designation} {m.company ? `@ ${m.company}` : ""}</p>
+                        </div>
+                        <Button size="sm" variant="outline" className="h-7 text-[10px] bg-transparent shrink-0 border-white/[0.08] text-gray-300" asChild>
+                          <Link href="/mentorship">Book</Link>
                         </Button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-full mt-4 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 bg-transparent"
-                >
-                  View All Sessions
-                </Button>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
 
-            {/* Goals Progress */}
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-white">
-                  <Target className="w-5 h-5" />
-                  Your Goals
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  {goals.map((goal) => (
-                    <div key={goal.id} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium dark:text-white">{goal.title}</h4>
+            {/* Courses */}
+            <div className={cardClass}>
+              <div className="px-4 pt-4">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 mb-3">
+                  <div className="text-white text-sm flex items-center gap-2">
+                    <BookOpen className="w-4 h-4 text-violet-500" /> Explore Courses
+                  </div>
+                  <Link href="/courses" className="text-xs text-blue-400 hover:underline flex items-center gap-0.5">
+                    All Courses <ChevronRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                {courses.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-6">No courses yet</p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-2">
+                    {courses.map((c) => (
+                      <div key={c._id} className="p-3 bg-white/[0.03] rounded-lg">
+                        <h4 className="text-xs font-medium line-clamp-2 mb-1 text-white">{c.title}</h4>
                         <div className="flex items-center gap-2">
-                          <Badge variant={goal.priority === "high" ? "destructive" : "secondary"} className="text-xs">
-                            {goal.priority} priority
-                          </Badge>
-                          <Badge variant="outline" className="dark:border-gray-600 dark:text-gray-300">
-                            {goal.status}
-                          </Badge>
+                          <Badge className="bg-white/[0.06] text-gray-300 border-0 text-[9px] px-1 py-0 capitalize">{c.language}</Badge>
+                          {c.isFree ? (
+                            <span className="text-[10px] font-bold text-emerald-500">Free</span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-white">₹{c.price}</span>
+                          )}
                         </div>
                       </div>
-                      <Progress value={goal.progress} className="h-2" />
-                      <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                        <span>{goal.progress}% complete</span>
-                        <span>Due: {goal.deadline}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-full mt-4 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 bg-transparent"
-                >
-                  <Target className="w-4 h-4 mr-2" />
-                  Set New Goal
-                </Button>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Right Column */}
-          <div className="space-y-6">
+          {/* Right Sidebar */}
+          <div className="space-y-4">
             {/* Quick Actions */}
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="dark:text-white">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button className="w-full justify-start bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white">
-                  <MessageCircle className="w-4 h-4 mr-2" />
-                  Find a Mentor
-                </Button>
-                <Button className="w-full justify-start bg-transparent" variant="outline">
-                  <BookOpen className="w-4 h-4 mr-2" />
-                  Browse Courses
-                </Button>
-                <Button className="w-full justify-start bg-transparent" variant="outline">
-                  <Brain className="w-4 h-4 mr-2" />
-                  Take Assessment
-                </Button>
-                <Button className="w-full justify-start bg-transparent" variant="outline">
-                  <Target className="w-4 h-4 mr-2" />
-                  Career Planner
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Psychometric Test Results */}
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-white">
-                  <Brain className="w-5 h-5" />
-                  Test Results
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {psychometricResults.map((result, index) => (
-                    <div
-                      key={index}
-                      className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-sm dark:text-white">{result.test}</h4>
-                        <Badge variant="secondary" className="text-xs">
-                          {result.score}
-                        </Badge>
-                      </div>
-                      <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">{result.result}</p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">{result.insights}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">{result.date}</p>
+            <div className={cardClass}>
+              <div className="px-4 pt-4">
+                <div className="text-white text-sm border-b border-white/[0.06] pb-3 mb-3">Quick Actions</div>
+              </div>
+              <div className="px-4 pb-4 space-y-1.5">
+                {[
+                  { label: "Find a Mentor", href: "/mentorship", icon: Users, color: "text-blue-500" },
+                  { label: "Alumni Network", href: "/alumni", icon: GraduationCap, color: "text-violet-500" },
+                  { label: "Browse Courses", href: "/courses", icon: BookOpen, color: "text-emerald-500" },
+                  { label: "Explore Startups", href: "/startups", icon: Rocket, color: "text-orange-500" },
+                ].map((action) => (
+                  <Link key={action.label} href={action.href}>
+                    <div className="flex items-center gap-2.5 p-3 rounded-lg hover:bg-white/[0.04] transition-colors">
+                      <action.icon className={`w-5 h-5 ${action.color}`} />
+                      <span className="text-sm font-medium text-white">{action.label}</span>
+                      <ChevronRight className="w-3 h-3 text-gray-400 ml-auto" />
                     </div>
-                  ))}
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-full mt-4 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 bg-transparent"
-                >
-                  View All Results
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
 
-            {/* Recent Achievements */}
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 dark:text-white">
-                  <Award className="w-5 h-5" />
-                  Recent Achievements
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentAchievements.map((achievement) => (
-                    <div
-                      key={achievement.id}
-                      className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
-                    >
-                      <div
-                        className={`w-8 h-8 ${achievement.color} rounded-full flex items-center justify-center flex-shrink-0`}
-                      >
-                        <achievement.icon className="w-4 h-4" />
+            {/* Notifications */}
+            <div className={cardClass}>
+              <div className="px-4 pt-4">
+                <div className="text-white text-sm flex items-center gap-2 border-b border-white/[0.06] pb-3 mb-3">
+                  <Bell className="w-4 h-4 text-yellow-500" /> Notifications
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                {notifications.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-4">No notifications</p>
+                ) : (
+                  <div className="space-y-2">
+                    {notifications.map((n) => (
+                      <div key={n._id} className={`p-2 rounded-lg text-xs ${n.isRead ? "bg-white/[0.03]" : "bg-blue-500/5 border border-blue-500/10"}`}>
+                        <p className="font-medium text-[11px] text-white">{n.title}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5">{n.message}</p>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium dark:text-white">{achievement.title}</p>
-                          <div className="flex items-center gap-1">
-                            <Gift className="w-3 h-3 text-yellow-500" />
-                            <span className="text-xs text-yellow-600 dark:text-yellow-400">+{achievement.points}</span>
-                          </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Alumni */}
+            <div className={cardClass}>
+              <div className="px-4 pt-4">
+                <div className="flex items-center justify-between border-b border-white/[0.06] pb-3 mb-3">
+                  <div className="text-white text-sm flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-violet-500" /> Alumni
+                  </div>
+                  <Link href="/alumni" className="text-xs text-blue-400 hover:underline">View All</Link>
+                </div>
+              </div>
+              <div className="px-4 pb-4">
+                {alumni.length === 0 ? (
+                  <p className="text-xs text-gray-400 text-center py-4">No alumni yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {alumni.map((a) => (
+                      <div key={a._id} className="flex items-center gap-2.5 p-2 bg-white/[0.03] rounded-lg">
+                        <div className="w-8 h-8 rounded-full bg-violet-500/20 flex items-center justify-center text-violet-400 text-[10px] font-bold shrink-0">
+                          {a.name?.charAt(0)?.toUpperCase()}
                         </div>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">{achievement.description}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{achievement.date}</p>
+                        <div className="min-w-0">
+                          <p className="text-xs font-medium truncate text-white">{a.name}</p>
+                          <p className="text-[10px] text-gray-400 truncate">{a.designation}</p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  variant="outline"
-                  className="w-full mt-4 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700 bg-transparent"
-                >
-                  View All Achievements
-                  <ChevronRight className="w-4 h-4 ml-2" />
-                </Button>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
