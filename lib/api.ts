@@ -31,6 +31,16 @@ async function apiCall(endpoint: string, options: RequestInit = {}) {
   }
 
   const response = await fetch(url, config);
+  const contentType = response.headers.get('content-type') || '';
+
+  if (!contentType.includes('application/json')) {
+    const text = await response.text();
+    if (text.trimStart().startsWith('<')) {
+      throw new Error('Backend returned HTML instead of JSON. Set NEXT_PUBLIC_API_URL to your API URL (e.g. https://paarthsarthi.vercel.app/api) and redeploy.');
+    }
+    throw new Error(text || 'Invalid response from server');
+  }
+
   const data = await response.json();
 
   if (!response.ok) {
