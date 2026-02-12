@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 
@@ -34,8 +36,19 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Static folder for uploads
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Static folder for uploads – serve only if file exists (avoids ENOENT on Vercel where uploads aren't persisted)
+const uploadsDir = path.join(__dirname, 'uploads');
+app.use('/uploads', (req, res, next) => {
+  const filePath = path.join(uploadsDir, req.path);
+  if (!filePath.startsWith(uploadsDir)) return res.status(404).end();
+  fs.stat(filePath, (err, stat) => {
+    if (err || !stat || !stat.isFile()) return res.status(404).end();
+    res.sendFile(filePath, (err2) => {
+      if (err2 && err2.code === 'ENOENT') return res.status(404).end();
+      if (err2) return next(err2);
+    });
+  });
+});
 
 // ============ API Routes ============
 
@@ -87,12 +100,20 @@ app.get('/api', (req, res) => {
   });
 });
 
-// ============ Health Check ============
+// ============ Health Check (includes DB status) ============
+const readyStateMap = { 0: 'disconnected', 1: 'connected', 2: 'connecting', 3: 'disconnecting' };
 app.get('/api/health', (req, res) => {
+  const state = mongoose.connection.readyState;
+  const database = readyStateMap[state] ?? 'unknown';
+  const dbConnected = state === 1;
   res.json({
     success: true,
     message: 'ParthSarthi API is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    database: {
+      status: database,
+      connected: dbConnected
+    }
   });
 });
 
