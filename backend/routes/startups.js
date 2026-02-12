@@ -16,8 +16,8 @@ router.get('/', getStartups);
 router.get('/:id', getStartupById);
 
 // Admin routes
-router.post('/', protect, authorize('admin'), upload.single('logo'), createStartup);
-router.put('/:id', protect, authorize('admin'), upload.single('logo'), updateStartup);
+router.post('/', protect, authorize('admin'), upload.single('logo'), upload.setUploadFilename, createStartup);
+router.put('/:id', protect, authorize('admin'), upload.single('logo'), upload.setUploadFilename, updateStartup);
 router.delete('/:id', protect, authorize('admin'), deleteStartup);
 router.post('/:id/milestones', protect, authorize('admin'), addMilestone);
 

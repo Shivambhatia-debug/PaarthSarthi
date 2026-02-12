@@ -18,8 +18,8 @@ router.get('/', getMentors);
 router.get('/:id', getMentorById);
 
 // Admin routes
-router.post('/', protect, authorize('admin'), upload.single('photo'), createMentor);
-router.put('/:id', protect, authorize('admin'), upload.single('photo'), updateMentor);
+router.post('/', protect, authorize('admin'), upload.single('photo'), upload.setUploadFilename, createMentor);
+router.put('/:id', protect, authorize('admin'), upload.single('photo'), upload.setUploadFilename, updateMentor);
 router.delete('/:id', protect, authorize('admin'), deleteMentor);
 router.patch('/:id/toggle', protect, authorize('admin'), toggleMentorStatus);
 

@@ -20,8 +20,8 @@ router.get('/', getCourses);
 router.get('/:id', getCourseById);
 
 // Admin routes
-router.post('/', protect, authorize('admin'), upload.single('thumbnail'), createCourse);
-router.put('/:id', protect, authorize('admin'), upload.single('thumbnail'), updateCourse);
+router.post('/', protect, authorize('admin'), upload.single('thumbnail'), upload.setUploadFilename, createCourse);
+router.put('/:id', protect, authorize('admin'), upload.single('thumbnail'), upload.setUploadFilename, updateCourse);
 router.delete('/:id', protect, authorize('admin'), deleteCourse);
 router.patch('/:id/publish', protect, authorize('admin'), togglePublish);
 

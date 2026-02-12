@@ -16,8 +16,8 @@ router.get('/', getAlumni);
 router.get('/:id', getAlumniById);
 
 // Admin routes
-router.post('/', protect, authorize('admin'), upload.single('photo'), createAlumni);
-router.put('/:id', protect, authorize('admin'), upload.single('photo'), updateAlumni);
+router.post('/', protect, authorize('admin'), upload.single('photo'), upload.setUploadFilename, createAlumni);
+router.put('/:id', protect, authorize('admin'), upload.single('photo'), upload.setUploadFilename, updateAlumni);
 router.delete('/:id', protect, authorize('admin'), deleteAlumni);
 router.patch('/:id/toggle', protect, authorize('admin'), toggleAlumniStatus);
 

@@ -21,8 +21,8 @@ router.get('/:id', getBlogById);
 router.post('/:id/like', likeBlog);
 
 // Admin routes
-router.post('/', protect, authorize('admin'), upload.single('thumbnail'), createBlog);
-router.put('/:id', protect, authorize('admin'), upload.single('thumbnail'), updateBlog);
+router.post('/', protect, authorize('admin'), upload.single('thumbnail'), upload.setUploadFilename, createBlog);
+router.put('/:id', protect, authorize('admin'), upload.single('thumbnail'), upload.setUploadFilename, updateBlog);
 router.delete('/:id', protect, authorize('admin'), deleteBlog);
 
 module.exports = router;
