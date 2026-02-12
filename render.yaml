@@ -1,0 +1,13 @@
+# Render Blueprint - use this when adding the repo as a Web Service
+# Dashboard: New -> Web Service -> connect repo; Render can auto-detect this file
+services:
+  - type: web
+    name: paarthsarthi
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Add NEXT_PUBLIC_API_URL in Render Dashboard to point to your backend API

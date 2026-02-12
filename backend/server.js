@@ -59,6 +59,24 @@ app.use('/api/admin', require('./routes/admin'));
 // Contact/Callback routes
 app.use('/api/contact', require('./routes/contact'));
 
+// ============ Root (for Vercel / deployment sanity) ============
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'ParthSarthi API',
+    docs: 'Use /api/* for endpoints. Health: /api/health',
+    health: '/api/health'
+  });
+});
+
+app.get('/api', (req, res) => {
+  res.json({
+    success: true,
+    message: 'ParthSarthi API',
+    endpoints: { health: '/api/health', auth: '/api/auth', alumni: '/api/alumni', mentors: '/api/mentors', courses: '/api/courses', startups: '/api/startups', meetings: '/api/meetings', contact: '/api/contact' }
+  });
+});
+
 // ============ Health Check ============
 app.get('/api/health', (req, res) => {
   res.json({
@@ -89,8 +107,10 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`
+// Only listen when not on Vercel (serverless)
+if (process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`
   =========================================
     ParthSarthi API Server
     Mode: ${process.env.NODE_ENV}
@@ -98,6 +118,7 @@ app.listen(PORT, () => {
     URL: http://localhost:${PORT}
   =========================================
   `);
-});
+  });
+}
 
 module.exports = app;
