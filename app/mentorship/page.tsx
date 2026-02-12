@@ -140,7 +140,7 @@ export default function MentorshipPage() {
             <div key={mentor._id} className="group bg-white/[0.02] border border-white/[0.06] rounded-xl p-5 hover:border-white/[0.15] hover:bg-white/[0.03] hover:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all">
               <div className="flex items-start gap-3 mb-4">
                 <Avatar className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold shrink-0">
-                  <AvatarImage src={mentor.photo ? `${apiBase()}${mentor.photo}` : undefined} alt={mentor.name} className="object-cover" />
+                  <AvatarImage src={mentor.photo ? (mentor.photo.startsWith("http") ? mentor.photo : `${apiBase()}${mentor.photo}`) : undefined} alt={mentor.name} className="object-cover" />
                   <AvatarFallback className="rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white font-bold">
                     {mentor.name?.split(/\s+/).map((s: string) => s[0]).join("").slice(0, 2).toUpperCase() || "M"}
                   </AvatarFallback>

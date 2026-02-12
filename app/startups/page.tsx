@@ -244,7 +244,7 @@ export default function StartupsPage() {
                 <CardContent className="p-5">
                   <div className="flex items-start gap-3 mb-4">
                     <Avatar className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold shrink-0">
-                      <AvatarImage src={startup.logo ? `${apiBase()}${startup.logo}` : undefined} alt={startup.name} className="object-cover rounded-lg" />
+                      <AvatarImage src={startup.logo ? (startup.logo.startsWith("http") ? startup.logo : `${apiBase()}${startup.logo}`) : undefined} alt={startup.name} className="object-cover rounded-lg" />
                       <AvatarFallback className="rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold">
                         {startup.name?.charAt(0)?.toUpperCase() || "S"}
                       </AvatarFallback>

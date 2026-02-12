@@ -85,7 +85,7 @@ exports.createCourse = async (req, res) => {
     req.body.addedBy = req.user.id;
 
     if (req.file) {
-      req.body.thumbnail = `/uploads/courses/${req.file.filename}`;
+      req.body.thumbnail = req.body.thumbnail || `/uploads/courses/${req.file.filename}`;
     }
 
     const course = await Course.create(req.body);
@@ -102,7 +102,7 @@ exports.createCourse = async (req, res) => {
 exports.updateCourse = async (req, res) => {
   try {
     if (req.file) {
-      req.body.thumbnail = `/uploads/courses/${req.file.filename}`;
+      req.body.thumbnail = req.body.thumbnail || `/uploads/courses/${req.file.filename}`;
     }
 
     const course = await Course.findByIdAndUpdate(req.params.id, req.body, {

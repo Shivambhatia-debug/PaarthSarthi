@@ -115,7 +115,7 @@ export default function CoursesPage() {
               <div className="relative aspect-video bg-white/[0.03]">
                 {course.thumbnail && !thumbFailed[course._id] ? (
                   <img
-                    src={`${apiBase()}${course.thumbnail}`}
+                    src={course.thumbnail?.startsWith("http") ? course.thumbnail : `${apiBase()}${course.thumbnail}`}
                     alt={course.title}
                     className="w-full h-full object-cover"
                     onError={() => setThumbFailed((p) => ({ ...p, [course._id]: true }))}

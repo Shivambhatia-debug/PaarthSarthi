@@ -89,7 +89,7 @@ exports.createBlog = async (req, res) => {
     req.body.authorName = req.user.name;
 
     if (req.file) {
-      req.body.thumbnail = `/uploads/blogs/${req.file.filename}`;
+      req.body.thumbnail = req.body.thumbnail || `/uploads/blogs/${req.file.filename}`;
     }
 
     if (req.body.isPublished) {
@@ -110,7 +110,7 @@ exports.createBlog = async (req, res) => {
 exports.updateBlog = async (req, res) => {
   try {
     if (req.file) {
-      req.body.thumbnail = `/uploads/blogs/${req.file.filename}`;
+      req.body.thumbnail = req.body.thumbnail || `/uploads/blogs/${req.file.filename}`;
     }
 
     // If publishing for first time

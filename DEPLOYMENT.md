@@ -28,9 +28,11 @@ Add these for **Production** (and same for Preview if you use branches):
 | `JWT_SECRET`   | Long random string (e.g. 32+ chars) | Yes |
 | `JWT_EXPIRE`   | `7d` | Yes |
 | `FRONTEND_URL` | `https://paarthsarthi.netlify.app` | Yes (for CORS) |
+| `BLOB_READ_WRITE_TOKEN` | From Vercel → Storage → Blob store (Create store if needed) | Yes (for image uploads on Vercel) |
 | `NODE_ENV`     | `production` | Optional |
 
 - **Do not** set `PORT` or `VERCEL` – Vercel sets these.
+- **BLOB_READ_WRITE_TOKEN:** Create a Blob store in the same Vercel project (Storage tab), then copy the token into env vars so alumni/mentor/course/startup/blog photos are stored in Blob and persist.
 - After deploy, note the backend URL, e.g. `https://parthsarthi-api.vercel.app`.  
   API base for the frontend is: **`https://parthsarthi-api.vercel.app/api`**
 

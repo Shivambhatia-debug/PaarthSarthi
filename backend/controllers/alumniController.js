@@ -63,9 +63,9 @@ exports.createAlumni = async (req, res) => {
   try {
     req.body.addedBy = req.user.id;
 
-    // Handle photo upload
+    // Handle photo: Blob URL set by uploadToBlob on Vercel, else local path
     if (req.file) {
-      req.body.photo = `/uploads/alumni/${req.file.filename}`;
+      req.body.photo = req.body.photo || `/uploads/alumni/${req.file.filename}`;
     }
 
     const alumni = await Alumni.create(req.body);
@@ -81,9 +81,9 @@ exports.createAlumni = async (req, res) => {
 // @access  Private/Admin
 exports.updateAlumni = async (req, res) => {
   try {
-    // Handle photo upload
+    // Handle photo: Blob URL set by uploadToBlob on Vercel, else local path
     if (req.file) {
-      req.body.photo = `/uploads/alumni/${req.file.filename}`;
+      req.body.photo = req.body.photo || `/uploads/alumni/${req.file.filename}`;
     }
 
     const alumni = await Alumni.findByIdAndUpdate(req.params.id, req.body, {

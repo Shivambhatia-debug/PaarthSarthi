@@ -68,7 +68,7 @@ exports.createMentor = async (req, res) => {
     req.body.addedBy = req.user.id;
 
     if (req.file) {
-      req.body.photo = `/uploads/mentors/${req.file.filename}`;
+      req.body.photo = req.body.photo || `/uploads/mentors/${req.file.filename}`;
     }
 
     const mentor = await Mentor.create(req.body);
@@ -85,7 +85,7 @@ exports.createMentor = async (req, res) => {
 exports.updateMentor = async (req, res) => {
   try {
     if (req.file) {
-      req.body.photo = `/uploads/mentors/${req.file.filename}`;
+      req.body.photo = req.body.photo || `/uploads/mentors/${req.file.filename}`;
     }
 
     const mentor = await Mentor.findByIdAndUpdate(req.params.id, req.body, {

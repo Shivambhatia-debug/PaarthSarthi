@@ -59,7 +59,7 @@ exports.createStartup = async (req, res) => {
     req.body.addedBy = req.user.id;
 
     if (req.file) {
-      req.body.logo = `/uploads/startups/${req.file.filename}`;
+      req.body.logo = req.body.logo || `/uploads/startups/${req.file.filename}`;
     }
 
     const startup = await Startup.create(req.body);
@@ -76,7 +76,7 @@ exports.createStartup = async (req, res) => {
 exports.updateStartup = async (req, res) => {
   try {
     if (req.file) {
-      req.body.logo = `/uploads/startups/${req.file.filename}`;
+      req.body.logo = req.body.logo || `/uploads/startups/${req.file.filename}`;
     }
 
     const startup = await Startup.findByIdAndUpdate(req.params.id, req.body, {
