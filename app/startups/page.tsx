@@ -14,7 +14,10 @@ import {
   Lightbulb, TrendingUp, ExternalLink, CheckCircle, AlertCircle,
   ArrowRight, Send
 } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { startupAPI, contactAPI } from "@/lib/api"
+
+const apiBase = () => process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, "") || ""
 
 const SERVICES = [
   { id: "tech", name: "Tech Development", icon: Code, desc: "Web, mobile app, MVP development" },
@@ -240,11 +243,12 @@ export default function StartupsPage() {
               <Card key={startup._id} className="group bg-white/[0.02] border border-white/[0.06] rounded-xl hover:border-white/[0.15] hover:bg-white/[0.03] hover:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all">
                 <CardContent className="p-5">
                   <div className="flex items-start gap-3 mb-4">
-                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white font-bold shrink-0 overflow-hidden">
-                      {startup.logo ? (
-                        <img src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${startup.logo}`} alt={startup.name} className="w-12 h-12 rounded-lg object-cover" />
-                      ) : startup.name?.charAt(0)?.toUpperCase()}
-                    </div>
+                    <Avatar className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold shrink-0">
+                      <AvatarImage src={startup.logo ? `${apiBase()}${startup.logo}` : undefined} alt={startup.name} className="object-cover rounded-lg" />
+                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold">
+                        {startup.name?.charAt(0)?.toUpperCase() || "S"}
+                      </AvatarFallback>
+                    </Avatar>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-sm text-white truncate group-hover:text-white transition-colors">{startup.name}</h3>
                       <p className="text-xs text-gray-500 mt-0.5">{startup.industry}</p>

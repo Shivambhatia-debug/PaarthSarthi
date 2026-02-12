@@ -9,12 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Clock, Users, Star, Search, Globe, Loader2, BookOpen, Play } from "lucide-react"
 import { courseAPI } from "@/lib/api"
 
+const apiBase = () => process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/?$/, "") || ""
+
 export default function CoursesPage() {
   const [courses, setCourses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
   const [category, setCategory] = useState("all")
   const [language, setLanguage] = useState("all")
+  const [thumbFailed, setThumbFailed] = useState<Record<string, boolean>>({})
 
   useEffect(() => { fetchCourses() }, [])
 
@@ -110,8 +113,13 @@ export default function CoursesPage() {
             <Card key={course._id} className="group bg-white/[0.02] border border-white/[0.06] rounded-xl overflow-hidden hover:border-white/[0.15] hover:bg-white/[0.03] hover:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all">
               {/* Thumbnail */}
               <div className="relative aspect-video bg-white/[0.03]">
-                {course.thumbnail ? (
-                  <img src={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${course.thumbnail}`} alt={course.title} className="w-full h-full object-cover" />
+                {course.thumbnail && !thumbFailed[course._id] ? (
+                  <img
+                    src={`${apiBase()}${course.thumbnail}`}
+                    alt={course.title}
+                    className="w-full h-full object-cover"
+                    onError={() => setThumbFailed((p) => ({ ...p, [course._id]: true }))}
+                  />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
                     <BookOpen className="w-10 h-10 text-gray-600" />
