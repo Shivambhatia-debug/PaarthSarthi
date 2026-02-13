@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema({
     enum: ['en', 'hi'],
     default: 'en'
   },
+  // Student-specific (optional)
+  currentEducation: { type: String, trim: true },
+  institution: { type: String, trim: true },
+  location: { type: String, trim: true },
+  yearOfStudy: { type: String, trim: true },
+  stream: { type: String, trim: true },
   interests: [{
     type: String
   }],

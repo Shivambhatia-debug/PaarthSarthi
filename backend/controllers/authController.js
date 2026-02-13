@@ -6,7 +6,7 @@ const { sendResponse, sendError, notifyAdmins } = require('../utils/helpers');
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, phone, password, role, language, interests } = req.body;
+    const { name, email, phone, password, role, language, interests, currentEducation, institution, location, yearOfStudy, stream } = req.body;
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -22,7 +22,12 @@ exports.register = async (req, res) => {
       password,
       role: role || 'student',
       language,
-      interests
+      interests,
+      currentEducation,
+      institution,
+      location,
+      yearOfStudy,
+      stream
     });
 
     // Notify admins about new user
@@ -43,8 +48,14 @@ exports.register = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
-        language: user.language
+        language: user.language,
+        currentEducation: user.currentEducation,
+        institution: user.institution,
+        location: user.location,
+        yearOfStudy: user.yearOfStudy,
+        stream: user.stream
       }
     }, 'Registration successful');
 
@@ -91,9 +102,15 @@ exports.login = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        phone: user.phone,
         role: user.role,
         avatar: user.avatar,
-        language: user.language
+        language: user.language,
+        currentEducation: user.currentEducation,
+        institution: user.institution,
+        location: user.location,
+        yearOfStudy: user.yearOfStudy,
+        stream: user.stream
       }
     }, 'Login successful');
 

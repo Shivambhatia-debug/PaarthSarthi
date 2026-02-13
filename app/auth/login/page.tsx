@@ -24,7 +24,8 @@ export default function AuthPage() {
 
   const [loginData, setLoginData] = useState({ email: "", password: "" })
   const [signupData, setSignupData] = useState({
-    name: "", email: "", phone: "", password: "", role: "student", language: "en"
+    name: "", email: "", phone: "", password: "", role: "student", language: "en",
+    currentEducation: "", institution: "", location: "", yearOfStudy: "", stream: ""
   })
 
   const handleLogin = async () => {
@@ -185,6 +186,32 @@ export default function AuthPage() {
                     </Select>
                   </div>
                 </div>
+                {signupData.role === "student" && (
+                  <>
+                    <div>
+                      <Label className="text-gray-300 text-xs">Current education</Label>
+                      <Input placeholder="e.g. B.Tech, Class 12, MBA" value={signupData.currentEducation} onChange={(e) => setSignupData({...signupData, currentEducation: e.target.value})} className="h-10 bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-gray-500 rounded-lg" />
+                    </div>
+                    <div>
+                      <Label className="text-gray-300 text-xs">School / College</Label>
+                      <Input placeholder="Institution name" value={signupData.institution} onChange={(e) => setSignupData({...signupData, institution: e.target.value})} className="h-10 bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-gray-500 rounded-lg" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-gray-300 text-xs">Year / Class</Label>
+                        <Input placeholder="e.g. 2nd year, Class 12" value={signupData.yearOfStudy} onChange={(e) => setSignupData({...signupData, yearOfStudy: e.target.value})} className="h-10 bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-gray-500 rounded-lg" />
+                      </div>
+                      <div>
+                        <Label className="text-gray-300 text-xs">Stream / Field</Label>
+                        <Input placeholder="e.g. Engineering, Commerce" value={signupData.stream} onChange={(e) => setSignupData({...signupData, stream: e.target.value})} className="h-10 bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-gray-500 rounded-lg" />
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-gray-300 text-xs">Location (city, state)</Label>
+                      <Input placeholder="e.g. Darbhanga, Bihar" value={signupData.location} onChange={(e) => setSignupData({...signupData, location: e.target.value})} className="h-10 bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-gray-500 rounded-lg" />
+                    </div>
+                  </>
+                )}
                 <Button onClick={handleSignup} disabled={loading} className="w-full bg-white text-black hover:bg-gray-200 h-11 rounded-xl text-sm font-semibold">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   {loading ? "Creating..." : "Create Account"}

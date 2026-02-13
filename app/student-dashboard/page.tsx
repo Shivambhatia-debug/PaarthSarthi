@@ -9,7 +9,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { meetingAPI, mentorAPI, alumniAPI, courseAPI, notificationAPI } from "@/lib/api"
+import { meetingAPI, mentorAPI, alumniAPI, courseAPI, notificationAPI, authAPI } from "@/lib/api"
 
 export default function StudentDashboard() {
   const router = useRouter()
@@ -27,6 +27,12 @@ export default function StudentDashboard() {
     if (!token || !userData) { router.push("/auth/login"); return }
     try { setUser(JSON.parse(userData)) } catch { router.push("/auth/login"); return }
     fetchData()
+    // Fetch full profile (education, location, etc.)
+    authAPI.getMe().then((res) => {
+      if (res?.user) {
+        setUser((prev) => ({ ...prev, ...res.user, id: res.user._id || prev?.id }))
+      }
+    }).catch(() => {})
   }, [])
 
   const fetchData = async () => {
@@ -261,7 +267,34 @@ export default function StudentDashboard() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="space-y-4">
+            <div className="space-y-4">
+            {/* My details (education, location) */}
+            {(user?.currentEducation || user?.institution || user?.location || user?.yearOfStudy || user?.stream) && (
+              <div className={cardClass}>
+                <div className="px-4 pt-4">
+                  <div className="text-white text-sm flex items-center gap-2 border-b border-white/[0.06] pb-3 mb-3">
+                    <GraduationCap className="w-4 h-4 text-emerald-500" /> My details
+                  </div>
+                </div>
+                <div className="px-4 pb-4 space-y-2 text-xs">
+                  {user?.currentEducation && (
+                    <p><span className="text-gray-500">Education:</span> <span className="text-white">{user.currentEducation}</span></p>
+                  )}
+                  {user?.institution && (
+                    <p><span className="text-gray-500">Institution:</span> <span className="text-white">{user.institution}</span></p>
+                  )}
+                  {user?.yearOfStudy && (
+                    <p><span className="text-gray-500">Year / Class:</span> <span className="text-white">{user.yearOfStudy}</span></p>
+                  )}
+                  {user?.stream && (
+                    <p><span className="text-gray-500">Stream:</span> <span className="text-white">{user.stream}</span></p>
+                  )}
+                  {user?.location && (
+                    <p className="flex items-center gap-1"><MapPin className="w-3 h-3 text-gray-500 shrink-0" /> <span className="text-white">{user.location}</span></p>
+                  )}
+                </div>
+              </div>
+            )}
             {/* Quick Actions */}
             <div className={cardClass}>
               <div className="px-4 pt-4">

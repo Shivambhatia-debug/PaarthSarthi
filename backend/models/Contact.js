@@ -17,7 +17,7 @@ const contactSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['callback', 'demo', 'inquiry', 'support', 'partnership', 'institution'],
+    enum: ['callback', 'demo', 'inquiry', 'support', 'partnership', 'institution', 'startup-service'],
     default: 'inquiry'
   },
   subject: {

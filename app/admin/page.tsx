@@ -1166,6 +1166,8 @@ export default function AdminPanel() {
                         <th className="text-left p-3 font-medium text-gray-400 text-xs">Email</th>
                         <th className="text-left p-3 font-medium text-gray-400 text-xs hidden md:table-cell">Phone</th>
                         <th className="text-left p-3 font-medium text-gray-400 text-xs">Role</th>
+                        <th className="text-left p-3 font-medium text-gray-400 text-xs hidden lg:table-cell">Education</th>
+                        <th className="text-left p-3 font-medium text-gray-400 text-xs hidden lg:table-cell">Location</th>
                         <th className="text-left p-3 font-medium text-gray-400 text-xs hidden lg:table-cell">Joined</th>
                         <th className="text-left p-3 font-medium text-gray-400 text-xs">Status</th>
                         <th className="text-left p-3 font-medium text-gray-400 text-xs">Actions</th>
@@ -1189,6 +1191,10 @@ export default function AdminPanel() {
                               {u.role}
                             </Badge>
                           </td>
+                          <td className="p-3 text-gray-400 text-xs hidden lg:table-cell max-w-[140px] truncate" title={[u.currentEducation, u.institution, u.yearOfStudy].filter(Boolean).join(" • ")}>
+                            {u.role === "student" && (u.currentEducation || u.institution || u.yearOfStudy) ? [u.currentEducation, u.institution, u.yearOfStudy].filter(Boolean).join(" • ") : "-"}
+                          </td>
+                          <td className="p-3 text-gray-400 text-xs hidden lg:table-cell max-w-[100px] truncate" title={u.location}>{u.role === "student" && u.location ? u.location : "-"}</td>
                           <td className="p-3 text-gray-500 text-xs hidden lg:table-cell">{new Date(u.createdAt).toLocaleDateString()}</td>
                           <td className="p-3">
                             <Badge className={`text-[10px] border-0 ${u.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-gray-500/10 text-gray-400"}`}>
