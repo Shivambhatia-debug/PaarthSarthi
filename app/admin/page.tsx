@@ -167,6 +167,22 @@ export default function AdminPanel() {
     try { await meetingAPI.updateStatus(id, { status: "cancelled" }); fetchMeetings(); fetchDashboard() } catch {}
   }
 
+  const openMeetingDetail = (meeting: any) => {
+    setSelectedMeeting(meeting)
+    setMeetingLinkInput(meeting.meetingLink || "")
+    setShowMeetingModal(true)
+  }
+
+  const handleSaveMeetingLinkOnly = async () => {
+    if (!selectedMeeting) return
+    try {
+      await meetingAPI.updateStatus(selectedMeeting._id, { meetingLink: meetingLinkInput || undefined })
+      setFormMsg({ type: "success", text: "Meeting link saved!" })
+      fetchMeetings()
+      setSelectedMeeting((prev) => prev ? { ...prev, meetingLink: meetingLinkInput || undefined } : null)
+    } catch (e: any) { setFormMsg({ type: "error", text: e.message }) }
+  }
+
   const deleteUser = async (id: string) => {
     if (!confirm("Are you sure you want to delete this user?")) return
     try { await adminAPI.deleteUser(id); fetchUsers(); fetchDashboard() } catch {}
@@ -1104,7 +1120,11 @@ export default function AdminPanel() {
                     </thead>
                     <tbody>
                       {meetings.map((m) => (
-                        <tr key={m._id} className="border-b border-white/[0.04] hover:bg-white/[0.02] even:bg-white/[0.01]">
+                        <tr
+                          key={m._id}
+                          className="border-b border-white/[0.04] hover:bg-white/[0.02] even:bg-white/[0.01] cursor-pointer"
+                          onClick={() => openMeetingDetail(m)}
+                        >
                           <td className="p-3">
                             <p className="font-medium text-white text-sm">{m.userName}</p>
                             <p className="text-xs text-gray-500">{m.userEmail}</p>
@@ -1120,12 +1140,14 @@ export default function AdminPanel() {
                           </td>
                           <td className="p-3 whitespace-nowrap text-gray-500 hidden md:table-cell">{m.userPhone}</td>
                           <td className="p-3">
-                            <Badge className={`text-[10px] ${m.status === "confirmed" ? "bg-emerald-500/10 text-emerald-400" : m.status === "pending" ? "bg-yellow-500/10 text-yellow-400" : "bg-red-500/10 text-red-400"} border-0`}>
-                              {m.status}
-                            </Badge>
+                            {m.status !== "confirmed" && (
+                              <Badge className={`text-[10px] ${m.status === "pending" ? "bg-yellow-500/10 text-yellow-400" : "bg-red-500/10 text-red-400"} border-0`}>
+                                {m.status}
+                              </Badge>
+                            )}
                             {m.meetingLink && <p className="text-[10px] text-blue-400 mt-0.5 truncate max-w-[100px]">Link set</p>}
                           </td>
-                          <td className="p-3">
+                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
                             {m.status === "pending" && (
                               <div className="flex gap-1.5">
                                 <Button size="sm" className="h-7 text-xs bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 px-2.5" onClick={() => handleStartAcceptMeeting(m)}>Accept</Button>
@@ -1276,15 +1298,15 @@ export default function AdminPanel() {
       {/* ==================== MEETING ACCEPT MODAL ==================== */}
       {showMeetingModal && selectedMeeting && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowMeetingModal(false)}>
-          <div className="bg-[#0d1117] border border-white/[0.1] rounded-2xl max-w-md w-full p-6 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#0d1117] border border-white/[0.1] rounded-2xl max-w-md w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold text-white">Accept Meeting Request</h3>
+              <h3 className="text-base font-bold text-white">Meeting details</h3>
               <button onClick={() => setShowMeetingModal(false)} className="text-gray-400 hover:text-white transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Meeting info */}
+            {/* Full meeting info */}
             <div className="space-y-3 mb-5">
               <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
                 <p className="text-[10px] text-gray-500 uppercase tracking-wider">Requested by</p>
@@ -1293,22 +1315,27 @@ export default function AdminPanel() {
                 {selectedMeeting.userPhone && <p className="text-xs text-gray-400">{selectedMeeting.userPhone}</p>}
               </div>
               <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Meeting details</p>
-                <p className="text-sm font-medium text-white mt-1">with {selectedMeeting.meetingPersonName} <span className="text-gray-400 text-xs capitalize">({selectedMeeting.meetingWith})</span></p>
-                <p className="text-xs text-gray-400 mt-0.5">{selectedMeeting.subject}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Meeting with</p>
+                <p className="text-sm font-medium text-white mt-1">{selectedMeeting.meetingPersonName} <span className="text-gray-400 text-xs capitalize">({selectedMeeting.meetingWith})</span></p>
+              </div>
+              <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Subject</p>
+                <p className="text-sm text-white mt-1">{selectedMeeting.subject}</p>
+                {selectedMeeting.description && <p className="text-xs text-gray-400 mt-1 whitespace-pre-wrap">{selectedMeeting.description}</p>}
+              </div>
+              <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Date & time</p>
+                <p className="text-sm text-white mt-1">
                   {new Date(selectedMeeting.date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
                   {selectedMeeting.timeSlot && ` · ${selectedMeeting.timeSlot.startTime} - ${selectedMeeting.timeSlot.endTime}`}
                 </p>
+                {selectedMeeting.meetingType && <p className="text-xs text-gray-400 mt-0.5 capitalize">{selectedMeeting.meetingType}</p>}
               </div>
             </div>
 
-            {/* Step 1: WhatsApp */}
+            {/* WhatsApp */}
             <div className="mb-4">
-              <p className="text-xs font-medium text-gray-300 mb-2 flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">1</span>
-                Contact user via WhatsApp & share meeting link
-              </p>
+              <p className="text-xs font-medium text-gray-300 mb-2">Contact via WhatsApp</p>
               <a
                 href={getWhatsAppUrl(selectedMeeting.userPhone, selectedMeeting.meetingPersonName, selectedMeeting.date)}
                 target="_blank"
@@ -1321,27 +1348,34 @@ export default function AdminPanel() {
               </a>
             </div>
 
-            {/* Step 2: Meeting Link */}
+            {/* Meeting link – always allow add/update */}
             <div className="mb-5">
-              <p className="text-xs font-medium text-gray-300 mb-2 flex items-center gap-1.5">
-                <span className="w-4 h-4 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-bold">2</span>
-                Paste meeting link (optional)
-              </p>
+              <p className="text-xs font-medium text-gray-300 mb-2">Meeting link (Google Meet / Zoom – you can add or update anytime)</p>
               <Input
                 value={meetingLinkInput}
                 onChange={(e) => setMeetingLinkInput(e.target.value)}
                 placeholder="https://meet.google.com/... or zoom link"
                 className={inputClass}
               />
+              <Button onClick={handleSaveMeetingLinkOnly} variant="outline" className="mt-2 h-9 text-xs rounded-lg bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20 w-full">
+                Save link
+              </Button>
             </div>
 
             {/* Actions */}
             <div className="flex gap-3">
-              <Button onClick={handleConfirmMeeting} className="flex-1 bg-emerald-500 text-white hover:bg-emerald-600 h-10 text-sm font-semibold rounded-xl">
-                <CheckCircle className="w-4 h-4 mr-1.5" /> Confirm & Accept
-              </Button>
-              <Button onClick={() => setShowMeetingModal(false)} variant="outline" className="h-10 text-sm rounded-xl bg-white/[0.04] border-white/[0.08] text-gray-300 hover:bg-white/[0.08]">
-                Cancel
+              {selectedMeeting.status === "pending" && (
+                <Button onClick={handleConfirmMeeting} className="flex-1 bg-emerald-500 text-white hover:bg-emerald-600 h-10 text-sm font-semibold rounded-xl">
+                  <CheckCircle className="w-4 h-4 mr-1.5" /> Confirm & Accept
+                </Button>
+              )}
+              {selectedMeeting.status === "pending" && (
+                <Button onClick={() => handleCancelMeeting(selectedMeeting._id)} className="h-10 text-sm rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 border-0">
+                  Cancel meeting
+                </Button>
+              )}
+              <Button onClick={() => setShowMeetingModal(false)} variant="outline" className={`h-10 text-sm rounded-xl bg-white/[0.04] border-white/[0.08] text-gray-300 hover:bg-white/[0.08] ${selectedMeeting.status !== "pending" ? "flex-1" : ""}`}>
+                Close
               </Button>
             </div>
           </div>
