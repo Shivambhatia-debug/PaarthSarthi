@@ -13,6 +13,7 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { authAPI } from "@/lib/api"
+import { restrictPhone10 } from "@/lib/utils"
 
 export default function AuthPage() {
   const router = useRouter()
@@ -50,7 +51,8 @@ export default function AuthPage() {
     try {
       if (!signupData.name || !signupData.email || !signupData.password) { setError("Please fill required fields"); setLoading(false); return }
       if (signupData.password.length < 6) { setError("Password must be 6+ characters"); setLoading(false); return }
-      const data = await authAPI.register(signupData)
+      if (signupData.phone && signupData.phone.replace(/\D/g, "").length !== 10) { setError("Phone must be 10 digits"); setLoading(false); return }
+      const data = await authAPI.register({ ...signupData, phone: signupData.phone ? signupData.phone.replace(/\D/g, "") : undefined })
       localStorage.setItem("ps_token", data.token)
       localStorage.setItem("ps_user", JSON.stringify(data.user))
       window.dispatchEvent(new Event("authChange"))
@@ -147,7 +149,7 @@ export default function AuthPage() {
                 </div>
                 <div>
                   <Label className="text-gray-300 text-xs">Phone</Label>
-                  <Input type="tel" placeholder="+91 98765 43210" value={signupData.phone} onChange={(e) => setSignupData({...signupData, phone: e.target.value})} className="h-10 bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-gray-500 rounded-lg" />
+                  <Input type="tel" placeholder="10 digits" maxLength={10} value={signupData.phone} onChange={(e) => setSignupData({...signupData, phone: restrictPhone10(e.target.value)})} className="h-10 bg-white/[0.04] border border-white/[0.08] text-white placeholder:text-gray-500 rounded-lg" />
                 </div>
                 <div>
                   <Label className="text-gray-300 text-xs">Password *</Label>
@@ -164,27 +166,15 @@ export default function AuthPage() {
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label className="text-gray-300 text-xs">I am a</Label>
-                    <Select value={signupData.role} onValueChange={(v) => setSignupData({...signupData, role: v})}>
-                      <SelectTrigger className="h-10 bg-white/[0.04] border border-white/[0.08] text-white rounded-lg"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="mentor">Mentor</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-gray-300 text-xs">Language</Label>
-                    <Select value={signupData.language} onValueChange={(v) => setSignupData({...signupData, language: v})}>
-                      <SelectTrigger className="h-10 bg-white/[0.04] border border-white/[0.08] text-white rounded-lg"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="hi">Hindi</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div>
+                  <Label className="text-gray-300 text-xs">Language</Label>
+                  <Select value={signupData.language} onValueChange={(v) => setSignupData({...signupData, language: v})}>
+                    <SelectTrigger className="h-10 bg-white/[0.04] border border-white/[0.08] text-white rounded-lg"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="hi">Hindi</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 {signupData.role === "student" && (
                   <>

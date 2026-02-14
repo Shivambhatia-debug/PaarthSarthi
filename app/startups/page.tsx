@@ -83,10 +83,16 @@ export default function StartupsPage() {
         setFormLoading(false)
         return
       }
+      const phoneDigits = serviceForm.phone.replace(/\D/g, "")
+      if (phoneDigits.length !== 10) {
+        setFormMsg({ type: "error", text: "Phone must be 10 digits" })
+        setFormLoading(false)
+        return
+      }
       await contactAPI.submit({
         name: serviceForm.name,
         email: serviceForm.email,
-        phone: serviceForm.phone,
+        phone: phoneDigits,
         subject: `Startup Service Request: ${serviceForm.service} - ${serviceForm.startupName}`,
         message: `Startup: ${serviceForm.startupName}\nStage: ${serviceForm.stage}\nService: ${serviceForm.service}\n\n${serviceForm.description}`,
         type: "startup-service"
@@ -164,7 +170,7 @@ export default function StartupsPage() {
             )}
             <div className="grid grid-cols-2 gap-2">
               <div><Label className="text-xs text-gray-400">Your Name *</Label><Input value={serviceForm.name} onChange={(e) => setServiceForm({...serviceForm, name: e.target.value})} placeholder="Full name" className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
-              <div><Label className="text-xs text-gray-400">Phone *</Label><Input value={serviceForm.phone} onChange={(e) => setServiceForm({...serviceForm, phone: e.target.value})} placeholder="+91..." className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
+              <div><Label className="text-xs text-gray-400">Phone *</Label><Input type="tel" value={serviceForm.phone} onChange={(e) => setServiceForm({...serviceForm, phone: (e.target.value.replace(/\D/g, "").slice(0, 10))})} placeholder="10 digits" maxLength={10} className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
             </div>
             <div><Label className="text-xs text-gray-400">Email *</Label><Input type="email" value={serviceForm.email} onChange={(e) => setServiceForm({...serviceForm, email: e.target.value})} placeholder="email@example.com" className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
             <div><Label className="text-xs text-gray-400">Startup Name *</Label><Input value={serviceForm.startupName} onChange={(e) => setServiceForm({...serviceForm, startupName: e.target.value})} placeholder="Your startup name" className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>

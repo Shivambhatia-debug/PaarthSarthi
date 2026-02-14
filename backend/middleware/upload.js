@@ -1,12 +1,14 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 function getFilename(file) {
   const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
   return file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname);
 }
 
-// On Vercel, disk is not persistent/writable – use memory so upload doesn't throw ENOENT
+// When using Blob (token set) or on Vercel: keep file in memory so we can upload to Blob without touching disk (avoids ENOENT locally).
+// Otherwise use disk for local dev – create dir if missing so multer doesn't throw ENOENT.
 const diskStorage = multer.diskStorage({
   destination: function(req, file, cb) {
     let uploadPath = 'uploads/';
@@ -15,7 +17,13 @@ const diskStorage = multer.diskStorage({
     else if (req.baseUrl.includes('course')) uploadPath += 'courses/';
     else if (req.baseUrl.includes('blog')) uploadPath += 'blogs/';
     else if (req.baseUrl.includes('startup')) uploadPath += 'startups/';
+    else if (req.baseUrl.includes('offer')) uploadPath += 'offers/';
     else uploadPath += 'general/';
+    try {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    } catch (e) {
+      return cb(e);
+    }
     cb(null, uploadPath);
   },
   filename: function(req, file, cb) {
@@ -23,7 +31,8 @@ const diskStorage = multer.diskStorage({
   }
 });
 
-const storage = process.env.VERCEL === '1' ? multer.memoryStorage() : diskStorage;
+const useMemoryStorage = process.env.VERCEL === '1' || !!process.env.BLOB_READ_WRITE_TOKEN;
+const storage = useMemoryStorage ? multer.memoryStorage() : diskStorage;
 
 // File filter
 const fileFilter = (req, file, cb) => {

@@ -58,6 +58,9 @@ app.use('/api/auth', require('./routes/auth'));
 // Alumni routes
 app.use('/api/alumni', require('./routes/alumni'));
 
+// Admission routes
+app.use('/api/admissions', require('./routes/admissions'));
+
 // Mentor routes
 app.use('/api/mentors', require('./routes/mentors'));
 
@@ -81,6 +84,12 @@ app.use('/api/admin', require('./routes/admin'));
 
 // Contact/Callback routes
 app.use('/api/contact', require('./routes/contact'));
+
+// Offers (slideshow) – public GET /api/offers, admin CRUD via /api/offers
+app.use('/api/offers', require('./routes/offers'));
+
+// Settings (ticker etc.)
+app.use('/api/settings', require('./routes/settings'));
 
 // ============ Root (for Vercel / deployment sanity) ============
 app.get('/', (req, res) => {

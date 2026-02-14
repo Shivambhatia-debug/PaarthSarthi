@@ -13,18 +13,20 @@ import {
   Users, Plus, Loader2, GraduationCap, BookOpen, Rocket, Calendar,
   Bell, CheckCircle, RefreshCw, AlertTriangle, LayoutDashboard,
   ChevronRight, Phone, Mail, Clock, MessageSquare, Trash2, Eye,
-  Pencil, X, Camera, ExternalLink, ImageIcon
+  Pencil, X, Camera, ExternalLink, ImageIcon, CopyPlus
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { adminAPI, alumniAPI, mentorAPI, courseAPI, startupAPI, meetingAPI, notificationAPI, contactAPI } from "@/lib/api"
+import { adminAPI, alumniAPI, mentorAPI, courseAPI, startupAPI, meetingAPI, notificationAPI, contactAPI, admissionAPI, offerAPI, settingsAPI } from "@/lib/api"
 
-type TabId = "overview" | "alumni" | "mentors" | "courses" | "startups" | "meetings" | "users" | "contacts"
+type TabId = "overview" | "alumni" | "admissions" | "offers" | "mentors" | "courses" | "startups" | "meetings" | "users" | "contacts"
 
 const API_HOST = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '')
 
 const TABS: { id: TabId; label: string; icon: any; shortLabel: string }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard, shortLabel: "Home" },
   { id: "alumni", label: "Alumni", icon: GraduationCap, shortLabel: "Alumni" },
+  { id: "admissions", label: "Admissions", icon: GraduationCap, shortLabel: "Admissions" },
+  { id: "offers", label: "Offers", icon: ImageIcon, shortLabel: "Offers" },
   { id: "mentors", label: "Mentors", icon: Users, shortLabel: "Mentors" },
   { id: "courses", label: "Courses", icon: BookOpen, shortLabel: "Courses" },
   { id: "startups", label: "Startups", icon: Rocket, shortLabel: "Startups" },
@@ -41,6 +43,8 @@ export default function AdminPanel() {
   const [notifications, setNotifications] = useState<any[]>([])
   const [users, setUsers] = useState<any[]>([])
   const [contacts, setContacts] = useState<any[]>([])
+  const [admissions, setAdmissions] = useState<any[]>([])
+  const [offerList, setOfferList] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<TabId>("overview")
 
   // Entity lists for split-panel
@@ -66,6 +70,11 @@ export default function AdminPanel() {
   const [selectedMeeting, setSelectedMeeting] = useState<any>(null)
   const [meetingLinkInput, setMeetingLinkInput] = useState("")
 
+  // User detail modal (click on user row)
+  const [selectedUser, setSelectedUser] = useState<any>(null)
+  // Admission detail modal (click on admission row)
+  const [selectedAdmission, setSelectedAdmission] = useState<any>(null)
+
   // Form states
   const [alumniForm, setAlumniForm] = useState({
     name: "", designation: "", company: "", email: "", phone: "",
@@ -85,6 +94,13 @@ export default function AdminPanel() {
     name: "", description: "", shortDescription: "", industry: "",
     stage: "idea", services: "", founderName: "", location: ""
   })
+  const [offerForm, setOfferForm] = useState({
+    title: "", subtitle: "", imageUrl: "", ctaText: "Get admission now", ctaLink: "/admission", order: 0, isActive: true
+  })
+  const [offerImage, setOfferImage] = useState<File | null>(null)
+  const [editingOfferId, setEditingOfferId] = useState<string | null>(null)
+  const [tickerText, setTickerText] = useState("")
+  const [tickerSaving, setTickerSaving] = useState(false)
 
   const [formLoading, setFormLoading] = useState(false)
   const [formMsg, setFormMsg] = useState({ type: "", text: "" })
@@ -101,6 +117,8 @@ export default function AdminPanel() {
   // Fetch entity lists when tab changes
   useEffect(() => {
     if (activeTab === "alumni") fetchAlumniList()
+    if (activeTab === "admissions") fetchAdmissions()
+    if (activeTab === "offers") { fetchOffers(); settingsAPI.getTicker().then((r) => setTickerText(r.ticker || "")).catch(() => {}) }
     if (activeTab === "mentors") fetchMentorList()
     if (activeTab === "courses") fetchCourseList()
     if (activeTab === "startups") fetchStartupList()
@@ -114,6 +132,14 @@ export default function AdminPanel() {
   const fetchDashboard = async () => {
     try { const data = await adminAPI.getDashboard(); setStats(data.stats) }
     catch {} finally { setLoading(false) }
+  }
+
+  const fetchAdmissions = async () => {
+    try { const data = await admissionAPI.getAll("limit=100"); setAdmissions(data.admissions || []) } catch {}
+  }
+
+  const fetchOffers = async () => {
+    try { const data = await offerAPI.getAll(); setOfferList(data.offers || []) } catch {}
   }
   const fetchMeetings = async () => {
     try { const data = await meetingAPI.getAll("limit=50"); setMeetings(data.meetings || []) } catch {}
@@ -190,6 +216,74 @@ export default function AdminPanel() {
 
   const updateContact = async (id: string, status: string) => {
     try { await contactAPI.update(id, { status }); fetchContacts() } catch {}
+  }
+
+  const updateAdmissionStatus = async (id: string, status: string) => {
+    try { await admissionAPI.update(id, { status }); fetchAdmissions() } catch {}
+  }
+  const deleteAdmissionById = async (id: string) => {
+    if (!confirm("Delete this admission request? This cannot be undone.")) return
+    try { await admissionAPI.delete(id); fetchAdmissions(); setSelectedAdmission(null) } catch {}
+  }
+
+  const saveOffer = async () => {
+    setFormLoading(true); setFormMsg({ type: "", text: "" })
+    try {
+      const useFormData = !!offerImage
+      const payload = useFormData
+        ? (() => {
+            const fd = new FormData()
+            fd.append('title', offerForm.title)
+            fd.append('subtitle', offerForm.subtitle)
+            fd.append('ctaText', offerForm.ctaText)
+            fd.append('ctaLink', offerForm.ctaLink)
+            fd.append('order', String(offerForm.order))
+            fd.append('isActive', String(offerForm.isActive))
+            if (offerForm.imageUrl && !offerImage) fd.append('imageUrl', offerForm.imageUrl)
+            if (offerImage) fd.append('image', offerImage)
+            return fd
+          })()
+        : offerForm
+      if (editingOfferId) {
+        await offerAPI.update(editingOfferId, payload)
+        setFormMsg({ type: "success", text: "Offer updated" })
+      } else {
+        await offerAPI.create(payload)
+        setFormMsg({ type: "success", text: "Offer added" })
+      }
+      setOfferForm({ title: "", subtitle: "", imageUrl: "", ctaText: "Get admission now", ctaLink: "/admission", order: 0, isActive: true })
+      setOfferImage(null); setEditingOfferId(null); fetchOffers()
+    } catch (e: any) { setFormMsg({ type: "error", text: e.message }) }
+    finally { setFormLoading(false) }
+  }
+  const deleteOfferById = async (id: string) => {
+    if (!confirm("Delete this offer?")) return
+    try { await offerAPI.delete(id); fetchOffers(); setEditingOfferId(null) } catch {}
+  }
+  const duplicateOffer = async (o: any) => {
+    try {
+      await offerAPI.create({
+        title: o.title,
+        subtitle: o.subtitle ?? "",
+        imageUrl: o.imageUrl ?? "",
+        ctaText: o.ctaText ?? "Get admission now",
+        ctaLink: o.ctaLink ?? "/admission",
+        order: o.order ?? 0,
+        isActive: o.isActive !== false
+      })
+      setFormMsg({ type: "success", text: "Offer duplicated" })
+      fetchOffers()
+    } catch (e: any) { setFormMsg({ type: "error", text: e.message }) }
+  }
+  const startEditOffer = (o: any) => {
+    setEditingOfferId(o._id)
+    setOfferForm({ title: o.title || "", subtitle: o.subtitle || "", imageUrl: o.imageUrl || "", ctaText: o.ctaText || "Get admission now", ctaLink: o.ctaLink || "/admission", order: o.order || 0, isActive: o.isActive !== false })
+    setOfferImage(null)
+  }
+  const saveTicker = async () => {
+    setTickerSaving(true)
+    try { await settingsAPI.updateTicker(tickerText); setFormMsg({ type: "success", text: "Ticker text updated" }) } catch (e: any) { setFormMsg({ type: "error", text: e.message }) }
+    finally { setTickerSaving(false) }
   }
 
   // ==================== EDIT HELPERS ====================
@@ -1166,6 +1260,194 @@ export default function AdminPanel() {
           </Card>
         )}
 
+        {/* ==================== ADMISSIONS ==================== */}
+        {activeTab === "admissions" && (
+          <Card className="bg-white/[0.02] border-white/[0.06]">
+            <CardHeader className="pb-3 px-5 pt-5">
+              <CardTitle className="text-sm text-white flex items-center gap-2">
+                <GraduationCap className="w-4 h-4 text-emerald-400" />
+                Admission requests ({admissions.length})
+              </CardTitle>
+              <p className="text-xs text-gray-500 mt-1">Student details — connect via WhatsApp or call</p>
+            </CardHeader>
+            <CardContent className="px-5 pb-5">
+              {admissions.length === 0 ? (
+                <p className="text-base text-gray-500 text-center py-16">No admission requests yet</p>
+              ) : (
+                <div className="rounded-xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-white/[0.06] bg-white/[0.02]">
+                          <th className="text-left p-3 font-medium text-gray-400 text-xs">Student</th>
+                          <th className="text-left p-3 font-medium text-gray-400 text-xs hidden md:table-cell">Contact</th>
+                          <th className="text-left p-3 font-medium text-gray-400 text-xs">Course</th>
+                          <th className="text-left p-3 font-medium text-gray-400 text-xs hidden lg:table-cell">Coaching</th>
+                          <th className="text-left p-3 font-medium text-gray-400 text-xs">Mode</th>
+                          <th className="text-left p-3 font-medium text-gray-400 text-xs">Status</th>
+                          <th className="text-left p-3 font-medium text-gray-400 text-xs">Connect</th>
+                          <th className="text-left p-3 font-medium text-gray-400 text-xs w-14">Delete</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {admissions.map((a) => (
+                          <tr
+                            key={a._id}
+                            className="border-b border-white/[0.04] hover:bg-white/[0.04] cursor-pointer transition-colors"
+                            onClick={() => setSelectedAdmission(a)}
+                          >
+                            <td className="p-3">
+                              <p className="font-medium text-white text-sm">{a.name}</p>
+                              <p className="text-xs text-gray-500">{a.currentClass || "-"} {a.stream ? ` · ${a.stream}` : ""}</p>
+                              {a.city && <p className="text-[10px] text-gray-500">{a.city}{a.state ? `, ${a.state}` : ""}</p>}
+                            </td>
+                            <td className="p-3 hidden md:table-cell">
+                              <p className="text-gray-400 text-xs">{a.email}</p>
+                              <p className="text-gray-500 text-xs">{a.phone}</p>
+                              {a.parentPhone && <p className="text-[10px] text-gray-500">Parent: {a.parentPhone}</p>}
+                            </td>
+                            <td className="p-3">
+                              <Badge className="text-[10px] bg-emerald-500/10 text-emerald-400 border-0">{a.course || "-"}</Badge>
+                            </td>
+                            <td className="p-3 text-gray-400 text-xs hidden lg:table-cell">{a.coachingInstitute || "-"}</td>
+                            <td className="p-3 text-gray-400 text-xs capitalize">{a.mode || "-"}</td>
+                            <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                              <Select value={a.status || "new"} onValueChange={(v) => updateAdmissionStatus(a._id, v)}>
+                                <SelectTrigger className="h-7 text-[10px] bg-white/[0.04] border-white/[0.08] text-gray-300 w-[100px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="new">New</SelectItem>
+                                  <SelectItem value="contacted">Contacted</SelectItem>
+                                  <SelectItem value="enrolled">Enrolled</SelectItem>
+                                  <SelectItem value="closed">Closed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </td>
+                            <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                              <a href={`https://wa.me/${(a.phone || "").replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[10px] text-emerald-400 hover:underline">
+                                <Phone className="w-3 h-3" /> WhatsApp
+                              </a>
+                            </td>
+                            <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                              <Button size="sm" className="h-7 w-7 p-0 text-red-400 bg-red-500/10 hover:bg-red-500/20 border-0" onClick={() => deleteAdmissionById(a._id)} title="Delete request">
+                                <Trash2 className="w-3 h-3" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ==================== OFFERS (slideshow templates) ==================== */}
+        {activeTab === "offers" && (
+          <div className="space-y-4">
+            <Card className="bg-white/[0.02] border-white/[0.06]">
+              <CardHeader className="pb-3 px-5 pt-5">
+                <CardTitle className="text-sm text-white flex items-center gap-2">Moving ticker text (homepage top bar)</CardTitle>
+                <p className="text-xs text-gray-500 mt-1">Edit the scrolling offer text that appears at the top of the homepage.</p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 flex gap-2">
+                <Input value={tickerText} onChange={(e) => setTickerText(e.target.value)} placeholder="e.g. OFFER — Get admission now" className={inputClass} />
+                <Button onClick={saveTicker} disabled={tickerSaving} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs shrink-0">{tickerSaving ? <Loader2 className="w-3 h-3 animate-spin" /> : null} Save ticker</Button>
+              </CardContent>
+            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="bg-white/[0.02] border-white/[0.06]">
+              <CardHeader className="pb-3 px-5 pt-5">
+                <CardTitle className="text-sm text-white flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-amber-400" />
+                  {editingOfferId ? "Edit offer" : "Add offer slide"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-5 pb-5 space-y-3">
+                {formMsg.text && (
+                  <div className={`p-2.5 rounded-lg text-xs ${formMsg.type === "error" ? "bg-red-500/10 text-red-400" : "bg-emerald-500/10 text-emerald-400"}`}>{formMsg.text}</div>
+                )}
+                <div>
+                  <Label className={labelClass}>Title *</Label>
+                  <Input value={offerForm.title} onChange={(e) => setOfferForm({ ...offerForm, title: e.target.value })} placeholder="e.g. JEE/NEET Batch" className={inputClass} />
+                </div>
+                <div>
+                  <Label className={labelClass}>Subtitle</Label>
+                  <Input value={offerForm.subtitle} onChange={(e) => setOfferForm({ ...offerForm, subtitle: e.target.value })} placeholder="Short description" className={inputClass} />
+                </div>
+                <div>
+                  <Label className={labelClass}>Image</Label>
+                  <div className="space-y-2">
+                    <Input value={offerForm.imageUrl} onChange={(e) => setOfferForm({ ...offerForm, imageUrl: e.target.value })} placeholder="Image URL (optional)" className={inputClass} />
+                    <p className="text-xs text-gray-500">Or upload image:</p>
+                    <input type="file" accept="image/*" className="block w-full text-xs text-gray-400 file:mr-2 file:py-1.5 file:px-3 file:rounded file:border-0 file:bg-white/10 file:text-white" onChange={(e) => setOfferImage(e.target.files?.[0] || null)} />
+                    {offerImage && <p className="text-xs text-emerald-400">{offerImage.name}</p>}
+                    {editingOfferId && offerForm.imageUrl && !offerImage && (
+                      <div className="mt-1">
+                        <img src={offerForm.imageUrl} alt="" className="h-20 rounded object-cover border border-white/10" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <Label className={labelClass}>Button text</Label>
+                  <Input value={offerForm.ctaText} onChange={(e) => setOfferForm({ ...offerForm, ctaText: e.target.value })} placeholder="Get admission now" className={inputClass} />
+                </div>
+                <div>
+                  <Label className={labelClass}>Button link</Label>
+                  <Input value={offerForm.ctaLink} onChange={(e) => setOfferForm({ ...offerForm, ctaLink: e.target.value })} placeholder="/admission" className={inputClass} />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch checked={offerForm.isActive} onCheckedChange={(v) => setOfferForm({ ...offerForm, isActive: v })} />
+                  <Label className={labelClass}>Show on homepage</Label>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={saveOffer} disabled={formLoading || !offerForm.title} className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs">
+                    {formLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : null} {editingOfferId ? "Update" : "Add"}
+                  </Button>
+                  {editingOfferId && (
+                    <Button variant="outline" size="sm" className="text-xs" onClick={() => { setEditingOfferId(null); setOfferForm({ title: "", subtitle: "", imageUrl: "", ctaText: "Get admission now", ctaLink: "/admission", order: 0, isActive: true }); setOfferImage(null) }}>Cancel</Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-white/[0.02] border-white/[0.06]">
+              <CardHeader className="pb-3 px-5 pt-5">
+                <CardTitle className="text-sm text-white flex items-center gap-2">
+                  <ImageIcon className="w-4 h-4 text-amber-400" />
+                  Offer slides ({offerList.length})
+                </CardTitle>
+                <p className="text-xs text-gray-500 mt-1">These appear in the homepage slideshow</p>
+              </CardHeader>
+              <CardContent className="px-5 pb-5">
+                {offerList.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-8 text-center">No offers yet. Add one to show on homepage.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {offerList.map((o) => (
+                      <div key={o._id} className="flex items-center justify-between gap-2 p-3 rounded-lg bg-white/[0.03] border border-white/[0.06]">
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-white truncate">{o.title}</p>
+                          {o.subtitle && <p className="text-xs text-gray-500 truncate">{o.subtitle}</p>}
+                        </div>
+                        <div className="flex gap-1 shrink-0">
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-emerald-400 hover:text-emerald-300" onClick={() => duplicateOffer(o)} title="Duplicate (same as this)"><CopyPlus className="w-3 h-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-gray-400" onClick={() => startEditOffer(o)}><Pencil className="w-3 h-3" /></Button>
+                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-red-400" onClick={() => deleteOfferById(o._id)}><Trash2 className="w-3 h-3" /></Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            </div>
+          </div>
+        )}
+
         {/* ==================== USERS ==================== */}
         {activeTab === "users" && (
           <Card className="bg-white/[0.02] border-white/[0.06]">
@@ -1197,7 +1479,11 @@ export default function AdminPanel() {
                     </thead>
                     <tbody>
                       {users.map((u) => (
-                        <tr key={u._id} className="border-b border-white/[0.04] hover:bg-white/[0.02]">
+                        <tr
+                          key={u._id}
+                          className="border-b border-white/[0.04] hover:bg-white/[0.04] cursor-pointer transition-colors"
+                          onClick={() => setSelectedUser(u)}
+                        >
                           <td className="p-3">
                             <div className="flex items-center gap-2.5">
                               <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-xs font-bold shrink-0">
@@ -1223,7 +1509,7 @@ export default function AdminPanel() {
                               {u.isActive ? "Active" : "Inactive"}
                             </Badge>
                           </td>
-                          <td className="p-3">
+                          <td className="p-3" onClick={(e) => e.stopPropagation()}>
                             {u.role !== "admin" && (
                               <Button size="sm" className="h-7 text-xs bg-red-500/10 text-red-400 hover:bg-red-500/20 border-0 px-2.5" onClick={() => deleteUser(u._id)}>
                                 <Trash2 className="w-3 h-3" />
@@ -1294,6 +1580,168 @@ export default function AdminPanel() {
           </Card>
         )}
       </div>
+
+      {/* ==================== ADMISSION DETAIL MODAL ==================== */}
+      {selectedAdmission && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedAdmission(null)}>
+          <div className="bg-[#0d1117] border border-white/[0.1] rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-white">Admission request — full details</h3>
+              <button onClick={() => setSelectedAdmission(null)} className="text-gray-400 hover:text-white transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4 mb-5 pb-4 border-b border-white/[0.06]">
+              <div className="w-14 h-14 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-lg font-bold shrink-0">
+                {selectedAdmission.name?.charAt(0)?.toUpperCase() || "S"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-semibold text-white truncate">{selectedAdmission.name}</p>
+                <p className="text-sm text-gray-400 truncate">{selectedAdmission.email}</p>
+                <div className="flex gap-2 mt-1.5">
+                  <Badge className="text-[10px] bg-emerald-500/10 text-emerald-400 border-0">{selectedAdmission.course || "-"}</Badge>
+                  <Badge className="text-[10px] border-0 bg-white/10 text-gray-300 capitalize">{selectedAdmission.status || "new"}</Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Contact</p>
+                <p className="text-sm text-white mt-1">Phone: {selectedAdmission.phone || "—"}</p>
+                {selectedAdmission.parentName && <p className="text-sm text-gray-400 mt-0.5">Parent: {selectedAdmission.parentName}</p>}
+                {selectedAdmission.parentPhone && <p className="text-sm text-gray-400">Parent phone: {selectedAdmission.parentPhone}</p>}
+              </div>
+              {(selectedAdmission.city || selectedAdmission.state) && (
+                <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Location</p>
+                  <p className="text-sm text-white mt-1">{[selectedAdmission.city, selectedAdmission.state].filter(Boolean).join(", ") || "—"}</p>
+                </div>
+              )}
+              <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Academic</p>
+                <p className="text-sm text-white mt-1">Class: {selectedAdmission.currentClass || "—"}</p>
+                {selectedAdmission.board && <p className="text-sm text-gray-400">Board: {selectedAdmission.board}</p>}
+                {selectedAdmission.schoolName && <p className="text-sm text-gray-400">School: {selectedAdmission.schoolName}</p>}
+                {(selectedAdmission.stream || selectedAdmission.yearOfPassing) && (
+                  <p className="text-sm text-gray-400">{[selectedAdmission.stream, selectedAdmission.yearOfPassing].filter(Boolean).join(" · ")}</p>
+                )}
+              </div>
+              <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Coaching preference</p>
+                <p className="text-sm text-white mt-1">Course: {selectedAdmission.course || "—"}</p>
+                <p className="text-sm text-gray-400">Institute: {selectedAdmission.coachingInstitute || "—"}</p>
+                <p className="text-sm text-gray-400 capitalize">Mode: {selectedAdmission.mode || "—"}</p>
+              </div>
+              {selectedAdmission.additionalNotes && (
+                <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Notes from student</p>
+                  <p className="text-sm text-gray-400 mt-1 whitespace-pre-wrap">{selectedAdmission.additionalNotes}</p>
+                </div>
+              )}
+              {selectedAdmission.adminNotes && (
+                <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Admin notes</p>
+                  <p className="text-sm text-gray-400 mt-1 whitespace-pre-wrap">{selectedAdmission.adminNotes}</p>
+                </div>
+              )}
+              <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Submitted</p>
+                <p className="text-sm text-gray-400 mt-1">{new Date(selectedAdmission.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 flex-wrap">
+              <a href={`https://wa.me/${(selectedAdmission.phone || "").replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30 text-sm font-medium">
+                <Phone className="w-4 h-4" /> WhatsApp
+              </a>
+              <Button size="sm" className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border-0 h-9 text-xs" onClick={() => { if (confirm("Delete this admission request?")) deleteAdmissionById(selectedAdmission._id); setSelectedAdmission(null); }}>Delete</Button>
+              <Button variant="outline" className="ml-auto h-9 text-xs rounded-xl bg-white/[0.04] border-white/[0.08] text-gray-300 hover:bg-white/[0.08]" onClick={() => setSelectedAdmission(null)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================== USER DETAIL MODAL ==================== */}
+      {selectedUser && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setSelectedUser(null)}>
+          <div className="bg-[#0d1117] border border-white/[0.1] rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-base font-bold text-white">User details</h3>
+              <button onClick={() => setSelectedUser(null)} className="text-gray-400 hover:text-white transition-colors">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-4 mb-5 pb-4 border-b border-white/[0.06]">
+              <div className="w-14 h-14 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 text-lg font-bold shrink-0">
+                {selectedUser.name?.charAt(0)?.toUpperCase() || "U"}
+              </div>
+              <div className="min-w-0">
+                <p className="text-lg font-semibold text-white truncate">{selectedUser.name}</p>
+                <p className="text-sm text-gray-400 truncate">{selectedUser.email}</p>
+                <div className="flex gap-2 mt-1.5">
+                  <Badge className={`text-[10px] border-0 capitalize ${selectedUser.role === "admin" ? "bg-red-500/10 text-red-400" : selectedUser.role === "mentor" ? "bg-emerald-500/10 text-emerald-400" : "bg-blue-500/10 text-blue-400"}`}>
+                    {selectedUser.role}
+                  </Badge>
+                  <Badge className={`text-[10px] border-0 ${selectedUser.isActive ? "bg-emerald-500/10 text-emerald-400" : "bg-gray-500/10 text-gray-400"}`}>
+                    {selectedUser.isActive ? "Active" : "Inactive"}
+                  </Badge>
+                  {selectedUser.isVerified && <Badge className="text-[10px] border-0 bg-amber-500/10 text-amber-400">Verified</Badge>}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-5">
+              <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Contact</p>
+                <p className="text-sm text-white mt-1">Phone: {selectedUser.phone || "—"}</p>
+                <p className="text-sm text-gray-400">Language: {selectedUser.language === "hi" ? "Hindi" : "English"}</p>
+              </div>
+              {(selectedUser.currentEducation || selectedUser.institution || selectedUser.yearOfStudy || selectedUser.stream) && (
+                <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Education</p>
+                  <p className="text-sm text-white mt-1">{selectedUser.currentEducation || "—"}</p>
+                  {selectedUser.institution && <p className="text-sm text-gray-400">Institution: {selectedUser.institution}</p>}
+                  {(selectedUser.yearOfStudy || selectedUser.stream) && (
+                    <p className="text-sm text-gray-400">{[selectedUser.yearOfStudy, selectedUser.stream].filter(Boolean).join(" · ")}</p>
+                  )}
+                </div>
+              )}
+              {selectedUser.location && (
+                <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Location</p>
+                  <p className="text-sm text-white mt-1">{selectedUser.location}</p>
+                </div>
+              )}
+              {Array.isArray(selectedUser.interests) && selectedUser.interests.length > 0 && (
+                <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Interests</p>
+                  <p className="text-sm text-gray-400 mt-1">{selectedUser.interests.join(", ")}</p>
+                </div>
+              )}
+              {selectedUser.bio && (
+                <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wider">Bio</p>
+                  <p className="text-sm text-gray-400 mt-1 whitespace-pre-wrap">{selectedUser.bio}</p>
+                </div>
+              )}
+              <div className="p-3 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wider">Joined</p>
+                <p className="text-sm text-gray-400 mt-1">{new Date(selectedUser.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</p>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              {selectedUser.role !== "admin" && (
+                <Button size="sm" className="bg-red-500/10 text-red-400 hover:bg-red-500/20 border-0" onClick={() => { if (confirm("Delete this user?")) deleteUser(selectedUser._id); setSelectedUser(null); }}>Delete user</Button>
+              )}
+              <Button variant="outline" className="ml-auto h-9 text-xs rounded-xl bg-white/[0.04] border-white/[0.08] text-gray-300 hover:bg-white/[0.08]" onClick={() => setSelectedUser(null)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ==================== MEETING ACCEPT MODAL ==================== */}
       {showMeetingModal && selectedMeeting && (

@@ -6,10 +6,11 @@ import {
   ArrowRight, BookOpen, Users, GraduationCap, Rocket,
   Star, Shield, Zap, Code, Megaphone, BarChart3, Lightbulb,
   CheckCircle, ArrowUpRight, Sparkles, Play, TrendingUp,
-  Globe, Award, Target, Cpu, Palette
+  Globe, Award, Target, Cpu, Palette, ChevronDown, ChevronUp
 } from "lucide-react"
 import Link from "next/link"
-import { mentorAPI, alumniAPI, courseAPI } from "@/lib/api"
+import { mentorAPI, courseAPI, offerAPI, settingsAPI } from "@/lib/api"
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from "@/components/ui/carousel"
 
 function useInView(threshold = 0.15) {
   const ref = useRef<HTMLDivElement>(null)
@@ -26,7 +27,7 @@ function useInView(threshold = 0.15) {
 
 const SERVICES = [
   { icon: Users, title: "1-on-1 Mentorship", desc: "Personalized career guidance from verified industry experts.", href: "/mentorship", tag: "Popular", accent: "blue", gradient: "from-blue-500 to-cyan-500" },
-  { icon: GraduationCap, title: "Alumni Network", desc: "Connect with successful professionals & get real-world advice.", href: "/alumni", tag: "Network", accent: "violet", gradient: "from-violet-500 to-purple-500" },
+  { icon: GraduationCap, title: "Admission", desc: "Coaching & course admissions — Physics Wallah, Unacademy & more.", href: "/admission", tag: "Admission", accent: "emerald", gradient: "from-emerald-500 to-green-500" },
   { icon: BookOpen, title: "Skill Courses", desc: "Hindi & English courses for career, tech, and communication.", href: "/courses", tag: "Learning", accent: "emerald", gradient: "from-emerald-500 to-green-500" },
   { icon: Rocket, title: "Startup Incubation", desc: "Full startup support — tech, marketing, strategy & mentoring.", href: "/startups", tag: "Startups", accent: "orange", gradient: "from-orange-500 to-amber-500" },
   { icon: Target, title: "Career Roadmaps", desc: "Strategic career planning with personalized growth plans.", href: "/mentorship", tag: "Strategy", accent: "cyan", gradient: "from-cyan-500 to-teal-500" },
@@ -43,7 +44,36 @@ const STARTUP_SERVICES = [
 
 export default function HomePage() {
   const [stats, setStats] = useState({ mentors: 0, alumni: 0, courses: 0 })
+  const [offers, setOffers] = useState<any[]>([])
+  const [tickerText, setTickerText] = useState("OFFER — Get admission now")
+  const [offersCarouselApi, setOffersCarouselApi] = useState<CarouselApi | null>(null)
   const [visible, setVisible] = useState(false)
+  const [atBottom, setAtBottom] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = document.documentElement
+      setAtBottom(scrollTop + clientHeight >= scrollHeight - 80)
+    }
+    onScroll()
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  const scrollToEnd = () => {
+    if (atBottom) {
+      window.scrollTo({ top: 0, behavior: "smooth" })
+    } else {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" })
+    }
+  }
+
+  const offerImageUrl = (url: string | undefined) => {
+    if (!url) return ""
+    if (url.startsWith("http")) return url
+    const apiHost = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api\/?$/, "")
+    return apiHost ? `${apiHost}${url.startsWith("/") ? url : "/" + url}` : url
+  }
   const services = useInView(0.1)
   const startup = useInView(0.1)
   const howItWorks = useInView(0.1)
@@ -53,12 +83,12 @@ export default function HomePage() {
     setVisible(true)
     const fetchStats = async () => {
       try {
-        const [m, a, c] = await Promise.allSettled([
-          mentorAPI.getAll("limit=1"), alumniAPI.getAll("limit=1"), courseAPI.getAll("limit=1"),
+        const [m, c] = await Promise.allSettled([
+          mentorAPI.getAll("limit=1"), courseAPI.getAll("limit=1"),
         ])
         setStats({
           mentors: m.status === "fulfilled" ? m.value.pagination?.total || 0 : 0,
-          alumni: a.status === "fulfilled" ? a.value.pagination?.total || 0 : 0,
+          alumni: 0,
           courses: c.status === "fulfilled" ? c.value.pagination?.total || 0 : 0,
         })
       } catch {}
@@ -66,8 +96,32 @@ export default function HomePage() {
     fetchStats()
   }, [])
 
+  useEffect(() => {
+    offerAPI.getActive().then((r) => setOffers(r.offers || [])).catch(() => setOffers([]))
+  }, [])
+  useEffect(() => {
+    settingsAPI.getTicker().then((r) => setTickerText(r.ticker || "OFFER — Get admission now")).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (!offersCarouselApi || offers.length <= 1) return
+    const t = setInterval(() => offersCarouselApi.scrollNext(), 2500)
+    return () => clearInterval(t)
+  }, [offersCarouselApi, offers.length])
+
   return (
     <div className="min-h-screen bg-[#060a13]">
+
+      {/* Moving ticker – editable from admin */}
+      <div className="bg-emerald-600 text-white text-sm font-semibold py-1.5 overflow-hidden border-b border-emerald-500/30">
+        <div className="flex animate-marquee whitespace-nowrap w-max">
+          <span className="inline-block px-6">{tickerText}</span>
+          <span className="inline-block px-6">{tickerText}</span>
+          <span className="inline-block px-6">{tickerText}</span>
+          <span className="inline-block px-6">{tickerText}</span>
+          <span className="inline-block px-6">{tickerText}</span>
+        </div>
+      </div>
 
       {/* ======================== HERO ======================== */}
       <section className="relative overflow-hidden">
@@ -100,7 +154,7 @@ export default function HomePage() {
               </h1>
 
               <p className={`text-gray-400 text-[13px] sm:text-sm md:text-[15px] leading-relaxed mb-5 sm:mb-6 max-w-md ${visible ? 'animate-slide-left delay-200' : 'opacity-0'}`}>
-                Mentorship, alumni networking, skill courses & startup incubation — everything to build your future.
+                Mentorship, admissions, skill courses & startup incubation — everything to build your future.
               </p>
 
               <div className={`flex flex-wrap gap-2.5 sm:gap-3 mb-6 sm:mb-8 ${visible ? 'animate-slide-left delay-300' : 'opacity-0'}`}>
@@ -121,7 +175,7 @@ export default function HomePage() {
               <div className={`flex items-center gap-5 sm:gap-8 ${visible ? 'animate-slide-left delay-400' : 'opacity-0'}`}>
                 {[
                   { v: stats.mentors > 0 ? stats.mentors + "+" : "500+", l: "Mentors", c: "text-blue-400" },
-                  { v: stats.alumni > 0 ? stats.alumni + "+" : "100+", l: "Alumni", c: "text-violet-400" },
+                  { v: "New", l: "Admission", c: "text-emerald-400" },
                   { v: stats.courses > 0 ? stats.courses + "+" : "50+", l: "Courses", c: "text-emerald-400" },
                   { v: "4.8", l: "Rating", c: "text-amber-400" },
                 ].map((s) => (
@@ -137,7 +191,7 @@ export default function HomePage() {
             <div className="order-2 flex flex-col gap-2 sm:gap-2.5 w-full lg:w-[320px]">
               {[
                 { icon: Users, title: "Expert Mentors", desc: "1-on-1 sessions with industry pros", c: "text-blue-400", bg: "from-blue-500/[0.12] to-blue-900/[0.04]", bc: "border-blue-500/[0.12]", href: "/mentorship" },
-                { icon: GraduationCap, title: "Alumni Network", desc: "Real connections, real advice", c: "text-violet-400", bg: "from-violet-500/[0.12] to-violet-900/[0.04]", bc: "border-violet-500/[0.12]", href: "/alumni" },
+                { icon: GraduationCap, title: "Admission", desc: "Coaching & course admissions", c: "text-emerald-400", bg: "from-emerald-500/[0.12] to-emerald-900/[0.04]", bc: "border-emerald-500/[0.12]", href: "/admission" },
                 { icon: BookOpen, title: "Skill Courses", desc: "Hindi & English career courses", c: "text-emerald-400", bg: "from-emerald-500/[0.12] to-emerald-900/[0.04]", bc: "border-emerald-500/[0.12]", href: "/courses" },
                 { icon: Rocket, title: "Startup Support", desc: "Tech, marketing, strategy & more", c: "text-orange-400", bg: "from-orange-500/[0.12] to-orange-900/[0.04]", bc: "border-orange-500/[0.12]", href: "/startups" },
               ].map((item, i) => (
@@ -171,6 +225,43 @@ export default function HomePage() {
 
         <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
       </section>
+
+      {/* ======================== OFFERS SLIDESHOW ======================== */}
+      {offers.length > 0 && (
+        <section className="border-b border-white/[0.06] bg-white/[0.02] py-6 sm:py-8">
+          <div className="container mx-auto px-4 max-w-6xl">
+            <p className="text-center text-xs text-emerald-400 font-medium uppercase tracking-wider mb-4">Offers & Courses</p>
+            <Carousel setApi={setOffersCarouselApi} opts={{ loop: true, align: "start" }} className="w-full mx-auto">
+              <CarouselContent className="-ml-2 sm:-ml-3 md:-ml-4">
+                {offers.map((o) => (
+                  <CarouselItem key={o._id} className="pl-2 sm:pl-3 md:pl-4 basis-[85%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4">
+                    <div className="rounded-xl border border-white/[0.08] bg-gradient-to-br from-white/[0.04] to-transparent p-5 sm:p-6 h-full flex flex-col">
+                      <div className="aspect-video rounded-lg overflow-hidden mb-3 bg-white/[0.04]">
+                        {o.imageUrl ? (
+                          <img src={offerImageUrl(o.imageUrl)} alt={o.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-gray-500 text-sm">No image</div>
+                        )}
+                      </div>
+                      <h3 className="text-lg font-semibold text-white mb-1">{o.title}</h3>
+                      {o.subtitle && <p className="text-sm text-gray-400 mb-4 flex-1">{o.subtitle}</p>}
+                      <div className="mt-auto">
+                        <Link href={o.ctaLink || "/admission"}>
+                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs">
+                            {o.ctaText || "Get admission now"}
+                          </Button>
+                        </Link>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden sm:flex -left-2 border-white/10 bg-[#060a13]" />
+              <CarouselNext className="hidden sm:flex -right-2 border-white/10 bg-[#060a13]" />
+            </Carousel>
+          </div>
+        </section>
+      )}
 
       {/* ======================== SERVICES ======================== */}
       <section ref={services.ref} className="relative py-12 sm:py-16 md:py-24">
@@ -289,7 +380,7 @@ export default function HomePage() {
 
               {[
                 { n: "01", title: "Sign Up", desc: "Create free account in 30 seconds.", icon: Zap, c: "text-blue-400", bg: "from-blue-500/15 to-blue-600/5" },
-                { n: "02", title: "Connect", desc: "Browse mentors, alumni & courses.", icon: Globe, c: "text-emerald-400", bg: "from-emerald-500/15 to-emerald-600/5" },
+                { n: "02", title: "Connect", desc: "Browse mentors, courses & admissions.", icon: Globe, c: "text-emerald-400", bg: "from-emerald-500/15 to-emerald-600/5" },
                 { n: "03", title: "Grow", desc: "Achieve your career & business goals.", icon: Award, c: "text-violet-400", bg: "from-violet-500/15 to-violet-600/5" },
               ].map((step, i) => (
                 <div key={step.n}
@@ -336,7 +427,7 @@ export default function HomePage() {
                     {[
                       "DPIIT Recognized by Govt. of India",
                       "Verified industry expert mentors",
-                      "Real alumni, real connections",
+                      "Admission support for top coaching",
                       "Full startup incubation support",
                       "Courses in Hindi & English",
                       "Mental wellness & counseling",
@@ -396,6 +487,17 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Scroll to end / Back to top – pura end tk */}
+      <button
+        type="button"
+        onClick={scrollToEnd}
+        className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-emerald-600 text-white shadow-lg hover:bg-emerald-500 transition-colors"
+        title={atBottom ? "Back to top" : "End tak jao"}
+        aria-label={atBottom ? "Back to top" : "Scroll to end"}
+      >
+        {atBottom ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+      </button>
     </div>
   )
 }

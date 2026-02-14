@@ -24,7 +24,7 @@ export function Footer() {
             <h4 className="text-white font-semibold text-[11px] mb-3 uppercase tracking-wider">Platform</h4>
             <ul className="space-y-1.5 text-[11px]">
               <li><Link href="/mentorship" className="hover:text-white transition-colors">Find Mentors</Link></li>
-              <li><Link href="/alumni" className="hover:text-white transition-colors">Alumni Network</Link></li>
+              <li><Link href="/admission" className="hover:text-white transition-colors">Admission</Link></li>
               <li><Link href="/courses" className="hover:text-white transition-colors">Courses</Link></li>
               <li><Link href="/startups" className="hover:text-white transition-colors">Startups</Link></li>
             </ul>
@@ -46,8 +46,8 @@ export function Footer() {
               <a href="mailto:parthsarthi0325@gmail.com" className="flex items-center gap-2 hover:text-white transition-colors">
                 <Mail className="w-3 h-3 shrink-0" /><span>parthsarthi0325@gmail.com</span>
               </a>
-              <a href="tel:+917545996960" className="flex items-center gap-2 hover:text-white transition-colors">
-                <Phone className="w-3 h-3 shrink-0" /><span>+91 75459 96960</span>
+              <a href="tel:+918873263348" className="flex items-center gap-2 hover:text-white transition-colors">
+                <Phone className="w-3 h-3 shrink-0" /><span>+91 88732 63348</span>
               </a>
               <div className="flex items-center gap-2"><MapPin className="w-3 h-3 shrink-0" /><span>Darbhanga</span></div>
               <a href="https://www.instagram.com/parthsarthi250425?igsh=MWdxejQyNzQwbXlvYw==" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white transition-colors">

@@ -104,6 +104,14 @@
   0%, 100% { border-color: rgba(59,130,246,0.1); }
   50% { border-color: rgba(59,130,246,0.3); }
 }
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 18s linear infinite;
+}
 
 .animate-fade-up {
   animation: fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;

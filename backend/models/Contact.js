@@ -13,7 +13,8 @@ const contactSchema = new mongoose.Schema({
   },
   phone: {
     type: String,
-    required: [true, 'Please provide your phone number']
+    required: [true, 'Please provide your phone number'],
+    match: [/^\d{10}$/, 'Phone must be 10 digits']
   },
   type: {
     type: String,

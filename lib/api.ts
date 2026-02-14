@@ -69,6 +69,29 @@ export const alumniAPI = {
   toggleStatus: (id: string) => apiCall(`/alumni/${id}/toggle`, { method: 'PATCH' }),
 };
 
+// ============ ADMISSION API ============
+export const admissionAPI = {
+  submit: (data: any) => apiCall('/admissions', { method: 'POST', body: JSON.stringify(data) }),
+  getAll: (params?: string) => apiCall(`/admissions${params ? `?${params}` : ''}`),
+  update: (id: string, data: any) => apiCall(`/admissions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/admissions/${id}`, { method: 'DELETE' }),
+};
+
+// ============ OFFERS API (slideshow) ============
+export const offerAPI = {
+  getActive: () => apiCall('/offers'),
+  getAll: () => apiCall('/offers/admin'),
+  create: (data: FormData | Record<string, unknown>) => apiCall('/offers', { method: 'POST', body: data instanceof FormData ? data : JSON.stringify(data) }),
+  update: (id: string, data: FormData | Record<string, unknown>) => apiCall(`/offers/${id}`, { method: 'PUT', body: data instanceof FormData ? data : JSON.stringify(data) }),
+  delete: (id: string) => apiCall(`/offers/${id}`, { method: 'DELETE' }),
+};
+
+// ============ SETTINGS API (ticker etc.) ============
+export const settingsAPI = {
+  getTicker: () => apiCall('/settings/ticker'),
+  updateTicker: (text: string) => apiCall('/settings/ticker', { method: 'PUT', body: JSON.stringify({ text }) }),
+};
+
 // ============ MENTOR API ============
 export const mentorAPI = {
   getAll: (params?: string) => apiCall(`/mentors${params ? `?${params}` : ''}`),

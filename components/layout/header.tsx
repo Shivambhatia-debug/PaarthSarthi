@@ -15,7 +15,7 @@ import {
 
 const NAV = [
   { name: "Mentors", href: "/mentorship", icon: Users },
-  { name: "Alumni", href: "/alumni", icon: GraduationCap },
+  { name: "Admission", href: "/admission", icon: GraduationCap },
   { name: "Courses", href: "/courses", icon: BookOpen },
   { name: "Startups", href: "/startups", icon: Rocket },
 ]
