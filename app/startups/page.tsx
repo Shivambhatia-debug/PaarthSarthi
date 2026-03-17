@@ -59,7 +59,7 @@ export default function StartupsPage() {
     try {
       const data = await startupAPI.getAll()
       setStartups(data.startups || [])
-    } catch {} finally { setLoading(false) }
+    } catch { } finally { setLoading(false) }
   }
 
   const filtered = startups.filter((s: any) =>
@@ -102,6 +102,40 @@ export default function StartupsPage() {
     } catch (err: any) {
       setFormMsg({ type: "error", text: err.message || "Failed to submit" })
     } finally { setFormLoading(false) }
+  }
+
+  const safeParseArray = (val: any): string[] => {
+    if (!val) return []
+    if (Array.isArray(val)) {
+      if (val.length > 0 && val.every(v => typeof v === 'string' && !v.startsWith('[') && !v.includes('"'))) {
+        return val
+      }
+      try {
+        const joined = val.join(',')
+        if (joined.startsWith('[') && joined.endsWith(']')) {
+          const parsed = JSON.parse(joined)
+          if (Array.isArray(parsed)) return parsed
+        }
+      } catch { }
+      if (val.length === 1 && typeof val[0] === 'string' && val[0].startsWith('[')) {
+        try {
+          const parsed = JSON.parse(val[0])
+          if (Array.isArray(parsed)) return parsed
+        } catch { }
+      }
+      return val.map(v => String(v).replace(/[\[\]"']/g, '').trim()).filter(Boolean)
+    }
+    if (typeof val === 'string') {
+      if (val.startsWith('[') && val.endsWith(']')) {
+        try {
+          const parsed = JSON.parse(val)
+          if (Array.isArray(parsed)) return parsed
+          if (typeof parsed === 'string') return safeParseArray(parsed)
+        } catch { }
+      }
+      return val.split(',').map(s => s.trim()).filter(Boolean)
+    }
+    return []
   }
 
   return (
@@ -157,11 +191,11 @@ export default function StartupsPage() {
 
       {/* Service Request Dialog */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto rounded-2xl bg-[#0d1117] border-white/[0.08]">
+        <DialogContent className="max-w-md rounded-2xl bg-[#0d1117] border-white/[0.08] p-6 shadow-2xl backdrop-blur-xl">
           <DialogHeader>
-            <DialogTitle className="text-base text-white">Request Startup Service</DialogTitle>
+            <DialogTitle className="text-xl font-bold text-white">Request Startup Service</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4 pt-4">
             {formMsg.text && (
               <div className={`p-2.5 rounded-lg text-xs flex items-center gap-1.5 ${formMsg.type === "error" ? "bg-red-500/10 text-red-400" : "bg-green-500/10 text-green-400"}`}>
                 {formMsg.type === "error" ? <AlertCircle className="w-3.5 h-3.5 shrink-0" /> : <CheckCircle className="w-3.5 h-3.5 shrink-0" />}
@@ -169,15 +203,15 @@ export default function StartupsPage() {
               </div>
             )}
             <div className="grid grid-cols-2 gap-2">
-              <div><Label className="text-xs text-gray-400">Your Name *</Label><Input value={serviceForm.name} onChange={(e) => setServiceForm({...serviceForm, name: e.target.value})} placeholder="Full name" className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
-              <div><Label className="text-xs text-gray-400">Phone *</Label><Input type="tel" value={serviceForm.phone} onChange={(e) => setServiceForm({...serviceForm, phone: (e.target.value.replace(/\D/g, "").slice(0, 10))})} placeholder="10 digits" maxLength={10} className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
+              <div><Label className="text-xs text-gray-400">Your Name *</Label><Input value={serviceForm.name} onChange={(e) => setServiceForm({ ...serviceForm, name: e.target.value })} placeholder="Full name" className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
+              <div><Label className="text-xs text-gray-400">Phone *</Label><Input type="tel" value={serviceForm.phone} onChange={(e) => setServiceForm({ ...serviceForm, phone: (e.target.value.replace(/\D/g, "").slice(0, 10)) })} placeholder="10 digits" maxLength={10} className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
             </div>
-            <div><Label className="text-xs text-gray-400">Email *</Label><Input type="email" value={serviceForm.email} onChange={(e) => setServiceForm({...serviceForm, email: e.target.value})} placeholder="email@example.com" className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
-            <div><Label className="text-xs text-gray-400">Startup Name *</Label><Input value={serviceForm.startupName} onChange={(e) => setServiceForm({...serviceForm, startupName: e.target.value})} placeholder="Your startup name" className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
+            <div><Label className="text-xs text-gray-400">Email *</Label><Input type="email" value={serviceForm.email} onChange={(e) => setServiceForm({ ...serviceForm, email: e.target.value })} placeholder="email@example.com" className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
+            <div><Label className="text-xs text-gray-400">Startup Name *</Label><Input value={serviceForm.startupName} onChange={(e) => setServiceForm({ ...serviceForm, startupName: e.target.value })} placeholder="Your startup name" className="h-9 rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30" /></div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <Label className="text-xs text-gray-400">Startup Stage</Label>
-                <Select value={serviceForm.stage} onValueChange={(v) => setServiceForm({...serviceForm, stage: v})}>
+                <Select value={serviceForm.stage} onValueChange={(v) => setServiceForm({ ...serviceForm, stage: v })}>
                   <SelectTrigger className="h-9 bg-white/[0.04] border-white/[0.08] text-white"><SelectValue /></SelectTrigger>
                   <SelectContent className="bg-[#0d1117] border-white/[0.08] text-white">
                     <SelectItem value="idea">Idea Stage</SelectItem>
@@ -190,7 +224,7 @@ export default function StartupsPage() {
               </div>
               <div>
                 <Label className="text-xs text-gray-400">Service Needed</Label>
-                <Select value={serviceForm.service} onValueChange={(v) => setServiceForm({...serviceForm, service: v})}>
+                <Select value={serviceForm.service} onValueChange={(v) => setServiceForm({ ...serviceForm, service: v })}>
                   <SelectTrigger className="h-9 bg-white/[0.04] border-white/[0.08] text-white"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent className="bg-[#0d1117] border-white/[0.08] text-white">
                     {SERVICES.map(s => (
@@ -204,7 +238,7 @@ export default function StartupsPage() {
               <Label className="text-xs text-gray-400">Describe your requirement</Label>
               <Textarea
                 value={serviceForm.description}
-                onChange={(e) => setServiceForm({...serviceForm, description: e.target.value})}
+                onChange={(e) => setServiceForm({ ...serviceForm, description: e.target.value })}
                 placeholder="Tell us about your startup and what help you need..."
                 rows={3}
                 className="text-sm rounded-lg bg-white/[0.04] border-white/[0.08] text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500/30"
@@ -245,54 +279,58 @@ export default function StartupsPage() {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-            {filtered.map((startup: any) => (
-              <Card key={startup._id} className="group bg-white/[0.02] border border-white/[0.06] rounded-xl hover:border-white/[0.15] hover:bg-white/[0.03] hover:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all">
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-3 mb-4">
-                    <Avatar className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold shrink-0">
-                      <AvatarImage src={startup.logo ? (startup.logo.startsWith("http") ? startup.logo : `${apiBase()}${startup.logo}`) : undefined} alt={startup.name} className="object-cover rounded-lg" />
-                      <AvatarFallback className="rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold">
-                        {startup.name?.charAt(0)?.toUpperCase() || "S"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-sm text-white truncate group-hover:text-white transition-colors">{startup.name}</h3>
-                      <p className="text-xs text-gray-500 mt-0.5">{startup.industry}</p>
-                      {startup.stage && (
-                        <Badge className={`mt-1.5 rounded-md text-[10px] px-2 py-0.5 ${getStageColor(startup.stage)}`}>
-                          {startup.stage?.replace("-", " ").toUpperCase()}
-                        </Badge>
-                      )}
+            {filtered.map((startup: any) => {
+              const startupServices = safeParseArray(startup.services)
+
+              return (
+                <Card key={startup._id} className="group bg-white/[0.02] border border-white/[0.06] rounded-xl hover:border-white/[0.15] hover:bg-white/[0.03] hover:shadow-[0_0_20px_rgba(255,255,255,0.03)] transition-all">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3 mb-4">
+                      <Avatar className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold shrink-0">
+                        <AvatarImage src={startup.logo ? (startup.logo.startsWith("http") ? startup.logo : `${apiBase()}${startup.logo}`) : undefined} alt={startup.name} className="object-cover rounded-lg" />
+                        <AvatarFallback className="rounded-lg bg-gradient-to-br from-orange-500 to-red-500 text-white font-bold">
+                          {startup.name?.charAt(0)?.toUpperCase() || "S"}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-sm text-white truncate group-hover:text-white transition-colors">{startup.name}</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">{startup.industry}</p>
+                        {startup.stage && (
+                          <Badge className={`mt-1.5 rounded-md text-[10px] px-2 py-0.5 ${getStageColor(startup.stage)}`}>
+                            {startup.stage?.replace("-", " ").toUpperCase()}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  {startup.shortDescription && (
-                    <p className="text-xs text-gray-500 mb-3 line-clamp-2 leading-relaxed">{startup.shortDescription}</p>
-                  )}
+                    {startup.shortDescription && (
+                      <p className="text-xs text-gray-500 mb-3 line-clamp-2 leading-relaxed">{startup.shortDescription}</p>
+                    )}
 
-                  {startup.services?.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-3">
-                      {startup.services.map((s: string, i: number) => (
-                        <Badge key={i} className="text-[10px] px-2 py-0.5 rounded-md capitalize bg-white/[0.06] text-gray-400 border-0">{s}</Badge>
-                      ))}
+                    {startupServices.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mb-3">
+                        {startupServices.map((s: string, i: number) => (
+                          <Badge key={i} className="text-[10px] px-2 py-0.5 rounded-md capitalize bg-white/[0.06] text-gray-400 border-0">{s}</Badge>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      {startup.founder?.name && <span>by {startup.founder.name}</span>}
+                      {startup.teamSize && <span><Users className="w-3 h-3 inline mr-0.5" />{startup.teamSize}</span>}
+                      {startup.location && <span>{startup.location}</span>}
                     </div>
-                  )}
 
-                  <div className="flex items-center gap-3 text-xs text-gray-500">
-                    {startup.founder?.name && <span>by {startup.founder.name}</span>}
-                    {startup.teamSize && <span><Users className="w-3 h-3 inline mr-0.5" />{startup.teamSize}</span>}
-                    {startup.location && <span>{startup.location}</span>}
-                  </div>
-
-                  {startup.website && (
-                    <a href={startup.website} target="_blank" rel="noopener noreferrer"
-                      className="mt-3 inline-flex items-center gap-1 text-xs text-blue-400 hover:underline">
-                      <ExternalLink className="w-3 h-3" /> Website
-                    </a>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    {startup.website && (
+                      <a href={startup.website} target="_blank" rel="noopener noreferrer"
+                        className="mt-3 inline-flex items-center gap-1 text-xs text-blue-400 hover:underline">
+                        <ExternalLink className="w-3 h-3" /> Website
+                      </a>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         </div>
       </section>
