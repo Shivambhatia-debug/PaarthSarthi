@@ -15,14 +15,14 @@ const connectDB = async () => {
         socketTimeoutMS: 45000,
         family: 4, // Force IPv4
       });
-      console.log(`MongoDB Connected: ${conn.connection.host}`);
+      // Connected
       return;
     } catch (error) {
       retries++;
       console.error(`MongoDB Connection Attempt ${retries}/${maxRetries} Failed: ${error.message}`);
-      
+
       if (retries < maxRetries) {
-        console.log(`Retrying in 3 seconds...`);
+        // Retrying
         await new Promise(resolve => setTimeout(resolve, 3000));
       } else {
         console.error('All MongoDB connection attempts failed.');

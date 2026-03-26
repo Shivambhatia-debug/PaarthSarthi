@@ -14,11 +14,11 @@ const seedAdmin = async () => {
 
     // Check if admin exists
     const existingAdmin = await User.findOne({ role: 'admin' });
-    
+
     if (existingAdmin) {
-      console.log('Admin already exists:');
-      console.log(`  Email: ${existingAdmin.email}`);
-      console.log('  Skipping seed...');
+      if (existingAdmin) {
+        return
+      }
     } else {
       // Create default admin
       const admin = await User.create({
@@ -31,12 +31,7 @@ const seedAdmin = async () => {
         isActive: true
       });
 
-      console.log('=================================');
-      console.log('  Admin created successfully!');
-      console.log('  Email: admin@parthsarthi.com');
-      console.log('  Password: admin123456');
-      console.log('  CHANGE PASSWORD AFTER FIRST LOGIN!');
-      console.log('=================================');
+      // Success
     }
 
     process.exit(0);
