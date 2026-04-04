@@ -21,17 +21,19 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
 // --- ROUTES ---
-app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/alumni', require('./routes/alumniRoutes'));
-app.use('/api/mentors', require('./routes/mentorRoutes'));
-app.use('/api/courses', require('./routes/courseRoutes'));
-app.use('/api/startups', require('./routes/startupRoutes'));
-app.use('/api/meetings', require('./routes/meetingRoutes'));
-app.use('/api/notifications', require('./routes/notificationRoutes'));
-app.use('/api/contacts', require('./routes/contactRoutes'));
-app.use('/api/admissions', require('./routes/admissionRoutes'));
-app.use('/api/offers', require('./routes/offerRoutes'));
-app.use('/api/settings', require('./routes/settingsRoutes'));
+app.use('/api/users', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/alumni', require('./routes/alumni'));
+app.use('/api/mentors', require('./routes/mentors'));
+app.use('/api/courses', require('./routes/courses'));
+app.use('/api/startups', require('./routes/startups'));
+app.use('/api/meetings', require('./routes/meetings'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/contacts', require('./routes/contact'));
+app.use('/api/admissions', require('./routes/admissions'));
+app.use('/api/offers', require('./routes/offers'));
+app.use('/api/settings', require('./routes/settings'));
+app.use('/api/blogs', require('./routes/blogs'));
 
 // Static assets for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -56,5 +58,5 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-  // Server started
+  console.log(`Server running on port ${PORT}`);
 });

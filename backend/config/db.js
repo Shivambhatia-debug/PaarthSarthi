@@ -15,7 +15,7 @@ const connectDB = async () => {
         socketTimeoutMS: 45000,
         family: 4, // Force IPv4
       });
-      // Connected
+      console.log(`MongoDB Connected: ${conn.connection.host}`);
       return;
     } catch (error) {
       retries++;
