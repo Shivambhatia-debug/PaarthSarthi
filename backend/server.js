@@ -21,7 +21,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cors());
 
 // --- ROUTES ---
-app.use('/api/users', require('./routes/auth'));
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/admin'));
 app.use('/api/alumni', require('./routes/alumni'));
 app.use('/api/mentors', require('./routes/mentors'));
@@ -29,7 +29,7 @@ app.use('/api/courses', require('./routes/courses'));
 app.use('/api/startups', require('./routes/startups'));
 app.use('/api/meetings', require('./routes/meetings'));
 app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/contacts', require('./routes/contact'));
+app.use('/api/contact', require('./routes/contact'));
 app.use('/api/admissions', require('./routes/admissions'));
 app.use('/api/offers', require('./routes/offers'));
 app.use('/api/settings', require('./routes/settings'));
