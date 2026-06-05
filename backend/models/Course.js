@@ -147,6 +147,6 @@ courseSchema.pre('save', function(next) {
   next();
 });
 
-courseSchema.index({ title: 'text', description: 'text', category: 'text' });
+courseSchema.index({ title: 'text', description: 'text', category: 'text' }, { language_override: 'dummy' });
 
 module.exports = mongoose.model('Course', courseSchema);
