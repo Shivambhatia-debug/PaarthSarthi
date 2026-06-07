@@ -1,8 +1,12 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../constants/colors';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 
 // Screens - Home
 import HomeScreen from '../screens/home/HomeScreen';
@@ -13,6 +17,8 @@ import MentorDetailScreen from '../screens/mentors/MentorDetailScreen';
 import BookMeetingScreen from '../screens/mentors/BookMeetingScreen';
 import NotificationsScreen from '../screens/notifications/NotificationsScreen';
 import AdmissionScreen from '../screens/admission/AdmissionScreen';
+import BlogScreen from '../screens/blog/BlogScreen';
+import BlogDetailScreen from '../screens/blog/BlogDetailScreen';
 
 // Screens - Chat
 import ChatListScreen from '../screens/chat/ChatListScreen';
@@ -22,10 +28,6 @@ import ChatScreen from '../screens/chat/ChatScreen';
 import CommunityScreen from '../screens/community/CommunityScreen';
 import CreatePostScreen from '../screens/community/CreatePostScreen';
 import PostDetailScreen from '../screens/community/PostDetailScreen';
-
-// Screens - Blog
-import BlogScreen from '../screens/blog/BlogScreen';
-import BlogDetailScreen from '../screens/blog/BlogDetailScreen';
 
 // Screens - Profile
 import ProfileScreen from '../screens/profile/ProfileScreen';
@@ -53,6 +55,9 @@ const HomeStack = () => (
     <Stack.Screen name="MentorsList" component={MentorsScreen} />
     <Stack.Screen name="MentorDetail" component={MentorDetailScreen} />
     <Stack.Screen name="BookMeeting" component={BookMeetingScreen} />
+    <Stack.Screen name="Chat" component={ChatScreen} />
+    <Stack.Screen name="BlogsList" component={BlogScreen} />
+    <Stack.Screen name="BlogDetail" component={BlogDetailScreen} />
   </Stack.Navigator>
 );
 
@@ -73,11 +78,13 @@ const CommunityStack = () => (
   </Stack.Navigator>
 );
 
-// Blog Stack
-const BlogStack = () => (
+// Mentors Stack
+const MentorsStack = () => (
   <Stack.Navigator screenOptions={screenOptions}>
-    <Stack.Screen name="BlogList" component={BlogScreen} />
-    <Stack.Screen name="BlogDetail" component={BlogDetailScreen} />
+    <Stack.Screen name="MentorsList" component={MentorsScreen} />
+    <Stack.Screen name="MentorDetail" component={MentorDetailScreen} />
+    <Stack.Screen name="BookMeeting" component={BookMeetingScreen} />
+    <Stack.Screen name="Chat" component={ChatScreen} />
   </Stack.Navigator>
 );
 
@@ -94,6 +101,35 @@ const ProfileStack = () => (
 );
 
 const MainTabs = () => {
+  const { user } = useAuth();
+  const socket = useSocket();
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  const fetchUnreadCount = React.useCallback(async () => {
+    try {
+      const response = await api.get('/chat/conversations');
+      const conversations = response.data?.conversations || [];
+      const totalUnread = conversations.reduce((acc, conv) => acc + (conv.unreadCount || 0), 0);
+      setUnreadCount(totalUnread);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchUnreadCount();
+
+    if (socket?.socket) {
+      socket.socket.on('conversationUpdated', fetchUnreadCount);
+      socket.socket.on('newMessage', fetchUnreadCount);
+
+      return () => {
+        socket.socket.off('conversationUpdated', fetchUnreadCount);
+        socket.socket.off('newMessage', fetchUnreadCount);
+      };
+    }
+  }, [socket?.socket, fetchUnreadCount]);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -110,8 +146,8 @@ const MainTabs = () => {
             case 'CommunityTab':
               iconName = focused ? 'globe' : 'globe-outline';
               break;
-            case 'BlogTab':
-              iconName = focused ? 'newspaper' : 'newspaper-outline';
+            case 'MentorsTab':
+              iconName = focused ? 'people' : 'people-outline';
               break;
             case 'ProfileTab':
               iconName = focused ? 'person' : 'person-outline';
@@ -125,9 +161,9 @@ const MainTabs = () => {
           backgroundColor: colors.card,
           borderTopWidth: 1,
           borderTopColor: colors.divider,
-          paddingBottom: 6,
-          paddingTop: 6,
-          height: 62,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 20,
+          paddingTop: 10,
+          height: Platform.OS === 'ios' ? 92 : 82,
           elevation: 10,
           shadowColor: colors.shadow,
           shadowOffset: { width: 0, height: -2 },
@@ -137,13 +173,14 @@ const MainTabs = () => {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginTop: -2,
         },
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeStack} options={{ tabBarLabel: 'Home' }} />
-      <Tab.Screen name="ChatTab" component={ChatStack} options={{ tabBarLabel: 'Chat' }} />
+      <Tab.Screen name="ChatTab" component={ChatStack} options={{ tabBarLabel: 'Chat', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
       <Tab.Screen name="CommunityTab" component={CommunityStack} options={{ tabBarLabel: 'Community' }} />
-      <Tab.Screen name="BlogTab" component={BlogStack} options={{ tabBarLabel: 'Blog' }} />
+      <Tab.Screen name="MentorsTab" component={MentorsStack} options={{ tabBarLabel: 'Mentors' }} />
       <Tab.Screen name="ProfileTab" component={ProfileStack} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
   );
