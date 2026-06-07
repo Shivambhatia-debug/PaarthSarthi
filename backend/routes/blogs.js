@@ -8,7 +8,8 @@ const {
   updateBlog,
   deleteBlog,
   likeBlog,
-  getBlogCategories
+  getBlogCategories,
+  getMyBlogs
 } = require('../controllers/blogController');
 const { protect, authorize } = require('../middleware/auth');
 const upload = require('../middleware/upload');
@@ -21,9 +22,11 @@ router.get('/', getBlogs);
 router.get('/:id', getBlogById);
 router.post('/:id/like', likeBlog);
 
-// Admin routes
-router.post('/', protect, authorize('admin'), upload.single('thumbnail'), upload.setUploadFilename, uploadToBlob, createBlog);
-router.put('/:id', protect, authorize('admin'), upload.single('thumbnail'), upload.setUploadFilename, uploadToBlob, updateBlog);
+// Mentor & Admin routes
+router.get('/my/list', protect, authorize('mentor', 'admin'), getMyBlogs);
+router.post('/', protect, authorize('admin', 'mentor'), upload.single('thumbnail'), upload.setUploadFilename, uploadToBlob, createBlog);
+router.put('/:id', protect, authorize('admin', 'mentor'), upload.single('thumbnail'), upload.setUploadFilename, uploadToBlob, updateBlog);
 router.delete('/:id', protect, authorize('admin'), deleteBlog);
 
 module.exports = router;
+
