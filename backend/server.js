@@ -1,8 +1,11 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
 const connectDB = require('./config/db');
+const initializeSocket = require('./config/socket');
 const { errorHandler } = require('./middleware/errorMiddleware');
 
 // Load env vars
@@ -12,6 +15,23 @@ dotenv.config();
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000
+});
+
+// Initialize socket event handlers
+initializeSocket(io);
+
+// Make io accessible in controllers if needed
+app.set('io', io);
 
 // Body parser
 app.use(express.json());
@@ -34,6 +54,8 @@ app.use('/api/admissions', require('./routes/admissions'));
 app.use('/api/offers', require('./routes/offers'));
 app.use('/api/settings', require('./routes/settings'));
 app.use('/api/blogs', require('./routes/blogs'));
+app.use('/api/chat', require('./routes/chat'));
+app.use('/api/community', require('./routes/community'));
 
 // Static assets for uploads
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -57,6 +79,7 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Socket.IO enabled for real-time chat`);
 });
