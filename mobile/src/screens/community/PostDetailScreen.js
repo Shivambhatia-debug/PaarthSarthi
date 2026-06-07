@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import colors from '../../constants/colors';
-import { getInitials, formatTimeAgo } from '../../utils/helpers';
+import { getInitials, formatTimeAgo, resolveImageUrl } from '../../utils/helpers';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const PostDetailScreen = ({ navigation, route }) => {
@@ -88,8 +88,8 @@ const PostDetailScreen = ({ navigation, route }) => {
   const renderComment = ({ item }) => (
     <View style={styles.commentCard}>
       <View style={styles.commentHeader}>
-        {item.author?.avatar ? (
-          <Image source={{ uri: item.author.avatar }} style={styles.commentAvatar} />
+        {item.author?.avatar || item.authorAvatar ? (
+          <Image source={{ uri: resolveImageUrl(item.author?.avatar || item.authorAvatar) }} style={styles.commentAvatar} />
         ) : (
           <View style={styles.commentAvatarPlaceholder}>
             <Text style={styles.commentAvatarText}>
@@ -159,8 +159,8 @@ const PostDetailScreen = ({ navigation, route }) => {
           <View style={styles.postSection}>
             {/* Author */}
             <View style={styles.authorRow}>
-              {post.author?.avatar ? (
-                <Image source={{ uri: post.author.avatar }} style={styles.authorAvatar} />
+              {post.author?.avatar || post.authorAvatar ? (
+                <Image source={{ uri: resolveImageUrl(post.author?.avatar || post.authorAvatar) }} style={styles.authorAvatar} />
               ) : (
                 <LinearGradient
                   colors={post.authorRole === 'mentor' ? ['#10B981', '#059669'] : ['#3B82F6', '#2563EB']}
