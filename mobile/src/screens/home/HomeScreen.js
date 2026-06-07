@@ -16,7 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import colors from '../../constants/colors';
-import { getInitials } from '../../utils/helpers';
+import { getInitials, resolveImageUrl, getRelativeTime } from '../../utils/helpers';
 import CourseCard from '../../components/CourseCard';
 import MentorCard from '../../components/MentorCard';
 import BlogCard from '../../components/BlogCard';
@@ -32,16 +32,18 @@ const HomeScreen = ({ navigation }) => {
   const [featuredMentors, setFeaturedMentors] = useState([]);
   const [courses, setCourses] = useState([]);
   const [blogs, setBlogs] = useState([]);
+  const [communityPosts, setCommunityPosts] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchData = useCallback(async () => {
     try {
-      const [offersRes, mentorsRes, coursesRes, blogsRes, notifRes] = await Promise.allSettled([
+      const [offersRes, mentorsRes, coursesRes, blogsRes, notifRes, postsRes] = await Promise.allSettled([
         api.get('/offers'),
         api.get('/mentors/featured'),
         api.get('/courses?limit=6&isPublished=true'),
         api.get('/blogs?limit=5&isPublished=true'),
         api.get('/notifications/unread-count'),
+        api.get('/community/posts?limit=3'),
       ]);
 
       if (offersRes.status === 'fulfilled') setOffers(offersRes.value.data?.offers || []);
@@ -49,6 +51,7 @@ const HomeScreen = ({ navigation }) => {
       if (coursesRes.status === 'fulfilled') setCourses(coursesRes.value.data?.courses || []);
       if (blogsRes.status === 'fulfilled') setBlogs(blogsRes.value.data?.blogs || []);
       if (notifRes.status === 'fulfilled') setUnreadCount(notifRes.value.data?.unreadCount || 0);
+      if (postsRes.status === 'fulfilled') setCommunityPosts(postsRes.value.data?.posts || []);
     } catch (e) {
       console.error('Error fetching home data:', e);
     } finally {
@@ -70,8 +73,8 @@ const HomeScreen = ({ navigation }) => {
 
   const quickActions = [
     { icon: 'calendar-outline', label: 'Book Session', color: colors.primary, screen: 'MentorsTab' },
-    { icon: 'book-outline', label: 'Courses', color: colors.success, screen: 'CoursesTab' },
-    { icon: 'newspaper-outline', label: 'Blogs', color: colors.info, screen: 'BlogTab' },
+    { icon: 'book-outline', label: 'Courses', color: colors.success, screen: 'CoursesList' },
+    { icon: 'newspaper-outline', label: 'Blogs', color: colors.info, screen: 'BlogsList' },
     { icon: 'person-outline', label: 'Profile', color: colors.secondary, screen: 'ProfileTab' },
   ];
 
@@ -91,7 +94,7 @@ const HomeScreen = ({ navigation }) => {
           <View style={styles.headerTop}>
             <View style={styles.headerLeftRow}>
               {user?.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.userAvatar} />
+                <Image source={{ uri: resolveImageUrl(user.avatar) }} style={styles.userAvatar} />
               ) : (
                 <View style={styles.userAvatarPlaceholder}>
                   <Text style={styles.userAvatarText}>{getInitials(user?.name)}</Text>
@@ -193,6 +196,59 @@ const HomeScreen = ({ navigation }) => {
             </View>
           )}
 
+          {/* Community Feed */}
+          {communityPosts.length > 0 && (
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.titleWithIndicator}>
+                  <View style={styles.headingIndicator} />
+                  <Text style={styles.sectionTitle}>Community Discussions</Text>
+                </View>
+                <TouchableOpacity onPress={() => navigation.navigate('CommunityTab')}>
+                  <Text style={styles.seeAll}>See All →</Text>
+                </TouchableOpacity>
+              </View>
+              {communityPosts.map((post) => (
+                <TouchableOpacity
+                  key={post._id}
+                  style={styles.postCard}
+                  activeOpacity={0.85}
+                  onPress={() => navigation.navigate('CommunityTab', { screen: 'PostDetail', params: { postId: post._id } })}
+                >
+                  <View style={styles.postHeader}>
+                    <View style={styles.authorRow}>
+                      {post.author?.avatar || post.authorAvatar ? (
+                        <Image source={{ uri: resolveImageUrl(post.author?.avatar || post.authorAvatar) }} style={styles.authorAvatar} />
+                      ) : (
+                        <View style={styles.authorAvatarPlaceholder}>
+                          <Text style={styles.authorAvatarText}>{getInitials(post.authorName || post.author?.name)}</Text>
+                        </View>
+                      )}
+                      <View style={styles.authorInfo}>
+                        <Text style={styles.authorName}>{post.authorName || post.author?.name}</Text>
+                        <Text style={styles.postTime}>{getRelativeTime(post.createdAt)}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.categoryBadge}>
+                      <Text style={styles.categoryBadgeText}>{post.category?.replace('-', ' ')}</Text>
+                    </View>
+                  </View>
+                  <Text style={styles.postContent} numberOfLines={2}>{post.content}</Text>
+                  <View style={styles.postFooter}>
+                    <View style={styles.postStat}>
+                      <Ionicons name="heart-outline" size={14} color={colors.textSecondary} />
+                      <Text style={styles.postStatText}>{post.likesCount || 0}</Text>
+                    </View>
+                    <View style={styles.postStat}>
+                      <Ionicons name="chatbubble-outline" size={14} color={colors.textSecondary} />
+                      <Text style={styles.postStatText}>{post.commentsCount || 0}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
           {/* Latest Blogs */}
           {blogs.length > 0 && (
             <View style={styles.section}>
@@ -201,7 +257,7 @@ const HomeScreen = ({ navigation }) => {
                   <View style={styles.headingIndicator} />
                   <Text style={styles.sectionTitle}>Latest Articles</Text>
                 </View>
-                <TouchableOpacity onPress={() => navigation.navigate('BlogTab')}>
+                <TouchableOpacity onPress={() => navigation.navigate('BlogsList')}>
                   <Text style={styles.seeAll}>See All →</Text>
                 </TouchableOpacity>
               </View>
@@ -210,7 +266,7 @@ const HomeScreen = ({ navigation }) => {
                   key={blog._id}
                   blog={blog}
                   compact
-                  onPress={() => navigation.navigate('BlogTab', { screen: 'BlogDetail', params: { blogId: blog._id } })}
+                  onPress={() => navigation.navigate('BlogDetail', { blogId: blog._id })}
                 />
               ))}
             </View>
@@ -365,6 +421,91 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: colors.primary,
+  },
+  postCard: {
+    backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  postHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  authorAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  authorAvatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: colors.primaryFaded,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  authorAvatarText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  authorInfo: {
+    justifyContent: 'center',
+  },
+  authorName: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  postTime: {
+    fontSize: 10,
+    color: colors.textLight,
+    marginTop: 1,
+  },
+  categoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: colors.primaryFaded,
+  },
+  categoryBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: colors.primary,
+    textTransform: 'uppercase',
+  },
+  postContent: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  postFooter: {
+    flexDirection: 'row',
+    gap: 14,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: 8,
+  },
+  postStat: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  postStatText: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: '600',
   },
 });
 
