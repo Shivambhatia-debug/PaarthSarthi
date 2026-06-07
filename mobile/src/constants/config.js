@@ -4,7 +4,7 @@
 // For physical device: use your computer's local IP (e.g., http://192.168.x.x:5000)
 
 const DEV_API_URL = 'http://10.185.221.68:5000';
-const PROD_API_URL = 'https://your-backend.onrender.com'; // Update this for production
+const PROD_API_URL = 'https://paarthsarthi.vercel.app'; 
 
 const isDev = __DEV__;
 
