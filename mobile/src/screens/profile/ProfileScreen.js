@@ -13,11 +13,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import colors from '../../constants/colors';
+import config from '../../constants/config';
 import { getInitials } from '../../utils/helpers';
 
 const ProfileScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
   const { user, logout } = useAuth();
+
+  const getAvatarUrl = (avatar) => {
+    if (!avatar) return null;
+    if (avatar.startsWith('http')) return avatar;
+    return `${config.API_BASE_URL}${avatar}`;
+  };
 
   const handleLogout = () => {
     Alert.alert(
@@ -60,7 +67,7 @@ const ProfileScreen = ({ navigation }) => {
         >
           <View style={styles.avatarWrap}>
             {user?.avatar ? (
-              <Image source={{ uri: user.avatar }} style={styles.avatar} />
+              <Image source={{ uri: getAvatarUrl(user.avatar) }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
                 <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
