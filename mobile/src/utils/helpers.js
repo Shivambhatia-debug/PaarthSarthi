@@ -150,3 +150,6 @@ export const cleanTags = (tagsArray) => {
   
   return result;
 };
+
+// Alias for getRelativeTime (used by chat & community screens)
+export const formatTimeAgo = getRelativeTime;
