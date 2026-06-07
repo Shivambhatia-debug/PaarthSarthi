@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Mentor = require('../models/Mentor');
 const { sendResponse, sendError, notifyAdmins } = require('../utils/helpers');
 
 // @desc    Register user
@@ -6,7 +7,10 @@ const { sendResponse, sendError, notifyAdmins } = require('../utils/helpers');
 // @access  Public
 exports.register = async (req, res) => {
   try {
-    const { name, email, phone, password, role, language, interests, currentEducation, institution, location, yearOfStudy, stream } = req.body;
+    const { name, email, phone, password, role, language, interests, currentEducation, institution, location, yearOfStudy, stream,
+      // Mentor-specific fields
+      designation, company, specialization, subjects, languages: mentorLanguages, experience, qualifications, bio, sessionPrice
+    } = req.body;
 
     // Check if user exists
     const existingUser = await User.findOne({ email });
@@ -27,8 +31,36 @@ exports.register = async (req, res) => {
       institution,
       location,
       yearOfStudy,
-      stream
+      stream,
+      bio
     });
+
+    // If registering as mentor, auto-create a Mentor profile
+    if (role === 'mentor') {
+      const mentorProfile = await Mentor.create({
+        name,
+        email,
+        phone,
+        photo: '',
+        designation: designation || 'Mentor',
+        company: company || '',
+        specialization: specialization || [],
+        subjects: subjects || [],
+        languages: mentorLanguages || ['Hindi', 'English'],
+        experience: experience || 0,
+        qualifications: qualifications || [],
+        bio: bio || '',
+        sessionPrice: sessionPrice || 0,
+        sessionTypes: ['chat', 'video'],
+        isAvailable: true,
+        isActive: true,
+        addedBy: user._id
+      });
+
+      // Link mentor profile to user
+      user.mentorProfile = mentorProfile._id;
+      await user.save();
+    }
 
     // Notify admins about new user
     await notifyAdmins({
@@ -55,7 +87,8 @@ exports.register = async (req, res) => {
         institution: user.institution,
         location: user.location,
         yearOfStudy: user.yearOfStudy,
-        stream: user.stream
+        stream: user.stream,
+        mentorProfile: user.mentorProfile || null
       }
     }, 'Registration successful');
 
@@ -125,7 +158,14 @@ exports.login = async (req, res) => {
 // @access  Private
 exports.getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
+    let userQuery = User.findById(req.user.id);
+
+    // If user is a mentor, populate their mentor profile
+    if (req.user.role === 'mentor') {
+      userQuery = userQuery.populate('mentorProfile');
+    }
+
+    const user = await userQuery;
     sendResponse(res, 200, { user });
   } catch (error) {
     sendError(res, 500, 'Server error');
