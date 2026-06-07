@@ -53,6 +53,25 @@ const userSchema = new mongoose.Schema({
     type: String,
     maxlength: [500, 'Bio cannot exceed 500 characters']
   },
+  // Mentor profile link (when role is 'mentor')
+  mentorProfile: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Mentor'
+  },
+  // Chat & online status
+  isOnline: {
+    type: Boolean,
+    default: false
+  },
+  lastSeen: {
+    type: Date,
+    default: Date.now
+  },
+  // Push notifications
+  fcmToken: {
+    type: String,
+    default: ''
+  },
   isActive: {
     type: Boolean,
     default: true
