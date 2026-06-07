@@ -80,9 +80,9 @@ exports.getBlogBySlug = async (req, res) => {
   }
 };
 
-// @desc    Create blog (Admin)
+// @desc    Create blog (Admin or Mentor)
 // @route   POST /api/blogs
-// @access  Private/Admin
+// @access  Private/Admin/Mentor
 exports.createBlog = async (req, res) => {
   try {
     req.body.author = req.user.id;
@@ -90,6 +90,11 @@ exports.createBlog = async (req, res) => {
 
     if (req.file) {
       req.body.thumbnail = req.body.thumbnail || `/uploads/blogs/${req.file.filename}`;
+    }
+
+    // Mentors create as draft by default, admins can publish directly
+    if (req.user.role === 'mentor' && req.body.isPublished === undefined) {
+      req.body.isPublished = true; // mentors can publish directly
     }
 
     if (req.body.isPublished) {
@@ -183,6 +188,38 @@ exports.getBlogCategories = async (req, res) => {
     ]);
 
     sendResponse(res, 200, { categories });
+  } catch (error) {
+    sendError(res, 500, error.message);
+  }
+};
+
+// @desc    Get my blogs (for mentors/admins)
+// @route   GET /api/blogs/my
+// @access  Private (mentor/admin)
+exports.getMyBlogs = async (req, res) => {
+  try {
+    const { page, limit, skip } = getPagination(req.query);
+    const { status } = req.query;
+
+    let query = { author: req.user.id };
+    if (status === 'published') query.isPublished = true;
+    if (status === 'draft') query.isPublished = false;
+
+    const total = await Blog.countDocuments(query);
+    const blogs = await Blog.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    sendResponse(res, 200, {
+      blogs,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     sendError(res, 500, error.message);
   }
