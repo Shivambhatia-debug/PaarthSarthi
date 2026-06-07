@@ -1,8 +1,12 @@
 import React from 'react';
+import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../constants/colors';
+import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
+import { useSocket } from '../context/SocketContext';
 
 // Screens - Mentor Dashboard
 import MentorDashboardScreen from '../screens/mentor/MentorDashboardScreen';
@@ -86,6 +90,35 @@ const ProfileStack = () => (
 );
 
 const MentorTabs = () => {
+  const { user } = useAuth();
+  const socket = useSocket();
+  const [unreadCount, setUnreadCount] = React.useState(0);
+
+  const fetchUnreadCount = React.useCallback(async () => {
+    try {
+      const response = await api.get('/chat/conversations');
+      const conversations = response.data?.conversations || [];
+      const totalUnread = conversations.reduce((acc, conv) => acc + (conv.unreadCount || 0), 0);
+      setUnreadCount(totalUnread);
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchUnreadCount();
+
+    if (socket?.socket) {
+      socket.socket.on('conversationUpdated', fetchUnreadCount);
+      socket.socket.on('newMessage', fetchUnreadCount);
+
+      return () => {
+        socket.socket.off('conversationUpdated', fetchUnreadCount);
+        socket.socket.off('newMessage', fetchUnreadCount);
+      };
+    }
+  }, [socket?.socket, fetchUnreadCount]);
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -117,9 +150,9 @@ const MentorTabs = () => {
           backgroundColor: colors.card,
           borderTopWidth: 1,
           borderTopColor: colors.divider,
-          paddingBottom: 6,
-          paddingTop: 6,
-          height: 62,
+          paddingBottom: Platform.OS === 'ios' ? 28 : 20,
+          paddingTop: 10,
+          height: Platform.OS === 'ios' ? 92 : 82,
           elevation: 10,
           shadowColor: colors.shadow,
           shadowOffset: { width: 0, height: -2 },
@@ -129,11 +162,12 @@ const MentorTabs = () => {
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
+          marginTop: -2,
         },
       })}
     >
       <Tab.Screen name="DashboardTab" component={DashboardStack} options={{ tabBarLabel: 'Dashboard' }} />
-      <Tab.Screen name="ChatTab" component={ChatStack} options={{ tabBarLabel: 'Chat' }} />
+      <Tab.Screen name="ChatTab" component={ChatStack} options={{ tabBarLabel: 'Chat', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
       <Tab.Screen name="CommunityTab" component={CommunityStack} options={{ tabBarLabel: 'Community' }} />
       <Tab.Screen name="BlogTab" component={BlogStack} options={{ tabBarLabel: 'My Blogs' }} />
       <Tab.Screen name="ProfileTab" component={ProfileStack} options={{ tabBarLabel: 'Profile' }} />
