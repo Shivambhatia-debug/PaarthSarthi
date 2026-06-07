@@ -32,11 +32,16 @@ const RegisterScreen = ({ navigation }) => {
     email: '',
     phone: '',
     password: '',
+    role: 'student',
     currentEducation: '',
     institution: '',
     yearOfStudy: '',
     stream: '',
     location: '',
+    designation: '',
+    company: '',
+    experience: '',
+    bio: '',
   });
 
   const updateForm = (key, value) => {
@@ -65,7 +70,7 @@ const RegisterScreen = ({ navigation }) => {
     const result = await register({
       ...form,
       email: form.email.trim().toLowerCase(),
-      role: 'student',
+      role: form.role,
     });
     setLoading(false);
 
@@ -78,6 +83,25 @@ const RegisterScreen = ({ navigation }) => {
     <>
       <Text style={styles.stepTitle}>Create Account ✨</Text>
       <Text style={styles.stepSubtitle}>Start your career guidance journey</Text>
+
+      {/* Role Selection */}
+      <Text style={styles.label}>I want to join as</Text>
+      <View style={styles.roleToggleContainer}>
+        <TouchableOpacity
+          style={[styles.roleTab, form.role === 'student' && styles.roleTabActive]}
+          onPress={() => updateForm('role', 'student')}
+        >
+          <Ionicons name="school-outline" size={18} color={form.role === 'student' ? '#fff' : colors.textSecondary} />
+          <Text style={[styles.roleTabText, form.role === 'student' && styles.roleTabTextActive]}>Student</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.roleTab, form.role === 'mentor' && styles.roleTabActive]}
+          onPress={() => updateForm('role', 'mentor')}
+        >
+          <Ionicons name="ribbon-outline" size={18} color={form.role === 'mentor' ? '#fff' : colors.textSecondary} />
+          <Text style={[styles.roleTabText, form.role === 'mentor' && styles.roleTabTextActive]}>Mentor</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Name */}
       <View style={styles.inputContainer}>
@@ -153,84 +177,177 @@ const RegisterScreen = ({ navigation }) => {
     </>
   );
 
-  const renderStep2 = () => (
-    <>
-      <Text style={styles.stepTitle}>Your Details 📚</Text>
-      <Text style={styles.stepSubtitle}>Help us personalize your experience</Text>
+  const renderStep2 = () => {
+    if (form.role === 'student') {
+      return (
+        <>
+          <Text style={styles.stepTitle}>Your Details 📚</Text>
+          <Text style={styles.stepSubtitle}>Help us personalize your experience</Text>
 
-      {/* Education */}
-      <Text style={styles.label}>Current Education</Text>
-      <View style={styles.optionsRow}>
-        {EDUCATION_OPTIONS.map(opt => (
-          <TouchableOpacity
-            key={opt}
-            style={[styles.optionChip, form.currentEducation === opt && styles.optionChipActive]}
-            onPress={() => updateForm('currentEducation', opt)}
-          >
-            <Text style={[styles.optionText, form.currentEducation === opt && styles.optionTextActive]}>{opt}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          {/* Education */}
+          <Text style={styles.label}>Current Education</Text>
+          <View style={styles.optionsRow}>
+            {EDUCATION_OPTIONS.map(opt => (
+              <TouchableOpacity
+                key={opt}
+                style={[styles.optionChip, form.currentEducation === opt && styles.optionChipActive]}
+                onPress={() => updateForm('currentEducation', opt)}
+              >
+                <Text style={[styles.optionText, form.currentEducation === opt && styles.optionTextActive]}>{opt}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-      {/* Stream */}
-      <Text style={styles.label}>Stream</Text>
-      <View style={styles.optionsRow}>
-        {STREAM_OPTIONS.map(opt => (
-          <TouchableOpacity
-            key={opt}
-            style={[styles.optionChip, form.stream === opt && styles.optionChipActive]}
-            onPress={() => updateForm('stream', opt)}
-          >
-            <Text style={[styles.optionText, form.stream === opt && styles.optionTextActive]}>{opt}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+          {/* Stream */}
+          <Text style={styles.label}>Stream</Text>
+          <View style={styles.optionsRow}>
+            {STREAM_OPTIONS.map(opt => (
+              <TouchableOpacity
+                key={opt}
+                style={[styles.optionChip, form.stream === opt && styles.optionChipActive]}
+                onPress={() => updateForm('stream', opt)}
+              >
+                <Text style={[styles.optionText, form.stream === opt && styles.optionTextActive]}>{opt}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
-      {/* Institution */}
-      <View style={styles.inputContainer}>
-        <Ionicons name="school-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="Institution / School Name"
-          placeholderTextColor={colors.textLight}
-          value={form.institution}
-          onChangeText={(t) => updateForm('institution', t)}
-        />
-      </View>
+          {/* Institution */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="school-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Institution / School Name"
+              placeholderTextColor={colors.textLight}
+              value={form.institution}
+              onChangeText={(t) => updateForm('institution', t)}
+            />
+          </View>
 
-      {/* Location */}
-      <View style={styles.inputContainer}>
-        <Ionicons name="location-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
-        <TextInput
-          style={styles.input}
-          placeholder="City / Location"
-          placeholderTextColor={colors.textLight}
-          value={form.location}
-          onChangeText={(t) => updateForm('location', t)}
-        />
-      </View>
+          {/* Location */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="location-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="City / Location"
+              placeholderTextColor={colors.textLight}
+              value={form.location}
+              onChangeText={(t) => updateForm('location', t)}
+            />
+          </View>
 
-      <View style={styles.btnRow}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}>
-          <Ionicons name="arrow-back" size={20} color={colors.primary} />
-          <Text style={styles.backBtnText}>Back</Text>
-        </TouchableOpacity>
+          <View style={styles.btnRow}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}>
+              <Ionicons name="arrow-back" size={20} color={colors.primary} />
+              <Text style={styles.backBtnText}>Back</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleRegister} disabled={loading} activeOpacity={0.85} style={{ flex: 1 }}>
-          <LinearGradient
-            colors={[colors.gradientStart, colors.gradientEnd]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.actionBtn, loading && styles.btnDisabled]}
-          >
-            <Text style={styles.actionBtnText}>
-              {loading ? 'Creating...' : 'Create Account'}
-            </Text>
-          </LinearGradient>
-        </TouchableOpacity>
-      </View>
-    </>
-  );
+            <TouchableOpacity onPress={handleRegister} disabled={loading} activeOpacity={0.85} style={{ flex: 1 }}>
+              <LinearGradient
+                colors={[colors.gradientStart, colors.gradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.actionBtn, loading && styles.btnDisabled]}
+              >
+                <Text style={styles.actionBtnText}>
+                  {loading ? 'Creating...' : 'Create Account'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <Text style={styles.stepTitle}>Mentor Profile 🎓</Text>
+          <Text style={styles.stepSubtitle}>Provide details about your expertise</Text>
+
+          {/* Designation */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="briefcase-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Designation (e.g. Software Engineer)"
+              placeholderTextColor={colors.textLight}
+              value={form.designation}
+              onChangeText={(t) => updateForm('designation', t)}
+            />
+          </View>
+
+          {/* Company */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="business-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Company / Organization"
+              placeholderTextColor={colors.textLight}
+              value={form.company}
+              onChangeText={(t) => updateForm('company', t)}
+            />
+          </View>
+
+          {/* Experience */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="hourglass-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Years of Experience"
+              placeholderTextColor={colors.textLight}
+              value={form.experience}
+              onChangeText={(t) => updateForm('experience', t)}
+              keyboardType="number-pad"
+            />
+          </View>
+
+          {/* Location */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="location-outline" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="City / Location"
+              placeholderTextColor={colors.textLight}
+              value={form.location}
+              onChangeText={(t) => updateForm('location', t)}
+            />
+          </View>
+
+          {/* Bio */}
+          <View style={[styles.inputContainer, { height: 100, alignItems: 'flex-start', paddingTop: 12 }]}>
+            <Ionicons name="document-text-outline" size={20} color={colors.textSecondary} style={[styles.inputIcon, { marginTop: 2 }]} />
+            <TextInput
+              style={[styles.input, { height: 80, textAlignVertical: 'top' }]}
+              placeholder="Short bio (e.g. Tell students how you can help them)"
+              placeholderTextColor={colors.textLight}
+              value={form.bio}
+              onChangeText={(t) => updateForm('bio', t)}
+              multiline
+            />
+          </View>
+
+          <View style={styles.btnRow}>
+            <TouchableOpacity style={styles.backBtn} onPress={() => setStep(1)}>
+              <Ionicons name="arrow-back" size={20} color={colors.primary} />
+              <Text style={styles.backBtnText}>Back</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={handleRegister} disabled={loading} activeOpacity={0.85} style={{ flex: 1 }}>
+              <LinearGradient
+                colors={[colors.gradientStart, colors.gradientEnd]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.actionBtn, loading && styles.btnDisabled]}
+              >
+                <Text style={styles.actionBtnText}>
+                  {loading ? 'Creating...' : 'Create Account'}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+        </>
+      );
+    }
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -435,6 +552,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.primary,
+  },
+  roleToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.inputBg,
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 20,
+  },
+  roleTab: {
+    flex: 1,
+    flexDirection: 'row',
+    height: 46,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+    gap: 8,
+  },
+  roleTabActive: {
+    backgroundColor: colors.primary,
+  },
+  roleTabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  roleTabTextActive: {
+    color: '#fff',
+    fontWeight: '700',
   },
 });
 
