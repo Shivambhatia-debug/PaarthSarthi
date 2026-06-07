@@ -8,11 +8,15 @@ import {
   StyleSheet,
   Dimensions,
   Linking,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import colors from '../../constants/colors';
+import config from '../../constants/config';
+import api from '../../api/axios';
 import { getInitials, formatPrice, cleanTags } from '../../utils/helpers';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -20,12 +24,41 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const MentorDetailScreen = ({ route, navigation }) => {
   const { mentor } = route.params;
   const insets = useSafeAreaInsets();
+  const [chatLoading, setChatLoading] = React.useState(false);
+
+  const getImageUrl = (photo) => {
+    if (!photo) return null;
+    if (photo.startsWith('http')) return photo;
+    return `${config.API_BASE_URL}${photo}`;
+  };
 
   const cleanSpecs = cleanTags(mentor.specialization);
   const cleanSubs = cleanTags(mentor.subjects);
 
   const openLink = (url) => {
     if (url) Linking.openURL(url);
+  };
+
+  const handleChatWithMentor = async () => {
+    try {
+      setChatLoading(true);
+      const res = await api.post('/chat/conversations', { mentorId: mentor._id });
+      const { conversation } = res.data;
+      
+      if (conversation) {
+        navigation.navigate('Chat', {
+          conversationId: conversation._id,
+          otherUser: conversation.otherUser,
+        });
+      } else {
+        Alert.alert('Error', 'Could not start chat. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error starting chat:', err);
+      Alert.alert('Error', err.message || 'Network error starting chat');
+    } finally {
+      setChatLoading(false);
+    }
   };
 
   return (
@@ -42,7 +75,7 @@ const MentorDetailScreen = ({ route, navigation }) => {
 
           <View style={styles.heroContent}>
             {mentor.photo ? (
-              <Image source={{ uri: mentor.photo }} style={styles.avatar} />
+              <Image source={{ uri: getImageUrl(mentor.photo) }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
                 <Text style={styles.avatarText}>{getInitials(mentor.name)}</Text>
@@ -148,7 +181,7 @@ const MentorDetailScreen = ({ route, navigation }) => {
                 <Ionicons name="cash-outline" size={18} color={colors.primary} />
                 <Text style={styles.infoLabel}>Price</Text>
                 <Text style={styles.infoValue}>
-                  {mentor.sessionPrice ? `₹${mentor.sessionPrice}/session` : 'Free'}
+                  {'Free'}
                 </Text>
               </View>
               {mentor.sessionTypes && mentor.sessionTypes.length > 0 && (
@@ -211,26 +244,42 @@ const MentorDetailScreen = ({ route, navigation }) => {
 
       {/* Bottom Bar */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 12 }]}>
-        <View>
+        <View style={styles.priceContainer}>
           <Text style={styles.priceLabel}>Session Price</Text>
           <Text style={styles.priceValue}>
-            {mentor.sessionPrice ? `₹${mentor.sessionPrice}` : 'Free'}
+            {'Free'}
           </Text>
         </View>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => navigation.navigate('BookMeeting', { mentor })}
-        >
-          <LinearGradient
-            colors={[colors.gradientStart, colors.gradientEnd]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.bookBtn}
+        
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={styles.chatIconBtn}
+            onPress={handleChatWithMentor}
+            disabled={chatLoading}
+            activeOpacity={0.7}
           >
-            <Ionicons name="calendar-outline" size={18} color="#fff" />
-            <Text style={styles.bookBtnText}>Book Session</Text>
-          </LinearGradient>
-        </TouchableOpacity>
+            {chatLoading ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <Ionicons name="chatbubbles-outline" size={22} color={colors.primary} />
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.85}
+            onPress={() => navigation.navigate('BookMeeting', { mentor })}
+          >
+            <LinearGradient
+              colors={[colors.primary, colors.primaryDark]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.bookBtn}
+            >
+              <Ionicons name="calendar-outline" size={18} color="#fff" />
+              <Text style={styles.bookBtnText}>Book Session</Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -436,6 +485,26 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '900',
     color: colors.primary,
+  },
+  priceContainer: {
+    marginRight: 10,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  chatIconBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.05)',
   },
   bookBtn: {
     flexDirection: 'row',
