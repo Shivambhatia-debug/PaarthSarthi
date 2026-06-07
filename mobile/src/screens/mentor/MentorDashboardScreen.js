@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import colors from '../../constants/colors';
-import { getInitials } from '../../utils/helpers';
+import { getInitials, resolveImageUrl } from '../../utils/helpers';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 const MentorDashboardScreen = ({ navigation }) => {
@@ -35,7 +35,7 @@ const MentorDashboardScreen = ({ navigation }) => {
   const fetchDashboardData = useCallback(async () => {
     try {
       const [meetingsRes, blogsRes, notifRes] = await Promise.allSettled([
-        api.get('/meetings?status=confirmed&limit=5'),
+        api.get('/meetings/my?limit=5'),
         api.get('/blogs/my/list?limit=3'),
         api.get('/notifications/unread-count'),
       ]);
@@ -43,14 +43,6 @@ const MentorDashboardScreen = ({ navigation }) => {
       if (meetingsRes.status === 'fulfilled') {
         const meetings = meetingsRes.value.data?.meetings || [];
         setUpcomingMeetings(meetings.slice(0, 3));
-        setStats(prev => ({
-          ...prev,
-          totalSessions: meetings.length,
-          todaySessions: meetings.filter(m => {
-            const today = new Date().toDateString();
-            return new Date(m.date).toDateString() === today;
-          }).length,
-        }));
       }
 
       if (blogsRes.status === 'fulfilled') {
@@ -62,17 +54,17 @@ const MentorDashboardScreen = ({ navigation }) => {
       }
 
       // Get mentor profile stats if available
-      if (user?.mentorProfile) {
+      if (user?.role === 'mentor') {
         try {
           const mentorRes = await api.get('/auth/me');
           const mentorData = mentorRes.data?.user?.mentorProfile;
           if (mentorData) {
-            setStats(prev => ({
-              ...prev,
+            setStats({
               totalStudents: mentorData.totalStudents || 0,
               rating: mentorData.rating || 0,
-              totalSessions: mentorData.totalSessions || prev.totalSessions,
-            }));
+              totalSessions: mentorData.totalSessions || 0,
+              todaySessions: mentorData.todaySessions || 0,
+            });
           }
         } catch (e) {
           // Silently handle
@@ -87,8 +79,11 @@ const MentorDashboardScreen = ({ navigation }) => {
   }, [user]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchDashboardData();
+    });
+    return unsubscribe;
+  }, [navigation, fetchDashboardData]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -127,7 +122,7 @@ const MentorDashboardScreen = ({ navigation }) => {
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               {user?.avatar ? (
-                <Image source={{ uri: user.avatar }} style={styles.userAvatar} />
+                <Image source={{ uri: resolveImageUrl(user.avatar) }} style={styles.userAvatar} />
               ) : (
                 <View style={styles.userAvatarPlaceholder}>
                   <Text style={styles.userAvatarText}>{getInitials(user?.name)}</Text>
@@ -375,7 +370,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 20,
-    marginTop: -10,
+    marginTop: 16,
   },
   statsGrid: {
     flexDirection: 'row',
