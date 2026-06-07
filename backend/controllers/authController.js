@@ -111,7 +111,7 @@ exports.login = async (req, res) => {
     }
 
     // Check user
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({ email }).select('+password').populate('mentorProfile');
     if (!user) {
       return sendError(res, 401, 'Invalid credentials');
     }
@@ -143,7 +143,8 @@ exports.login = async (req, res) => {
         institution: user.institution,
         location: user.location,
         yearOfStudy: user.yearOfStudy,
-        stream: user.stream
+        stream: user.stream,
+        mentorProfile: user.mentorProfile || null
       }
     }, 'Login successful');
 
@@ -166,8 +167,35 @@ exports.getMe = async (req, res) => {
     }
 
     const user = await userQuery;
+
+    if (user && user.role === 'mentor' && user.mentorProfile) {
+      const Meeting = require('../models/Meeting');
+      const mentorId = user.mentorProfile._id;
+
+      const totalSessions = await Meeting.countDocuments({ mentor: mentorId });
+      const uniqueStudents = await Meeting.distinct('userEmail', { mentor: mentorId });
+      const totalStudents = uniqueStudents.length;
+
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setHours(23, 59, 59, 999);
+      const todaySessions = await Meeting.countDocuments({
+        mentor: mentorId,
+        date: { $gte: todayStart, $lte: todayEnd }
+      });
+
+      const mentorObj = user.mentorProfile.toObject();
+      mentorObj.totalSessions = totalSessions;
+      mentorObj.totalStudents = totalStudents;
+      mentorObj.todaySessions = todaySessions;
+
+      user.mentorProfile = mentorObj;
+    }
+
     sendResponse(res, 200, { user });
   } catch (error) {
+    console.error('getMe error:', error);
     sendError(res, 500, 'Server error');
   }
 };
@@ -182,7 +210,9 @@ exports.updateProfile = async (req, res) => {
       phone: req.body.phone,
       bio: req.body.bio,
       language: req.body.language,
-      interests: req.body.interests
+      interests: req.body.interests,
+      fcmToken: req.body.fcmToken,
+      avatar: req.body.avatar
     };
 
     // Remove undefined fields
@@ -194,6 +224,20 @@ exports.updateProfile = async (req, res) => {
       new: true,
       runValidators: true
     });
+
+    // Sync changes to Mentor document if user is a mentor
+    if (user.role === 'mentor' && user.mentorProfile) {
+      const Mentor = require('../models/Mentor');
+      const mentorUpdate = {};
+      if (fieldsToUpdate.name) mentorUpdate.name = fieldsToUpdate.name;
+      if (fieldsToUpdate.phone) mentorUpdate.phone = fieldsToUpdate.phone;
+      if (fieldsToUpdate.bio) mentorUpdate.bio = fieldsToUpdate.bio;
+      if (fieldsToUpdate.avatar !== undefined) mentorUpdate.photo = fieldsToUpdate.avatar;
+
+      if (Object.keys(mentorUpdate).length > 0) {
+        await Mentor.findByIdAndUpdate(user.mentorProfile, mentorUpdate);
+      }
+    }
 
     sendResponse(res, 200, { user }, 'Profile updated');
   } catch (error) {
@@ -223,5 +267,38 @@ exports.changePassword = async (req, res) => {
     sendResponse(res, 200, { token }, 'Password changed successfully');
   } catch (error) {
     sendError(res, 500, error.message);
+  }
+};
+
+// @desc    Upload profile photo
+// @route   PUT /api/auth/profile/avatar
+// @access  Private
+exports.uploadAvatar = async (req, res) => {
+  try {
+    let avatarUrl = '';
+    if (req.body.photo) {
+      avatarUrl = req.body.photo;
+    } else if (req.file) {
+      avatarUrl = `/uploads/general/${req.file.filename}`;
+    } else {
+      return sendError(res, 400, 'Please upload a photo');
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { avatar: avatarUrl },
+      { new: true, runValidators: true }
+    );
+
+    // Sync to Mentor profile if user is a mentor
+    if (user.role === 'mentor' && user.mentorProfile) {
+      const Mentor = require('../models/Mentor');
+      await Mentor.findByIdAndUpdate(user.mentorProfile, { photo: avatarUrl });
+    }
+
+    sendResponse(res, 200, { avatar: avatarUrl, user }, 'Profile picture updated');
+  } catch (error) {
+    console.error('Upload avatar error:', error);
+    sendError(res, 500, error.message || 'Server error');
   }
 };
