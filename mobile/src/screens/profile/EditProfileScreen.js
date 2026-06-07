@@ -7,16 +7,23 @@ import {
   ScrollView,
   StyleSheet,
   Alert,
+  Image,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../../context/AuthContext';
 import colors from '../../constants/colors';
+import config from '../../constants/config';
+import storage from '../../utils/storage';
+import { getInitials } from '../../utils/helpers';
+import api from '../../api/axios';
 
 const EditProfileScreen = ({ navigation }) => {
   const insets = useSafeAreaInsets();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, setUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     name: user?.name || '',
@@ -24,6 +31,65 @@ const EditProfileScreen = ({ navigation }) => {
     bio: user?.bio || '',
     language: user?.language || 'en',
   });
+
+  const getAvatarUrl = (avatar) => {
+    if (!avatar) return null;
+    if (avatar.startsWith('http')) return avatar;
+    return `${config.API_BASE_URL}${avatar}`;
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'We need access to your photos to upload a profile picture.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled && result.assets && result.assets.length > 0) {
+      uploadProfileImage(result.assets[0].uri);
+    }
+  };
+
+  const uploadProfileImage = async (uri) => {
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      const filename = uri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename || '');
+      const type = match ? `image/${match[1]}` : `image`;
+
+      formData.append('avatar', {
+        uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
+        name: filename || 'avatar.jpg',
+        type,
+      });
+
+      const response = await api.put('/auth/profile/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      if (response.data?.success) {
+        const updatedUser = response.data.user;
+        setUser(updatedUser);
+        await storage.setUser(updatedUser);
+        Alert.alert('Success', 'Profile photo updated successfully!');
+      }
+    } catch (err) {
+      console.error('Image upload error:', err);
+      Alert.alert('Upload Failed', err.message || 'Could not upload profile photo.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateForm = (key, value) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -56,6 +122,23 @@ const EditProfileScreen = ({ navigation }) => {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Avatar Section */}
+        <View style={styles.avatarSection}>
+          <View style={styles.avatarWrapper}>
+            {user?.avatar ? (
+              <Image source={{ uri: getAvatarUrl(user.avatar) }} style={styles.avatarImg} />
+            ) : (
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
+              </View>
+            )}
+            <TouchableOpacity style={styles.avatarEditBtn} onPress={pickImage} disabled={loading} activeOpacity={0.8}>
+              <Ionicons name="camera" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.avatarHint}>Tap camera to change photo</Text>
+        </View>
+
         {/* Name */}
         <Text style={styles.label}>Full Name</Text>
         <View style={styles.inputContainer}>
@@ -231,6 +314,61 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: '700',
     color: '#fff',
+  },
+  avatarSection: {
+    alignItems: 'center',
+    marginBottom: 20,
+    marginTop: 10,
+  },
+  avatarWrapper: {
+    position: 'relative',
+    width: 100,
+    height: 100,
+  },
+  avatarImg: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: colors.primary,
+  },
+  avatarPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.primaryFaded,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 3,
+    borderColor: colors.primary,
+  },
+  avatarText: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.primary,
+  },
+  avatarEditBtn: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: colors.primary,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.card,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  avatarHint: {
+    fontSize: 12,
+    color: colors.textLight,
+    marginTop: 8,
   },
 });
 
