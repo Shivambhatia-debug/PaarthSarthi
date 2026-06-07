@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../constants/colors';
+import config from '../constants/config';
 import { getInitials, cleanTags } from '../utils/helpers';
 
 const MentorCard = ({ mentor, onPress, compact = false }) => {
@@ -17,13 +18,20 @@ const MentorCard = ({ mentor, onPress, compact = false }) => {
     sessionPrice,
     isFeatured,
   } = mentor;
+
+  const getImageUrl = (url) => {
+    if (!url) return null;
+    if (url.startsWith('http')) return url;
+    return `${config.API_BASE_URL}${url}`;
+  };
+
   const cleanSpecs = cleanTags(specialization);
 
   if (compact) {
     return (
       <TouchableOpacity style={styles.compactCard} onPress={onPress} activeOpacity={0.85}>
         {photo ? (
-          <Image source={{ uri: photo }} style={styles.compactAvatar} />
+          <Image source={{ uri: getImageUrl(photo) }} style={styles.compactAvatar} />
         ) : (
           <View style={[styles.compactAvatar, styles.avatarPlaceholder]}>
             <Text style={styles.avatarText}>{getInitials(name)}</Text>
@@ -49,7 +57,7 @@ const MentorCard = ({ mentor, onPress, compact = false }) => {
       )}
       <View style={styles.row}>
         {photo ? (
-          <Image source={{ uri: photo }} style={styles.avatar} />
+          <Image source={{ uri: getImageUrl(photo) }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <Text style={styles.avatarTextLarge}>{getInitials(name)}</Text>
@@ -90,7 +98,7 @@ const MentorCard = ({ mentor, onPress, compact = false }) => {
 
       <View style={styles.footer}>
         <Text style={styles.price}>
-          {sessionPrice ? `₹${sessionPrice}/session` : 'Free consultation'}
+          {'Free consultation'}
         </Text>
         <View style={styles.bookBtn}>
           <Text style={styles.bookBtnText}>Book Now</Text>
