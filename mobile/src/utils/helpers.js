@@ -1,3 +1,11 @@
+import config from '../constants/config';
+
+export const resolveImageUrl = (url) => {
+  if (!url) return null;
+  if (url.startsWith('http')) return url;
+  return `${config.API_BASE_URL}${url}`;
+};
+
 export const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
