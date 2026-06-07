@@ -34,19 +34,23 @@ exports.bookMeeting = async (req, res) => {
     }
 
     // Set alumni or mentor
-    if (meetingWith === 'alumni' && alumniId) {
-      const alumni = await Alumni.findById(alumniId);
+    const finalAlumniId = alumniId || req.body.alumni;
+    const finalMentorId = mentorId || req.body.mentor;
+
+    if (meetingWith === 'alumni' && finalAlumniId) {
+      const alumni = await Alumni.findById(finalAlumniId);
       if (!alumni) return sendError(res, 404, 'Alumni not found');
-      meetingData.alumni = alumniId;
+      meetingData.alumni = finalAlumniId;
       meetingData.meetingPersonName = alumni.name;
-      meetingData.amount = alumni.meetingRate || 0;
-    } else if (meetingWith === 'mentor' && mentorId) {
-      const mentor = await Mentor.findById(mentorId);
+      meetingData.amount = 0; // Free session
+    } else if (meetingWith === 'mentor' && finalMentorId) {
+      const mentor = await Mentor.findById(finalMentorId);
       if (!mentor) return sendError(res, 404, 'Mentor not found');
-      meetingData.mentor = mentorId;
+      meetingData.mentor = finalMentorId;
       meetingData.meetingPersonName = mentor.name;
-      meetingData.amount = mentor.sessionPrice || 0;
+      meetingData.amount = 0; // Free session
     }
+
 
     const meeting = await Meeting.create(meetingData);
 
@@ -113,11 +117,28 @@ exports.getMeetings = async (req, res) => {
 // @access  Private
 exports.getMyMeetings = async (req, res) => {
   try {
-    const meetings = await Meeting.find({ user: req.user.id })
+    let query = {};
+    if (req.user.role === 'mentor') {
+      query = { mentor: req.user.mentorProfile };
+    } else {
+      query = { user: req.user.id };
+    }
+
+    if (req.query.status) {
+      query.status = req.query.status;
+    }
+
+    let meetingsQuery = Meeting.find(query)
+      .populate('user', 'name email phone avatar')
       .populate('alumni', 'name photo designation')
       .populate('mentor', 'name photo designation')
       .sort({ date: -1 });
 
+    if (req.query.limit) {
+      meetingsQuery = meetingsQuery.limit(parseInt(req.query.limit, 10));
+    }
+
+    const meetings = await meetingsQuery;
     sendResponse(res, 200, { meetings });
   } catch (error) {
     sendError(res, 500, error.message);
