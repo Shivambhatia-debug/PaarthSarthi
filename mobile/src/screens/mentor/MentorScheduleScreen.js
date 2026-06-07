@@ -23,7 +23,7 @@ const MentorScheduleScreen = ({ navigation }) => {
 
   const fetchMeetings = useCallback(async () => {
     try {
-      const response = await api.get('/meetings?limit=50');
+      const response = await api.get('/meetings/my?limit=50');
       setMeetings(response.data?.meetings || []);
     } catch (error) {
       console.error('Error fetching meetings:', error);
@@ -34,8 +34,11 @@ const MentorScheduleScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    fetchMeetings();
-  }, [fetchMeetings]);
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchMeetings();
+    });
+    return unsubscribe;
+  }, [navigation, fetchMeetings]);
 
   const getStatusColor = (status) => {
     switch (status) {
