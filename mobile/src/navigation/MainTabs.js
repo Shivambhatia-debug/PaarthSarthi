@@ -4,21 +4,34 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import colors from '../constants/colors';
 
-// Screens
+// Screens - Home
 import HomeScreen from '../screens/home/HomeScreen';
 import CoursesScreen from '../screens/courses/CoursesScreen';
 import CourseDetailScreen from '../screens/courses/CourseDetailScreen';
 import MentorsScreen from '../screens/mentors/MentorsScreen';
 import MentorDetailScreen from '../screens/mentors/MentorDetailScreen';
 import BookMeetingScreen from '../screens/mentors/BookMeetingScreen';
+import NotificationsScreen from '../screens/notifications/NotificationsScreen';
+import AdmissionScreen from '../screens/admission/AdmissionScreen';
+
+// Screens - Chat
+import ChatListScreen from '../screens/chat/ChatListScreen';
+import ChatScreen from '../screens/chat/ChatScreen';
+
+// Screens - Community
+import CommunityScreen from '../screens/community/CommunityScreen';
+import CreatePostScreen from '../screens/community/CreatePostScreen';
+import PostDetailScreen from '../screens/community/PostDetailScreen';
+
+// Screens - Blog
 import BlogScreen from '../screens/blog/BlogScreen';
 import BlogDetailScreen from '../screens/blog/BlogDetailScreen';
+
+// Screens - Profile
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import EditProfileScreen from '../screens/profile/EditProfileScreen';
 import MyMeetingsScreen from '../screens/profile/MyMeetingsScreen';
 import ChangePasswordScreen from '../screens/profile/ChangePasswordScreen';
-import NotificationsScreen from '../screens/notifications/NotificationsScreen';
-import AdmissionScreen from '../screens/admission/AdmissionScreen';
 import SupportScreen from '../screens/profile/SupportScreen';
 
 const Tab = createBottomTabNavigator();
@@ -35,23 +48,28 @@ const HomeStack = () => (
     <Stack.Screen name="HomeMain" component={HomeScreen} />
     <Stack.Screen name="Notifications" component={NotificationsScreen} />
     <Stack.Screen name="Admission" component={AdmissionScreen} />
-  </Stack.Navigator>
-);
-
-// Courses Stack
-const CoursesStack = () => (
-  <Stack.Navigator screenOptions={screenOptions}>
     <Stack.Screen name="CoursesList" component={CoursesScreen} />
     <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
-  </Stack.Navigator>
-);
-
-// Mentors Stack
-const MentorsStack = () => (
-  <Stack.Navigator screenOptions={screenOptions}>
     <Stack.Screen name="MentorsList" component={MentorsScreen} />
     <Stack.Screen name="MentorDetail" component={MentorDetailScreen} />
     <Stack.Screen name="BookMeeting" component={BookMeetingScreen} />
+  </Stack.Navigator>
+);
+
+// Chat Stack
+const ChatStack = () => (
+  <Stack.Navigator screenOptions={screenOptions}>
+    <Stack.Screen name="ChatList" component={ChatListScreen} />
+    <Stack.Screen name="Chat" component={ChatScreen} />
+  </Stack.Navigator>
+);
+
+// Community Stack
+const CommunityStack = () => (
+  <Stack.Navigator screenOptions={screenOptions}>
+    <Stack.Screen name="CommunityMain" component={CommunityScreen} />
+    <Stack.Screen name="CreatePost" component={CreatePostScreen} />
+    <Stack.Screen name="PostDetail" component={PostDetailScreen} />
   </Stack.Navigator>
 );
 
@@ -86,11 +104,11 @@ const MainTabs = () => {
             case 'HomeTab':
               iconName = focused ? 'home' : 'home-outline';
               break;
-            case 'CoursesTab':
-              iconName = focused ? 'book' : 'book-outline';
+            case 'ChatTab':
+              iconName = focused ? 'chatbubbles' : 'chatbubbles-outline';
               break;
-            case 'MentorsTab':
-              iconName = focused ? 'people' : 'people-outline';
+            case 'CommunityTab':
+              iconName = focused ? 'globe' : 'globe-outline';
               break;
             case 'BlogTab':
               iconName = focused ? 'newspaper' : 'newspaper-outline';
@@ -123,8 +141,8 @@ const MainTabs = () => {
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeStack} options={{ tabBarLabel: 'Home' }} />
-      <Tab.Screen name="CoursesTab" component={CoursesStack} options={{ tabBarLabel: 'Courses' }} />
-      <Tab.Screen name="MentorsTab" component={MentorsStack} options={{ tabBarLabel: 'Mentors' }} />
+      <Tab.Screen name="ChatTab" component={ChatStack} options={{ tabBarLabel: 'Chat' }} />
+      <Tab.Screen name="CommunityTab" component={CommunityStack} options={{ tabBarLabel: 'Community' }} />
       <Tab.Screen name="BlogTab" component={BlogStack} options={{ tabBarLabel: 'Blog' }} />
       <Tab.Screen name="ProfileTab" component={ProfileStack} options={{ tabBarLabel: 'Profile' }} />
     </Tab.Navigator>
@@ -132,3 +150,4 @@ const MainTabs = () => {
 };
 
 export default MainTabs;
+
