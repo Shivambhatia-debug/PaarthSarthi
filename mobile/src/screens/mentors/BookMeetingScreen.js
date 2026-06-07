@@ -80,6 +80,7 @@ const BookMeetingScreen = ({ route, navigation }) => {
         user: user?.id || user?._id,
         meetingWith: 'mentor',
         mentor: mentor._id,
+        mentorId: mentor._id,
         meetingPersonName: mentor.name,
         subject: form.subject,
         description: form.description,
@@ -90,7 +91,7 @@ const BookMeetingScreen = ({ route, navigation }) => {
         },
         duration: form.duration,
         meetingType: form.meetingType,
-        amount: mentor.sessionPrice || 0,
+        amount: 0,
       });
 
       Alert.alert(
@@ -249,7 +250,7 @@ const BookMeetingScreen = ({ route, navigation }) => {
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Price</Text>
               <Text style={[styles.summaryValue, { color: colors.primary, fontWeight: '800' }]}>
-                {mentor.sessionPrice ? `₹${mentor.sessionPrice}` : 'Free'}
+                {'Free'}
               </Text>
             </View>
           </View>
