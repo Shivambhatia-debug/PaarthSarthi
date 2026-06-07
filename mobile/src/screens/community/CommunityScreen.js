@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import colors from '../../constants/colors';
-import { getInitials, formatTimeAgo } from '../../utils/helpers';
+import { getInitials, formatTimeAgo, resolveImageUrl } from '../../utils/helpers';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import EmptyState from '../../components/EmptyState';
 
@@ -118,7 +118,7 @@ const CommunityScreen = ({ navigation }) => {
         <View style={styles.authorRow}>
           {item.author?.avatar || item.authorAvatar ? (
             <Image
-              source={{ uri: item.author?.avatar || item.authorAvatar }}
+              source={{ uri: resolveImageUrl(item.author?.avatar || item.authorAvatar) }}
               style={styles.authorAvatar}
             />
           ) : (
