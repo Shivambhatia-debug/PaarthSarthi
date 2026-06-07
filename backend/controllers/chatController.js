@@ -1,6 +1,7 @@
 const Conversation = require('../models/Conversation');
 const Message = require('../models/Message');
 const User = require('../models/User');
+const Mentor = require('../models/Mentor');
 const { sendResponse, sendError, getPagination } = require('../utils/helpers');
 
 // @desc    Get all conversations for current user
@@ -44,10 +45,46 @@ exports.getConversations = async (req, res) => {
 // @access  Private
 exports.getOrCreateConversation = async (req, res) => {
   try {
-    const { userId } = req.body;
+    let { userId, mentorId } = req.body;
+
+    if (mentorId) {
+      const mentor = await Mentor.findById(mentorId);
+      if (!mentor) {
+        return sendError(res, 404, 'Mentor not found');
+      }
+
+      // Find user by email or by mentorProfile
+      let mentorUser = await User.findOne({
+        $or: [
+          { email: mentor.email.toLowerCase() },
+          { mentorProfile: mentor._id }
+        ]
+      });
+
+      if (!mentorUser) {
+        // Auto-create user for mentor to enable chat
+        mentorUser = await User.create({
+          name: mentor.name,
+          email: mentor.email.toLowerCase(),
+          phone: mentor.phone || '',
+          password: 'mentor_temp_password_2026', // will be hashed automatically by schema pre-save hook
+          role: 'mentor',
+          mentorProfile: mentor._id,
+          avatar: mentor.photo || '',
+          isVerified: true,
+          isActive: true
+        });
+      } else if (!mentorUser.mentorProfile) {
+        // Link mentor profile if not linked
+        mentorUser.mentorProfile = mentor._id;
+        await mentorUser.save();
+      }
+
+      userId = mentorUser._id.toString();
+    }
 
     if (!userId) {
-      return sendError(res, 400, 'Please provide userId to chat with');
+      return sendError(res, 400, 'Please provide userId or mentorId to chat with');
     }
 
     if (userId === req.user.id.toString()) {
