@@ -11,8 +11,8 @@ const {
 } = require('../controllers/meetingController');
 const { protect, authorize } = require('../middleware/auth');
 
-// Public booking (no auth required - so anyone can book)
-router.post('/', bookMeeting);
+// Book a meeting (requires authentication)
+router.post('/', protect, bookMeeting);
 
 // Authenticated user routes
 router.get('/my', protect, getMyMeetings);
