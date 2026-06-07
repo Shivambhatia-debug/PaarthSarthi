@@ -35,8 +35,11 @@ const MyMeetingsScreen = ({ navigation }) => {
   }, []);
 
   useEffect(() => {
-    fetchMeetings();
-  }, [fetchMeetings]);
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchMeetings();
+    });
+    return unsubscribe;
+  }, [navigation, fetchMeetings]);
 
   const handleCancel = (meeting) => {
     Alert.alert(
