@@ -57,6 +57,8 @@ const ProfileScreen = ({ navigation }) => {
     },
   ];
 
+  const [imageError, setImageError] = React.useState(false);
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -66,8 +68,12 @@ const ProfileScreen = ({ navigation }) => {
           style={styles.header}
         >
           <View style={styles.avatarWrap}>
-            {user?.avatar ? (
-              <Image source={{ uri: getAvatarUrl(user.avatar) }} style={styles.avatar} />
+            {user?.avatar && !imageError ? (
+              <Image 
+                source={{ uri: getAvatarUrl(user.avatar) }} 
+                style={styles.avatar} 
+                onError={() => setImageError(true)}
+              />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
                 <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
