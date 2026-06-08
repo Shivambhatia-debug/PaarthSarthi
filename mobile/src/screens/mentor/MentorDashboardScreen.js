@@ -31,6 +31,7 @@ const MentorDashboardScreen = ({ navigation }) => {
   const [upcomingMeetings, setUpcomingMeetings] = useState([]);
   const [myBlogs, setMyBlogs] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [imageError, setImageError] = useState(false);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -121,8 +122,12 @@ const MentorDashboardScreen = ({ navigation }) => {
         >
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
-              {user?.avatar ? (
-                <Image source={{ uri: resolveImageUrl(user.avatar) }} style={styles.userAvatar} />
+              {user?.avatar && !imageError ? (
+                <Image 
+                  source={{ uri: resolveImageUrl(user.avatar) }} 
+                  style={styles.userAvatar} 
+                  onError={() => setImageError(true)}
+                />
               ) : (
                 <View style={styles.userAvatarPlaceholder}>
                   <Text style={styles.userAvatarText}>{getInitials(user?.name)}</Text>
