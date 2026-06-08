@@ -34,6 +34,7 @@ const HomeScreen = ({ navigation }) => {
   const [blogs, setBlogs] = useState([]);
   const [communityPosts, setCommunityPosts] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [imageError, setImageError] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -75,7 +76,7 @@ const HomeScreen = ({ navigation }) => {
     { icon: 'calendar-outline', label: 'Book Session', color: colors.primary, screen: 'MentorsTab' },
     { icon: 'book-outline', label: 'Courses', color: colors.success, screen: 'CoursesList' },
     { icon: 'newspaper-outline', label: 'Blogs', color: colors.info, screen: 'BlogsList' },
-    { icon: 'person-outline', label: 'Profile', color: colors.secondary, screen: 'ProfileTab' },
+    { icon: 'school-outline', label: 'Admission', color: colors.secondary, screen: 'Admission' },
   ];
 
   return (
@@ -93,8 +94,12 @@ const HomeScreen = ({ navigation }) => {
         >
           <View style={styles.headerTop}>
             <View style={styles.headerLeftRow}>
-              {user?.avatar ? (
-                <Image source={{ uri: resolveImageUrl(user.avatar) }} style={styles.userAvatar} />
+              {user?.avatar && !imageError ? (
+                <Image 
+                  source={{ uri: resolveImageUrl(user.avatar) }} 
+                  style={styles.userAvatar} 
+                  onError={() => setImageError(true)}
+                />
               ) : (
                 <View style={styles.userAvatarPlaceholder}>
                   <Text style={styles.userAvatarText}>{getInitials(user?.name)}</Text>
