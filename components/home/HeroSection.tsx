@@ -1,6 +1,6 @@
 "use client"
 
-import { Shield, Play, ArrowRight, Users, GraduationCap, BookOpen, Rocket, ArrowUpRight, CheckCircle } from "lucide-react"
+import { Shield, Play, ArrowRight, Users, GraduationCap, BookOpen, Rocket, ArrowUpRight, CheckCircle, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
@@ -55,6 +55,11 @@ export function HeroSection({ visible, stats }: HeroSectionProps) {
                                 <Link href="/mentorship">
                                     <Play className="w-3 h-3 mr-1.5" /> Explore Platform
                                 </Link>
+                            </Button>
+                            <Button variant="outline" className="border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/10 hover:text-emerald-300 bg-emerald-500/[0.02] h-9 sm:h-10 px-5 sm:px-6 text-xs sm:text-sm rounded-lg" asChild>
+                                <a href="/ParthSarthi.apk" download="ParthSarthi.apk">
+                                    <Download className="w-3.5 h-3.5 mr-1.5 inline" /> Download App (34MB)
+                                </a>
                             </Button>
                         </div>
 
