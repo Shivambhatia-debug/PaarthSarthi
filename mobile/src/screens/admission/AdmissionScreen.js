@@ -1,73 +1,133 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
   ActivityIndicator,
-  KeyboardAvoidingView,
+  Animated,
+  Dimensions,
+  TextInput,
   Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../api/axios';
 import colors from '../../constants/colors';
-import GradientHeader from '../../components/GradientHeader';
 
-const COACHING_INSTITUTES = [
-  'ParthSarthi Knowledge Hub',
-  'Allen Career Institute',
-  'Physics Wallah (PW)',
-  'Resonance',
-  'FIITJEE',
-  'Aakash Institute',
-  'Other / Self-Guided',
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+// ──────────────────────────────────────
+// QUESTIONNAIRE DATA
+// ──────────────────────────────────────
+const CLASSES = [
+  { id: 'class_9', label: 'Class 9th', sub: 'Foundation & School Exams', emoji: '🎒', bg: '#EEF2FF', border: '#C7D2FE', text: '#4F46E5' },
+  { id: 'class_10', label: 'Class 10th', sub: 'Board Exam Preparation', emoji: '🏫', bg: '#ECFDF5', border: '#A7F3D0', text: '#059669' },
+  { id: 'class_11', label: 'Class 11th', sub: 'JEE/NEET Target Start', emoji: '📚', bg: '#FFFBEB', border: '#FDE68A', text: '#D97706' },
+  { id: 'class_12', label: 'Class 12th', sub: 'Boards + Entrance Exams', emoji: '🎓', bg: '#FDF2F8', border: '#FBCFE8', text: '#DB2777' },
+  { id: 'dropper', label: 'Dropper / Repeater', sub: 'Dedicated Target Prep', emoji: '🎯', bg: '#F5F3FF', border: '#DDD6FE', text: '#7C3AED' },
 ];
 
-const COURSES = [
-  'JEE (Main + Advanced) Prep',
-  'NEET-UG Prep',
-  'Foundation Course (Class 9-10)',
-  'Psychometric Counseling & Stream Selection',
-  'Career Mentorship & Internship Prep',
-  'Board Exam Prep (CBSE/ICSE/State)',
-  'Other Specialization',
+const GOALS = [
+  { id: 'jee', label: 'IIT-JEE Prep', sub: 'Engineering Entrance Target', emoji: '🚀', bg: '#EEF2FF', border: '#C7D2FE', text: '#4F46E5' },
+  { id: 'neet', label: 'NEET-UG Prep', sub: 'Medical Entrance Target', emoji: '🩺', bg: '#FDF2F8', border: '#FBCFE8', text: '#DB2777' },
+  { id: 'boards', label: 'Board Exams', sub: 'Aiming for 95%+ in Boards', emoji: '🏆', bg: '#ECFDF5', border: '#A7F3D0', text: '#059669' },
+  { id: 'coding', label: 'Coding & Tech', sub: 'Web Dev, Python, Internships', emoji: '💻', bg: '#F3F4F6', border: '#E5E7EB', text: '#374151' },
+  { id: 'counseling', label: 'Career Counseling', sub: 'Confused about stream or goals', emoji: '🧭', bg: '#FFFBEB', border: '#FDE68A', text: '#D97706' },
 ];
 
-const BOARDS = ['CBSE', 'ICSE', 'Bihar Board', 'UP Board', 'Other'];
-const CLASSES = ['Class 9', 'Class 10', 'Class 11', 'Class 12', 'College Graduate', 'Other'];
-const STREAMS = ['Science (PCM)', 'Science (PCB)', 'Commerce', 'Arts', 'General / None'];
+const STUDY_MODES = [
+  { id: 'online', label: 'Online Live Classes', sub: 'Learn from top mentors at home', emoji: '💻', icon: 'desktop-outline', bg: 'rgba(59, 130, 246, 0.08)', border: '#3B82F6', text: '#3B82F6' },
+  { id: 'offline', label: 'Offline Center / Hybrid', sub: 'Face-to-face coaching & support', emoji: '🏫', icon: 'school-outline', bg: 'rgba(16, 185, 129, 0.08)', border: '#10B981', text: '#10B981' },
+  { id: 'mentorship', label: '1-on-1 Personal Mentorship', sub: 'Daily guidance by IIT/NEET rankers', emoji: '🧠', icon: 'people-outline', bg: 'rgba(139, 92, 246, 0.08)', border: '#8B5CF6', text: '#8B5CF6' },
+];
+
+const CHALLENGES = [
+  { id: 'doubts', label: 'Clearing Complex Doubts', sub: 'Need fast answers to hard problems', emoji: '❓', bg: '#F3F4F6', border: '#E5E7EB', text: '#374151' },
+  { id: 'schedule', label: 'Structured Time-table', sub: 'Struggling with consistency & schedule', emoji: '📅', bg: '#FFFBEB', border: '#FDE68A', text: '#D97706' },
+  { id: 'guidance', label: 'Personal Guidance & Support', sub: 'No mentor to guide stream/career', emoji: '🤝', bg: '#EEF2FF', border: '#C7D2FE', text: '#4F46E5' },
+  { id: 'scores', label: 'Improving Test Marks', sub: 'Need tricks to score higher in exams', emoji: '📈', bg: '#ECFDF5', border: '#A7F3D0', text: '#059669' },
+];
 
 const AdmissionScreen = ({ navigation }) => {
   const { user } = useAuth();
-  
-  // States
-  const [step, setStep] = useState(1);
+  const insets = useSafeAreaInsets();
+
+  const [step, setStep] = useState(0); // 0: Class, 1: Goal, 2: Mode, 3: Challenge, 4: Review/Verify
+  const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [selectedMode, setSelectedMode] = useState(null);
+  const [selectedChallenge, setSelectedChallenge] = useState(null);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+  });
+
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Form Fields
-  const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    parentName: '',
-    parentPhone: '',
-    city: '',
-    state: '',
-    currentClass: '',
-    board: '',
-    schoolName: '',
-    stream: '',
-    yearOfPassing: '',
-    coachingInstitute: '',
-    course: '',
-    mode: 'both', // default
-    additionalNotes: '',
-  });
+  // Animations
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        phone: user.phone || '',
+        email: user.email || '',
+      });
+    }
+  }, [user]);
+
+  // Update progress bar
+  useEffect(() => {
+    const toValue = (step) / 4; // 0 to 1
+    Animated.timing(progressAnim, {
+      toValue,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  }, [step]);
+
+  const goTo = (nextStep) => {
+    const dir = nextStep > step ? 1 : -1;
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: dir * -30, duration: 120, useNativeDriver: true }),
+    ]).start(() => {
+      setStep(nextStep);
+      slideAnim.setValue(dir * 30);
+      Animated.parallel([
+        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.spring(slideAnim, { toValue: 0, friction: 8, tension: 40, useNativeDriver: true }),
+      ]).start();
+    });
+  };
+
+  const handleBack = () => {
+    if (step === 0) {
+      navigation.goBack();
+    } else {
+      goTo(step - 1);
+    }
+  };
+
+  const handleSelectOption = (value, setter, nextStep) => {
+    setter(value);
+    // Tiny delay for a premium feeling, letting the user see the selection highlight before transitioning
+    setTimeout(() => {
+      goTo(nextStep);
+    }, 250);
+  };
 
   const updateField = (field, val) => {
     setFormData((prev) => ({ ...prev, [field]: val }));
@@ -80,117 +140,78 @@ const AdmissionScreen = ({ navigation }) => {
     }
   };
 
-  // Step 1 Validation
-  const validateStep1 = () => {
+  const handleSubmit = async () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
+    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
+    else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) newErrors.phone = 'Enter a valid 10-digit number';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email address';
-    
-    if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
-    else if (!/^\d{10}$/.test(formData.phone.replace(/[^0-9]/g, ''))) {
-      newErrors.phone = 'Phone must be exactly 10 digits';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
     }
 
-    if (formData.parentPhone && !/^\d{10}$/.test(formData.parentPhone.replace(/[^0-9]/g, ''))) {
-      newErrors.parentPhone = 'Parent phone must be exactly 10 digits';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Step 3 Validation
-  const validateStep3 = () => {
-    const newErrors = {};
-    if (!formData.coachingInstitute) newErrors.coachingInstitute = 'Please select a coaching institute';
-    if (!formData.course) newErrors.course = 'Please select your target course';
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleNext = () => {
-    if (step === 1) {
-      if (validateStep1()) setStep(2);
-    } else if (step === 2) {
-      setStep(3);
-    }
-  };
-
-  const handlePrev = () => {
-    if (step > 1) setStep(step - 1);
-  };
-
-  const handleSubmit = async () => {
-    if (!validateStep3()) return;
-    
     setLoading(true);
     try {
-      // Clean phone numbers
-      const payload = {
-        ...formData,
-        phone: formData.phone.replace(/[^0-9]/g, ''),
-        parentPhone: formData.parentPhone.replace(/[^0-9]/g, ''),
-      };
-      
-      await api.post('/admissions', payload);
+      const clsName = CLASSES.find(c => c.id === selectedClass)?.label || '';
+      const goalName = GOALS.find(g => g.id === selectedGoal)?.label || '';
+      const modeName = STUDY_MODES.find(m => m.id === selectedMode)?.label || '';
+      const challengeName = CHALLENGES.find(ch => ch.id === selectedChallenge)?.label || '';
+
+      await api.post('/admissions', {
+        name: formData.name,
+        phone: formData.phone.replace(/\D/g, ''),
+        email: formData.email,
+        currentClass: clsName,
+        course: goalName || 'General Discovery',
+        coachingInstitute: 'ParthSarthi Knowledge Hub',
+        mode: selectedMode === 'online' ? 'online' : selectedMode === 'offline' ? 'offline' : 'both',
+        stream: selectedGoal === 'jee' ? 'Science (PCM)' : selectedGoal === 'neet' ? 'Science (PCB)' : 'General',
+        additionalNotes: `Student Discovery Profile. Class: ${clsName}, Target Goal: ${goalName}, Preferred Mode: ${modeName}, Main Challenge: ${challengeName}`,
+      });
       setSubmitted(true);
     } catch (e) {
-      console.error('Admission submission error:', e);
-      setErrors({ submit: e.response?.data?.message || 'Server error. Please try again.' });
+      setErrors({ submit: e.response?.data?.message || 'Something went wrong. Please try again.' });
     } finally {
       setLoading(false);
     }
   };
 
-  // Render Step Indicators
-  const renderStepIndicator = () => (
-    <View style={styles.indicatorContainer}>
-      <View style={styles.stepIndicator}>
-        <View style={[styles.stepCircle, step >= 1 && styles.stepCircleActive]}>
-          <Text style={[styles.stepNumber, step >= 1 && styles.stepNumberActive]}>1</Text>
-        </View>
-        <Text style={[styles.indicatorLabel, step === 1 && styles.indicatorLabelActive]}>Contact</Text>
-      </View>
-      
-      <View style={[styles.connector, step >= 2 && styles.connectorActive]} />
+  // Progress percentage format
+  const progressWidth = progressAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0%', '100%'],
+  });
 
-      <View style={styles.stepIndicator}>
-        <View style={[styles.stepCircle, step >= 2 && styles.stepCircleActive]}>
-          <Text style={[styles.stepNumber, step >= 2 && styles.stepNumberActive]}>2</Text>
-        </View>
-        <Text style={[styles.indicatorLabel, step === 2 && styles.indicatorLabelActive]}>Academic</Text>
-      </View>
-
-      <View style={[styles.connector, step >= 3 && styles.connectorActive]} />
-
-      <View style={styles.stepIndicator}>
-        <View style={[styles.stepCircle, step >= 3 && styles.stepCircleActive]}>
-          <Text style={[styles.stepNumber, step >= 3 && styles.stepNumberActive]}>3</Text>
-        </View>
-        <Text style={[styles.indicatorLabel, step === 3 && styles.indicatorLabelActive]}>Program</Text>
-      </View>
-    </View>
-  );
-
+  // ──────────────────────────────────────
+  // SUCCESS SCREEN
+  // ──────────────────────────────────────
   if (submitted) {
     return (
-      <View style={styles.successContainer}>
-        <View style={styles.successCard}>
-          <View style={styles.successIconCircle}>
-            <Ionicons name="checkmark-done" size={48} color={colors.primary} />
-          </View>
-          <Text style={styles.successTitle}>Application Submitted!</Text>
-          <Text style={styles.successSubtitle}>
-            Your admission counseling request has been registered. Our career counselors will reach out to you within 24 hours.
+      <View style={s.successContainer}>
+        <View style={s.successCard}>
+          <LinearGradient
+            colors={['#10B981', '#059669']}
+            style={s.successIconCircle}
+          >
+            <Ionicons name="checkmark-done" size={44} color="#fff" />
+          </LinearGradient>
+          <Text style={s.successTitle}>🎉 Preferences Registered!</Text>
+          <Text style={s.successSubtitle}>
+            Thank you, {formData.name?.split(' ')[0] || 'Student'}! We have captured your academic preferences.
+          </Text>
+          <View style={s.successDivider} />
+          
+          <Ionicons name="chatbubbles-outline" size={32} color={colors.primary} style={{ marginBottom: 12 }} />
+          <Text style={s.successHighlightText}>We will connect to you soon!</Text>
+          <Text style={s.successSecondaryText}>
+            Our expert counselor will call you on your registered mobile number ({formData.phone}) to schedule your free guidance session.
           </Text>
           
-          <TouchableOpacity
-            style={styles.doneBtn}
-            onPress={() => navigation.navigate('HomeMain')}
-          >
-            <Text style={styles.doneBtnText}>Go to Home</Text>
+          <TouchableOpacity style={s.successBtn} onPress={() => navigation.navigate('HomeMain')}>
+            <Text style={s.successBtnText}>Back to Home</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -200,408 +221,517 @@ const AdmissionScreen = ({ navigation }) => {
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
+      style={s.container}
     >
-      <GradientHeader title="Apply for Admission" subtitle="Auto-filled from your profile details" />
-      
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {renderStepIndicator()}
-
-        {errors.submit && (
-          <View style={styles.errorBanner}>
-            <Ionicons name="alert-circle-outline" size={20} color={colors.error} />
-            <Text style={styles.errorBannerText}>{errors.submit}</Text>
-          </View>
-        )}
-
-        {/* Step 1: Personal Details */}
-        {step === 1 && (
-          <View style={styles.formSection}>
-            <Text style={styles.sectionHeading}>Personal & Contact Details</Text>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Full Name <Text style={styles.required}>*</Text></Text>
-              <View style={[styles.inputWrapper, errors.name && styles.inputError]}>
-                <Ionicons name="person-outline" size={18} color={colors.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your name"
-                  placeholderTextColor={colors.textLight}
-                  value={formData.name}
-                  onChangeText={(val) => updateField('name', val)}
-                />
-              </View>
-              {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Email Address <Text style={styles.required}>*</Text></Text>
-              <View style={[styles.inputWrapper, errors.email && styles.inputError]}>
-                <Ionicons name="mail-outline" size={18} color={colors.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your email"
-                  placeholderTextColor={colors.textLight}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={formData.email}
-                  onChangeText={(val) => updateField('email', val)}
-                />
-              </View>
-              {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Phone Number <Text style={styles.required}>*</Text></Text>
-              <View style={[styles.inputWrapper, errors.phone && styles.inputError]}>
-                <Ionicons name="call-outline" size={18} color={colors.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="10-digit mobile number"
-                  placeholderTextColor={colors.textLight}
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                  value={formData.phone}
-                  onChangeText={(val) => updateField('phone', val)}
-                />
-              </View>
-              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
-            </View>
-
-            <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={styles.inputLabel}>City</Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="E.g., Patna"
-                    placeholderTextColor={colors.textLight}
-                    value={formData.city}
-                    onChangeText={(val) => updateField('city', val)}
-                  />
-                </View>
-              </View>
-              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                <Text style={styles.inputLabel}>State</Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="E.g., Bihar"
-                    placeholderTextColor={colors.textLight}
-                    value={formData.state}
-                    onChangeText={(val) => updateField('state', val)}
-                  />
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Parent's Name</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="people-outline" size={18} color={colors.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter father / mother name"
-                  placeholderTextColor={colors.textLight}
-                  value={formData.parentName}
-                  onChangeText={(val) => updateField('parentName', val)}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Parent's Phone Number</Text>
-              <View style={[styles.inputWrapper, errors.parentPhone && styles.inputError]}>
-                <Ionicons name="call-outline" size={18} color={colors.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="10-digit mobile number"
-                  placeholderTextColor={colors.textLight}
-                  keyboardType="phone-pad"
-                  maxLength={10}
-                  value={formData.parentPhone}
-                  onChangeText={(val) => updateField('parentPhone', val)}
-                />
-              </View>
-              {errors.parentPhone && <Text style={styles.errorText}>{errors.parentPhone}</Text>}
-            </View>
-          </View>
-        )}
-
-        {/* Step 2: Academic Details */}
-        {step === 2 && (
-          <View style={styles.formSection}>
-            <Text style={styles.sectionHeading}>Academic Information</Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Current Grade / Status</Text>
-              <View style={styles.chipContainer}>
-                {CLASSES.map((cls) => (
-                  <TouchableOpacity
-                    key={cls}
-                    style={[styles.chip, formData.currentClass === cls && styles.chipActive]}
-                    onPress={() => updateField('currentClass', cls)}
-                  >
-                    <Text style={[styles.chipText, formData.currentClass === cls && styles.chipTextActive]}>
-                      {cls}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Educational Board</Text>
-              <View style={styles.chipContainer}>
-                {BOARDS.map((bd) => (
-                  <TouchableOpacity
-                    key={bd}
-                    style={[styles.chip, formData.board === bd && styles.chipActive]}
-                    onPress={() => updateField('board', bd)}
-                  >
-                    <Text style={[styles.chipText, formData.board === bd && styles.chipTextActive]}>
-                      {bd}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Choose Academic Stream</Text>
-              <View style={styles.chipContainer}>
-                {STREAMS.map((st) => (
-                  <TouchableOpacity
-                    key={st}
-                    style={[styles.chip, formData.stream === st && styles.chipActive]}
-                    onPress={() => updateField('stream', st)}
-                  >
-                    <Text style={[styles.chipText, formData.stream === st && styles.chipTextActive]}>
-                      {st}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>School / College Name</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="business-outline" size={18} color={colors.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter school or college name"
-                  placeholderTextColor={colors.textLight}
-                  value={formData.schoolName}
-                  onChangeText={(val) => updateField('schoolName', val)}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Year of Passing</Text>
-              <View style={styles.inputWrapper}>
-                <Ionicons name="calendar-outline" size={18} color={colors.textLight} style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="E.g., 2026"
-                  placeholderTextColor={colors.textLight}
-                  keyboardType="numeric"
-                  maxLength={4}
-                  value={formData.yearOfPassing}
-                  onChangeText={(val) => updateField('yearOfPassing', val)}
-                />
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Step 3: Coaching / Course Preference */}
-        {step === 3 && (
-          <View style={styles.formSection}>
-            <Text style={styles.sectionHeading}>Coaching Preferences</Text>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Target Coaching Institute <Text style={styles.required}>*</Text></Text>
-              <View style={styles.listSelector}>
-                {COACHING_INSTITUTES.map((inst) => (
-                  <TouchableOpacity
-                    key={inst}
-                    style={[
-                      styles.listItem,
-                      formData.coachingInstitute === inst && styles.listItemActive,
-                    ]}
-                    onPress={() => updateField('coachingInstitute', inst)}
-                  >
-                    <Ionicons
-                      name={formData.coachingInstitute === inst ? 'radio-button-on' : 'radio-button-off'}
-                      size={18}
-                      color={formData.coachingInstitute === inst ? colors.primary : colors.textLight}
-                    />
-                    <Text style={[styles.listItemText, formData.coachingInstitute === inst && styles.listItemTextActive]}>
-                      {inst}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {errors.coachingInstitute && <Text style={styles.errorText}>{errors.coachingInstitute}</Text>}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Target Program / Course <Text style={styles.required}>*</Text></Text>
-              <View style={styles.listSelector}>
-                {COURSES.map((crs) => (
-                  <TouchableOpacity
-                    key={crs}
-                    style={[
-                      styles.listItem,
-                      formData.course === crs && styles.listItemActive,
-                    ]}
-                    onPress={() => updateField('course', crs)}
-                  >
-                    <Ionicons
-                      name={formData.course === crs ? 'radio-button-on' : 'radio-button-off'}
-                      size={18}
-                      color={formData.course === crs ? colors.primary : colors.textLight}
-                    />
-                    <Text style={[styles.listItemText, formData.course === crs && styles.listItemTextActive]}>
-                      {crs}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-              {errors.course && <Text style={styles.errorText}>{errors.course}</Text>}
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Preferred Study Mode</Text>
-              <View style={styles.row}>
-                {['online', 'offline', 'both'].map((m) => (
-                  <TouchableOpacity
-                    key={m}
-                    style={[
-                      styles.modeBtn,
-                      formData.mode === m && styles.modeBtnActive,
-                    ]}
-                    onPress={() => updateField('mode', m)}
-                  >
-                    <Text style={[styles.modeBtnText, formData.mode === m && styles.modeBtnTextActive]}>
-                      {m.toUpperCase()}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Additional Queries (Optional)</Text>
-              <View style={[styles.inputWrapper, { height: 100, alignItems: 'flex-start', paddingTop: 12 }]}>
-                <TextInput
-                  style={[styles.input, { height: '100%', textAlignVertical: 'top' }]}
-                  placeholder="Share details or coupon discount batch questions..."
-                  placeholderTextColor={colors.textLight}
-                  multiline
-                  numberOfLines={4}
-                  value={formData.additionalNotes}
-                  onChangeText={(val) => updateField('additionalNotes', val)}
-                />
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Navigation Actions */}
-        <View style={styles.actionRow}>
-          {step > 1 ? (
-            <TouchableOpacity style={styles.backBtn} onPress={handlePrev} disabled={loading}>
-              <Text style={styles.backBtnText}>Back</Text>
-            </TouchableOpacity>
-          ) : (
-            <View />
-          )}
-
-          {step < 3 ? (
-            <TouchableOpacity style={styles.nextBtn} onPress={handleNext}>
-              <Text style={styles.nextBtnText}>Next Step</Text>
-              <Ionicons name="arrow-forward-outline" size={16} color="#fff" />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <>
-                  <Text style={styles.submitBtnText}>Submit Form</Text>
-                  <Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
-                </>
-              )}
-            </TouchableOpacity>
-          )}
+      {/* Custom Header with back button & title */}
+      <View style={[s.header, { paddingTop: insets.top + 8 }]}>
+        <TouchableOpacity style={s.backBtn} onPress={handleBack}>
+          <Ionicons name="arrow-back" size={20} color="#fff" />
+        </TouchableOpacity>
+        <View style={{ flex: 1 }}>
+          <Text style={s.headerTitle}>Discovery Path</Text>
+          <Text style={s.headerSub}>Help us customize your mentorship</Text>
         </View>
+        <View style={s.stepBadge}>
+          <Text style={s.stepBadgeText}>{step + 1} / 5</Text>
+        </View>
+      </View>
+
+      {/* Progress Bar */}
+      <View style={s.progressBarBackground}>
+        <Animated.View style={[s.progressBarFill, { width: progressWidth }]} />
+      </View>
+
+      <ScrollView
+        contentContainerStyle={s.scrollContent}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Animated.View style={{ opacity: fadeAnim, transform: [{ translateX: slideAnim }] }}>
+          
+          {/* STEP 0: CLASS SELECTION */}
+          {step === 0 && (
+            <View>
+              <Text style={s.questionTitle}>Which class are you in? 🏫</Text>
+              <Text style={s.questionSub}>Select your current grade to view relevant programs.</Text>
+
+              {CLASSES.map((item) => {
+                const isSelected = selectedClass === item.id;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    activeOpacity={0.7}
+                    style={[
+                      s.selectionCard,
+                      isSelected && { borderColor: item.text, borderWidth: 1.5, backgroundColor: 'rgba(255,255,255,0.03)' }
+                    ]}
+                    onPress={() => handleSelectOption(item.id, setSelectedClass, 1)}
+                  >
+                    <View style={[s.emojiCircle, { backgroundColor: item.bg }]}>
+                      <Text style={s.emojiText}>{item.emoji}</Text>
+                    </View>
+                    <View style={s.cardInfo}>
+                      <Text style={[s.cardTitle, isSelected && { color: item.text, fontWeight: '800' }]}>
+                        {item.label}
+                      </Text>
+                      <Text style={s.cardSub}>{item.sub}</Text>
+                    </View>
+                    <View style={[
+                      s.checkOuter, 
+                      isSelected && { borderColor: item.text, backgroundColor: item.text }
+                    ]}>
+                      {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* STEP 1: GOAL SELECTION */}
+          {step === 1 && (
+            <View>
+              <Text style={s.questionTitle}>What is your target goal? 🚀</Text>
+              <Text style={s.questionSub}>Select the primary exam or area you want guidance in.</Text>
+
+              {GOALS.map((item) => {
+                const isSelected = selectedGoal === item.id;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    activeOpacity={0.7}
+                    style={[
+                      s.selectionCard,
+                      isSelected && { borderColor: item.text, borderWidth: 1.5, backgroundColor: 'rgba(255,255,255,0.03)' }
+                    ]}
+                    onPress={() => handleSelectOption(item.id, setSelectedGoal, 2)}
+                  >
+                    <View style={[s.emojiCircle, { backgroundColor: item.bg }]}>
+                      <Text style={s.emojiText}>{item.emoji}</Text>
+                    </View>
+                    <View style={s.cardInfo}>
+                      <Text style={[s.cardTitle, isSelected && { color: item.text, fontWeight: '800' }]}>
+                        {item.label}
+                      </Text>
+                      <Text style={s.cardSub}>{item.sub}</Text>
+                    </View>
+                    <View style={[
+                      s.checkOuter,
+                      isSelected && { borderColor: item.text, backgroundColor: item.text }
+                    ]}>
+                      {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* STEP 2: PREFERRED STUDY MODE */}
+          {step === 2 && (
+            <View>
+              <Text style={s.questionTitle}>How do you want to learn? 💡</Text>
+              <Text style={s.questionSub}>Choose your preferred method of study & mentorship support.</Text>
+
+              {STUDY_MODES.map((item) => {
+                const isSelected = selectedMode === item.id;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    activeOpacity={0.7}
+                    style={[
+                      s.selectionCard,
+                      isSelected && { borderColor: item.border, borderWidth: 1.5, backgroundColor: 'rgba(255,255,255,0.03)' }
+                    ]}
+                    onPress={() => handleSelectOption(item.id, setSelectedMode, 3)}
+                  >
+                    <View style={[s.emojiCircle, { backgroundColor: item.bg }]}>
+                      <Ionicons name={item.icon} size={22} color={item.border} />
+                    </View>
+                    <View style={s.cardInfo}>
+                      <Text style={[s.cardTitle, isSelected && { color: item.border, fontWeight: '800' }]}>
+                        {item.label}
+                      </Text>
+                      <Text style={s.cardSub}>{item.sub}</Text>
+                    </View>
+                    <View style={[
+                      s.checkOuter,
+                      isSelected && { borderColor: item.border, backgroundColor: item.border }
+                    ]}>
+                      {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* STEP 3: MAIN CHALLENGE */}
+          {step === 3 && (
+            <View>
+              <Text style={s.questionTitle}>What is your biggest study challenge? 🎯</Text>
+              <Text style={s.questionSub}>This helps our mentors address your exact requirements.</Text>
+
+              {CHALLENGES.map((item) => {
+                const isSelected = selectedChallenge === item.id;
+                return (
+                  <TouchableOpacity
+                    key={item.id}
+                    activeOpacity={0.7}
+                    style={[
+                      s.selectionCard,
+                      isSelected && { borderColor: item.text, borderWidth: 1.5, backgroundColor: 'rgba(255,255,255,0.03)' }
+                    ]}
+                    onPress={() => handleSelectOption(item.id, setSelectedChallenge, 4)}
+                  >
+                    <View style={[s.emojiCircle, { backgroundColor: item.bg }]}>
+                      <Text style={s.emojiText}>{item.emoji}</Text>
+                    </View>
+                    <View style={s.cardInfo}>
+                      <Text style={[s.cardTitle, isSelected && { color: item.text, fontWeight: '800' }]}>
+                        {item.label}
+                      </Text>
+                      <Text style={s.cardSub}>{item.sub}</Text>
+                    </View>
+                    <View style={[
+                      s.checkOuter,
+                      isSelected && { borderColor: item.text, backgroundColor: item.text }
+                    ]}>
+                      {isSelected && <Ionicons name="checkmark" size={14} color="#fff" />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
+
+          {/* STEP 4: REVIEW & VERIFY */}
+          {step === 4 && (
+            <View style={{ gap: 20 }}>
+              <Text style={s.questionTitle}>Review & Confirm Details 📝</Text>
+              <Text style={s.questionSub}>Just review your interests and contact info to request counseling.</Text>
+
+              {/* Selections Summary Grid */}
+              <View style={s.summaryCard}>
+                <Text style={s.summaryCardTitle}>📋 Your Selected Path</Text>
+                
+                <View style={s.summaryRow}>
+                  <View style={s.summaryItem}>
+                    <Text style={s.summaryLabel}>Grade / Class</Text>
+                    <Text style={s.summaryValue}>
+                      {CLASSES.find(c => c.id === selectedClass)?.emoji} {CLASSES.find(c => c.id === selectedClass)?.label || 'Not set'}
+                    </Text>
+                  </View>
+                  <View style={s.summaryItem}>
+                    <Text style={s.summaryLabel}>Target Exam</Text>
+                    <Text style={s.summaryValue}>
+                      {GOALS.find(g => g.id === selectedGoal)?.emoji} {GOALS.find(g => g.id === selectedGoal)?.label || 'Not set'}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={s.summaryDivider} />
+
+                <View style={s.summaryRow}>
+                  <View style={s.summaryItem}>
+                    <Text style={s.summaryLabel}>Study Style</Text>
+                    <Text style={s.summaryValue}>
+                      {STUDY_MODES.find(m => m.id === selectedMode)?.emoji} {STUDY_MODES.find(m => m.id === selectedMode)?.label || 'Not set'}
+                    </Text>
+                  </View>
+                  <View style={s.summaryItem}>
+                    <Text style={s.summaryLabel}>Core Bottleneck</Text>
+                    <Text style={s.summaryValue}>
+                      {CHALLENGES.find(ch => ch.id === selectedChallenge)?.emoji} {CHALLENGES.find(ch => ch.id === selectedChallenge)?.label || 'Not set'}
+                    </Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity style={s.editPrefBtn} onPress={() => goTo(0)}>
+                  <Ionicons name="pencil-outline" size={14} color={colors.primary} />
+                  <Text style={s.editPrefText}>Edit preferences</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Contact Information Form */}
+              <View style={s.formCard}>
+                <Text style={s.formCardTitle}>📞 Contact Information</Text>
+                <Text style={s.formCardSub}>Mentors will reach out on these credentials.</Text>
+
+                {errors.submit && (
+                  <View style={s.errorBanner}>
+                    <Ionicons name="alert-circle" size={16} color={colors.error} />
+                    <Text style={s.errorBannerText}>{errors.submit}</Text>
+                  </View>
+                )}
+
+                <View style={s.inputGroup}>
+                  <Text style={s.inputLabel}>Name</Text>
+                  <View style={[s.inputWrap, errors.name && s.inputError]}>
+                    <Ionicons name="person-outline" size={18} color={colors.textLight} />
+                    <TextInput
+                      style={s.textInput}
+                      placeholder="Enter your name"
+                      placeholderTextColor={colors.textLight}
+                      value={formData.name}
+                      onChangeText={(v) => updateField('name', v)}
+                    />
+                  </View>
+                  {errors.name && <Text style={s.errText}>{errors.name}</Text>}
+                </View>
+
+                <View style={s.inputGroup}>
+                  <Text style={s.inputLabel}>WhatsApp / Mobile Number</Text>
+                  <View style={[s.inputWrap, errors.phone && s.inputError]}>
+                    <Ionicons name="call-outline" size={18} color={colors.textLight} />
+                    <TextInput
+                      style={s.textInput}
+                      placeholder="10 digit number"
+                      placeholderTextColor={colors.textLight}
+                      keyboardType="phone-pad"
+                      maxLength={10}
+                      value={formData.phone}
+                      onChangeText={(v) => updateField('phone', v)}
+                    />
+                  </View>
+                  {errors.phone && <Text style={s.errText}>{errors.phone}</Text>}
+                </View>
+
+                <View style={s.inputGroup}>
+                  <Text style={s.inputLabel}>Email ID</Text>
+                  <View style={[s.inputWrap, errors.email && s.inputError]}>
+                    <Ionicons name="mail-outline" size={18} color={colors.textLight} />
+                    <TextInput
+                      style={s.textInput}
+                      placeholder="name@email.com"
+                      placeholderTextColor={colors.textLight}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={formData.email}
+                      onChangeText={(v) => updateField('email', v)}
+                    />
+                  </View>
+                  {errors.email && <Text style={s.errText}>{errors.email}</Text>}
+                </View>
+              </View>
+
+              {/* Submit Button */}
+              <TouchableOpacity
+                style={s.submitBtn}
+                onPress={handleSubmit}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                <LinearGradient
+                  colors={[colors.primary, colors.primaryDark]}
+                  style={s.submitBtnGrad}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <>
+                      <Text style={s.submitBtnText}>Submit Details</Text>
+                      <Ionicons name="arrow-forward-outline" size={18} color="#fff" />
+                    </>
+                  )}
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
+          )}
+
+        </Animated.View>
         <View style={{ height: 40 }} />
       </ScrollView>
     </KeyboardAvoidingView>
   );
 };
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  scrollContent: {
-    padding: 20,
-  },
-  indicatorContainer: {
+  header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 24,
-    paddingHorizontal: 10,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    backgroundColor: colors.card,
   },
-  stepIndicator: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  stepCircle: {
+  backBtn: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#fff',
+  },
+  headerSub: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  stepBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  stepBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.primary,
+  },
+  progressBarBackground: {
+    height: 3,
+    backgroundColor: colors.border,
+    width: '100%',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+  },
+  scrollContent: {
+    padding: 18,
+  },
+  questionTitle: {
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 6,
+  },
+  questionSub: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: 20,
+    lineHeight: 18,
+  },
+  selectionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.card,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+  },
+  emojiCircle: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  emojiText: {
+    fontSize: 22,
+  },
+  cardInfo: {
+    flex: 1,
+  },
+  cardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  cardSub: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 3,
+  },
+  checkOuter: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     borderWidth: 1.5,
     borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
   },
-  stepCircleActive: {
-    backgroundColor: colors.primaryFaded,
-    borderColor: colors.primary,
+  summaryCard: {
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  stepNumber: {
+  summaryCardTitle: {
     fontSize: 14,
-    fontWeight: '700',
+    fontWeight: '800',
+    color: colors.primary,
+    marginBottom: 14,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  summaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  summaryItem: {
+    flex: 1,
+    marginRight: 10,
+  },
+  summaryLabel: {
+    fontSize: 11,
     color: colors.textLight,
   },
-  stepNumberActive: {
+  summaryValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#fff',
+    marginTop: 4,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: 12,
+  },
+  editPrefBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: colors.primary + '30',
+    borderRadius: 10,
+    paddingVertical: 8,
+    marginTop: 12,
+    backgroundColor: colors.primary + '05',
+  },
+  editPrefText: {
+    fontSize: 12,
+    fontWeight: '700',
     color: colors.primary,
   },
-  indicatorLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: colors.textLight,
+  formCard: {
+    backgroundColor: colors.card,
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  indicatorLabelActive: {
-    color: colors.textWhite,
+  formCardTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 2,
   },
-  connector: {
-    flex: 1,
-    height: 2,
-    backgroundColor: colors.border,
+  formCardSub: {
+    fontSize: 12,
+    color: colors.textSecondary,
     marginBottom: 16,
-  },
-  connectorActive: {
-    backgroundColor: colors.primary,
   },
   errorBanner: {
     flexDirection: 'row',
@@ -610,46 +740,27 @@ const styles = StyleSheet.create({
     backgroundColor: colors.errorLight,
     padding: 12,
     borderRadius: 10,
-    marginBottom: 20,
+    marginBottom: 16,
   },
   errorBannerText: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.error,
     fontWeight: '600',
     flex: 1,
   },
-  formSection: {
-    backgroundColor: colors.card,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 16,
-    marginBottom: 20,
-  },
-  sectionHeading: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: colors.textWhite,
-    marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-    paddingBottom: 8,
-  },
   inputGroup: {
-    marginBottom: 16,
+    marginBottom: 14,
   },
   inputLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textPrimary,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary,
     marginBottom: 6,
   },
-  required: {
-    color: colors.error,
-  },
-  inputWrapper: {
+  inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
     backgroundColor: colors.inputBg,
     borderWidth: 1,
     borderColor: colors.border,
@@ -660,148 +771,34 @@ const styles = StyleSheet.create({
   inputError: {
     borderColor: colors.error,
   },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
+  textInput: {
     flex: 1,
-    color: colors.textWhite,
+    color: '#fff',
     fontSize: 14,
   },
-  errorText: {
+  errText: {
     fontSize: 11,
     color: colors.error,
     marginTop: 4,
     fontWeight: '500',
   },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 4,
-  },
-  chip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: colors.inputBg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  chipActive: {
-    backgroundColor: colors.primaryFaded,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  chipTextActive: {
-    color: colors.primary,
-  },
-  listSelector: {
-    backgroundColor: colors.inputBg,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.divider,
-  },
-  listItemActive: {
-    backgroundColor: 'rgba(16, 185, 129, 0.05)',
-  },
-  listItemText: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  listItemTextActive: {
-    color: colors.textWhite,
-    fontWeight: '700',
-  },
-  modeBtn: {
-    flex: 1,
-    height: 40,
-    backgroundColor: colors.inputBg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginHorizontal: 4,
-  },
-  modeBtnActive: {
-    backgroundColor: colors.primaryFaded,
-    borderColor: colors.primary,
-  },
-  modeBtnText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textLight,
-  },
-  modeBtnTextActive: {
-    color: colors.primary,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  backBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: colors.inputBg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  backBtnText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  nextBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-  },
-  nextBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#fff',
-  },
   submitBtn: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginTop: 8,
+  },
+  submitBtnGrad: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
   },
   submitBtnText: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
     color: '#fff',
   },
-  // Success Screen Styles
   successContainer: {
     flex: 1,
     backgroundColor: colors.background,
@@ -814,47 +811,63 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: 30,
+    padding: 24,
     width: '100%',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
     elevation: 6,
   },
   successIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primaryFaded,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   successTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: colors.textWhite,
-    marginBottom: 10,
+    fontSize: 18,
+    fontWeight: '850',
+    color: '#fff',
+    marginBottom: 8,
     textAlign: 'center',
   },
   successSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 14,
   },
-  doneBtn: {
+  successDivider: {
+    height: 1,
+    width: '100%',
+    backgroundColor: colors.border,
+    marginVertical: 14,
+  },
+  successHighlightText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: colors.primary,
+    marginBottom: 6,
+    textAlign: 'center',
+  },
+  successSecondaryText: {
+    fontSize: 11,
+    color: colors.textLight,
+    lineHeight: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 8,
+  },
+  successBtn: {
     backgroundColor: colors.primary,
-    paddingHorizontal: 32,
-    paddingVertical: 14,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
     borderRadius: 12,
     width: '100%',
     alignItems: 'center',
   },
-  doneBtnText: {
+  successBtnText: {
     color: '#fff',
     fontWeight: '700',
     fontSize: 14,
