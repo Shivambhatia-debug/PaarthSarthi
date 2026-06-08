@@ -6,7 +6,8 @@
 const DEV_API_URL = 'http://192.168.1.7:5000';
 const PROD_API_URL = 'https://paarthsarthi.vercel.app'; 
 
-const isDev = __DEV__;
+// Forced to false for production release build
+const isDev = false; 
 
 export default {
   API_BASE_URL: PROD_API_URL,
