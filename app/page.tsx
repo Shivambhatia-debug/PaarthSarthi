@@ -6,6 +6,7 @@ import { mentorAPI, courseAPI, offerAPI, settingsAPI } from "@/lib/api"
 import { HeroSection } from "@/components/home/HeroSection"
 import { OffersSlideshow } from "@/components/home/OffersSlideshow"
 import { ServicesSection } from "@/components/home/ServicesSection"
+import { AppShowcaseSection } from "@/components/home/AppShowcaseSection"
 import { StartupIncubation } from "@/components/home/StartupIncubation"
 import { HowItWorks } from "@/components/home/HowItWorks"
 import { TrustSection } from "@/components/home/TrustSection"
@@ -113,6 +114,8 @@ export default function HomePage() {
       <HeroSection visible={visible} stats={stats} />
 
       <OffersSlideshow offers={offers} />
+
+      <AppShowcaseSection />
 
       <ServicesSection services={servicesInView} servicesData={SERVICES} />
 
