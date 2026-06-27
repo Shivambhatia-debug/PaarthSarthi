@@ -58,7 +58,7 @@ export function StartupManager({
                             <Label className={labelClass}>Startup Logo</Label>
                             <div className="flex items-center gap-3 mt-1">
                                 {(getEditingLogo() || form.logo) ? (
-                                    <img src={form.logo ? URL.createObjectURL(form.logo) : getImageUrl(getEditingLogo() || "") || ""} className="w-14 h-14 rounded-lg object-cover border border-white/[0.08]" alt="" />
+                                    <img src={getImageUrl(form.logo || getEditingLogo() || "") || ""} className="w-14 h-14 rounded-lg object-cover border border-white/[0.08]" alt="" />
                                 ) : (
                                     <div className="w-14 h-14 rounded-lg bg-white/[0.04] border border-dashed border-white/[0.12] flex items-center justify-center">
                                         <Camera className="w-5 h-5 text-gray-500" />
