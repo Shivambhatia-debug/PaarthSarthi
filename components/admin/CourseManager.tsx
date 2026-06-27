@@ -60,7 +60,7 @@ export function CourseManager({
                             <div className="flex items-center gap-3 mt-1">
                                 {(getEditingThumbnail() || form.thumbnail) ? (
                                     <div className="w-20 aspect-video rounded-lg overflow-hidden border border-white/[0.08]">
-                                        <img src={form.thumbnail ? URL.createObjectURL(form.thumbnail) : getImageUrl(getEditingThumbnail() || "") || ""} className="w-full h-full object-cover" alt="" />
+                                        <img src={getImageUrl(form.thumbnail || getEditingThumbnail() || "") || ""} className="w-full h-full object-cover" alt="" />
                                     </div>
                                 ) : (
                                     <div className="w-20 aspect-video rounded-lg bg-white/[0.04] border border-dashed border-white/[0.12] flex items-center justify-center">
