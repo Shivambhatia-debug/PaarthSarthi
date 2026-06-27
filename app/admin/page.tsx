@@ -125,6 +125,7 @@ export default function AdminPanel() {
     setFormLoading(true); setFormMsg({ type: "", text: "" })
     try {
       const fd = new FormData(); Object.entries(alumniForm).forEach(([k, v]) => {
+        if (["_id", "__v", "createdAt", "updatedAt", "photo", "addedBy"].includes(k) || (v && typeof v === "object")) return;
         if (k === "expertise") fd.append(k, JSON.stringify((v as string).split(",").map(s => s.trim()).filter(Boolean)))
         else fd.append(k, String(v))
       })
@@ -140,6 +141,7 @@ export default function AdminPanel() {
     setFormLoading(true); setFormMsg({ type: "", text: "" })
     try {
       const fd = new FormData(); Object.entries(mentorForm).forEach(([k, v]) => {
+        if (["_id", "__v", "createdAt", "updatedAt", "photo", "addedBy"].includes(k) || (v && typeof v === "object")) return;
         if (k === "specialization" || k === "languages") fd.append(k, JSON.stringify((v as string).split(",").map(s => s.trim()).filter(Boolean)))
         else fd.append(k, String(v))
       })
@@ -154,7 +156,10 @@ export default function AdminPanel() {
   const handleSaveCourse = async () => {
     setFormLoading(true); setFormMsg({ type: "", text: "" })
     try {
-      const fd = new FormData(); Object.entries(courseForm).forEach(([k, v]) => fd.append(k, String(v)))
+      const fd = new FormData(); Object.entries(courseForm).forEach(([k, v]) => {
+        if (["_id", "__v", "createdAt", "updatedAt", "thumbnail", "addedBy"].includes(k) || (v && typeof v === "object")) return;
+        fd.append(k, String(v))
+      })
       if (courseThumbnail) fd.append("thumbnail", courseThumbnail)
       if (editingId) await courseAPI.update(editingId, fd)
       else await courseAPI.create(fd)
