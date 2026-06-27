@@ -58,7 +58,7 @@ export function AlumniManager({
                             <Label className={labelClass}>Photo</Label>
                             <div className="flex items-center gap-3 mt-1">
                                 {(getEditingPhoto() || form.photo) ? (
-                                    <img src={form.photo ? URL.createObjectURL(form.photo) : getImageUrl(getEditingPhoto() || "") || ""} className="w-14 h-14 rounded-lg object-cover border border-white/[0.08]" alt="" />
+                                    <img src={getImageUrl(form.photo || getEditingPhoto() || "") || ""} className="w-14 h-14 rounded-lg object-cover border border-white/[0.08]" alt="" />
                                 ) : (
                                     <div className="w-14 h-14 rounded-lg bg-white/[0.04] border border-dashed border-white/[0.12] flex items-center justify-center">
                                         <Camera className="w-5 h-5 text-gray-500" />
