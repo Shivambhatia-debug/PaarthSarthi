@@ -200,7 +200,7 @@ export function PresenterDock() {
         <span className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-blue-500/0 via-cyan-300/60 to-emerald-400/0" aria-hidden />
         <span className="flex shrink-0 items-center gap-1.5 pl-1.5 pr-1 text-[12px] font-semibold uppercase tracking-wider text-gray-500" title="Presenter mode">
           <span className="h-2 w-2 rounded-full bg-gradient-to-br from-blue-400 via-cyan-300 to-emerald-400 shadow-[0_0_8px_rgba(34,211,238,0.9)]" />
-          <span className="hidden xl:inline">Presenter</span>
+          <span className="hidden 2xl:inline">Presenter</span>
         </span>
 
         {/* Role jumps 0-5 */}
@@ -316,7 +316,7 @@ export function PresenterDock() {
           className={cn(icon, 'text-rose-300 hover:bg-rose-500/10 hover:text-rose-200')}
         >
           <RotateCcw className="h-3.5 w-3.5" aria-hidden />
-          <span className={cn(kbd, 'hidden sm:inline')}>⇧R</span>
+          <span className={cn(kbd, 'hidden 2xl:inline')}>⇧R</span>
         </button>
         <button
           type="button"

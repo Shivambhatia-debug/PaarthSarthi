@@ -1,6 +1,6 @@
 'use client'
 
-/* /os-kit/runbook: unlinked presenter runbook for the 27 Oct DSTTE pitch. Pre-flight checklists,
+/* /os-kit/runbook: unlinked presenter runbook for the 28 Oct DSTTE pitch. Pre-flight checklists,
  * the 10-minute click path with timings, the 3-minute fallback, drop order, Q&A crib, hotkeys and the
  * printable T2 cue card (printed alone via printOnly). Checklist ticks and rehearsal laps are kept in
  * this browser only (localStorage, best effort). */

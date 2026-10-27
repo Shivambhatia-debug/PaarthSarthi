@@ -165,7 +165,7 @@ export function DriveShell({
           </span>
           <div className="min-w-0 flex-1">
             {bpLabel && <p className="hidden truncate text-[12px] leading-tight text-gray-500 sm:block">{bpLabel}</p>}
-            <h1 className="truncate text-[15px] font-semibold leading-tight text-white sm:text-base">{span(title)}</h1>
+            <h1 className="line-clamp-2 break-words text-[14px] font-semibold leading-[1.2] text-white sm:line-clamp-1 sm:text-base sm:leading-tight">{span(title)}</h1>
           </div>
 
           {timer != null && timer !== false && (

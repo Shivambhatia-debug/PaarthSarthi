@@ -288,7 +288,7 @@ export function stretchDrivesFor(personaId: PersonaId | PersonaRunId | null | un
   )
 }
 
-/** 'before' = eligible drives on the diagnostic date (Priya: 2 on 5 Oct); 'now' is computed. */
+/** 'before' = eligible drives on the diagnostic date (Priya: 2 on 6 Oct); 'now' is computed. */
 export const DRIVE_COUNTS: Record<PersonaRunId, { before: number | null; now: number }> = {
   priya: { before: 2, now: drivesFor('priya').length },
   rahul: { before: null, now: drivesFor('rahul').length },
@@ -319,10 +319,17 @@ function buildPoolContrib(): Record<string, number> {
   // students are interview-ready). Move the rest to the host polytechnic so the total stays d2.readyCount.
   const PURNEA_CAP = 9
   if (typeof out['pce-purnea'] === 'number' && out['pce-purnea'] > PURNEA_CAP) {
-    const extra = out['pce-purnea'] - PURNEA_CAP
+    let extra = out['pce-purnea'] - PURNEA_CAP
     out['pce-purnea'] = PURNEA_CAP
-    const host = typeof out['gp-muzaffarpur'] === 'number' ? 'gp-muzaffarpur' : ids.find((id) => id !== 'pce-purnea')
-    if (host) out[host] = (out[host] ?? 0) + extra
+    // Host polytechnic first, then the others; never above a college's own interview-ready count.
+    const order = ['gp-muzaffarpur', ...ids.filter((id) => id !== 'gp-muzaffarpur' && id !== 'pce-purnea')]
+    for (const id of order) {
+      if (extra <= 0 || typeof out[id] !== 'number') continue
+      const give = Math.min(extra, Math.max(0, batchOf(institutionById(id)!).interviewReady - out[id]))
+      out[id] += give
+      extra -= give
+    }
+    if (extra > 0) out['pce-purnea'] += extra
   }
   return out
 }
