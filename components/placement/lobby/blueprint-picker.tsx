@@ -10,6 +10,7 @@ import { BLUEPRINTS } from '@/lib/mock/blueprints'
 import type { Blueprint } from '@/lib/mock/types'
 import type { Bi } from '@/lib/os/i18n'
 import { Tr } from '@/components/os/tr-text'
+import { mockBi } from '@/components/placement/report/report-data'
 import { cn } from '@/lib/utils'
 
 const TRACK_ICON: Record<Blueprint['track'], LucideIcon> = {
@@ -237,7 +238,7 @@ export const BlueprintTable = forwardRef<HTMLDivElement, { blueprint: Blueprint 
           </tbody>
         </table>
       </div>
-      <p className="mt-3 text-[12px] italic text-gray-500">{b.footnote}</p>
+      <Tr b={mockBi(b.footnote)} as="p" className="mt-3 text-[12px] italic text-gray-500" />
     </div>
   )
 })

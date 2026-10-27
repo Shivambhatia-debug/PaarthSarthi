@@ -46,7 +46,7 @@ export default function PlacementPage() {
   const { state, personaId } = useDemo()
   if (!state.loggedIn) {
     return (
-      <div className="relative mx-auto flex min-h-[calc(100vh-140px)] w-full max-w-7xl items-start justify-center px-4 py-8 sm:items-center sm:px-6 sm:py-12">
+      <div className="relative mx-auto flex min-h-[calc(100vh-140px)] w-full max-w-7xl overflow-x-clip items-start justify-center px-4 py-8 sm:items-center sm:px-6 sm:py-12">
         <LoginCard />
       </div>
     )

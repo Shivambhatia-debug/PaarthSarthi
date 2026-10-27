@@ -1,12 +1,18 @@
 'use client'
 
+import { usePathname } from 'next/navigation'
 import { Languages } from 'lucide-react'
 import { useDemo, useLang } from '@/lib/os/demo-store'
 import { LANG_LABEL, PLANNED_LANGS, type Lang } from '@/lib/os/i18n'
 import { cn } from '@/lib/utils'
 
 const DEFAULT_OPTIONS: Lang[] = ['hi', 'en', 'hinglish']
-const SHORT: Record<Lang, string> = { hi: 'हिं', en: 'EN', hinglish: 'Hing' }
+const SHORT: Record<Lang, string> = { hi: 'हि', en: 'EN', hinglish: 'HG' }
+
+/** Officer screens (/tpo, /state, /state/brief) render Hinglish as English: only हिंदी and EN are offered there. */
+export function isOfficerPath(path: string | null | undefined): boolean {
+  return /^\/(tpo|state)(\/|$)/.test(path ?? '')
+}
 const COMPACT: Record<Lang, string> = { hi: 'हिंदी', en: 'EN', hinglish: 'Hinglish' }
 
 export interface LanguageSwitcherProps {
@@ -32,8 +38,10 @@ export function LanguageSwitcher({
 }: LanguageSwitcherProps) {
   const { set } = useDemo()
   const effective = useLang()
-  const current: Lang = value ?? effective
-  const opts = (Array.isArray(options) && options.length ? options : DEFAULT_OPTIONS).filter(
+  const path = usePathname()
+  const officer = value == null && !options && isOfficerPath(path)
+  const current: Lang = officer && effective === 'hinglish' ? 'en' : value ?? effective
+  const opts = (Array.isArray(options) && options.length ? options : officer ? (['hi', 'en'] as Lang[]) : DEFAULT_OPTIONS).filter(
     (o, i, a) => (o === 'en' || o === 'hi' || o === 'hinglish') && a.indexOf(o) === i,
   )
   const sm = size === 'sm' || compact

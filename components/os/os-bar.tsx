@@ -96,7 +96,7 @@ export function OSBar() {
   const strip = useScrollStrip<HTMLElement>('[aria-current="page"]', normPath(pathname))
 
   return (
-    <div className="os-chrome no-print sticky top-12 z-40 h-11 border-b border-white/[0.06] bg-[#0d1117]/85 backdrop-blur-xl">
+    <div className="os-chrome no-print sticky top-0 z-40 h-11 border-b border-white/[0.06] bg-[#0d1117]/85 backdrop-blur-xl">
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-blue-500/0 via-cyan-400/40 to-emerald-400/0"
         aria-hidden

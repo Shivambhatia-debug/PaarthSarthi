@@ -34,6 +34,10 @@ const UI = {
     hi: 'आपकी AI करियर काउंसलर: बोलकर या लिखकर, हिंदी में पूछें',
   } as Bi,
   gateTitle: { en: 'Talk to Sarthi Didi', hi: 'सारथी दीदी से बात करें' } as Bi,
+  gateHint: {
+    en: 'Use headphones if you can. Allow the microphone when Chrome asks.',
+    hi: 'हो सके तो हेडफ़ोन लगाएँ। Chrome पूछे तो माइक्रोफ़ोन की अनुमति दें।',
+  } as Bi,
   gateBody: {
     en: 'She answers aloud in Hindi, and every answer is also shown as text.',
     hi: 'दीदी हिंदी में बोलकर जवाब देंगी, और हर जवाब लिखा हुआ भी दिखेगा।',
@@ -99,7 +103,7 @@ export function SarthiDidi() {
   return (
     <section>
       <StepHeading title={UI.title} sub={UI.sub} icon={MessageCircleHeart} />
-      <AudioGate title={L(UI.gateTitle)} body={L(UI.gateBody)} startLabel={L(UI.start)} note={L(SPEECH_NOTE)} className="min-h-[46vh] py-2">
+      <AudioGate title={L(UI.gateTitle)} body={L(UI.gateBody)} startLabel={L(UI.start)} note={L(SPEECH_NOTE)} hint={L(UI.gateHint)} className="min-h-[46vh] py-2">
         <DidiChat />
       </AudioGate>
       <StepNav next={6} nextLabel={UI.next} />

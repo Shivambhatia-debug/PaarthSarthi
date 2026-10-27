@@ -10,6 +10,7 @@ import { SCHEMES } from '@/lib/mock/schemes'
 import { daysFromToday } from '@/lib/mock/state'
 import { fmtDate, type Bi } from '@/lib/os/i18n'
 import { Tr } from '@/components/os/tr-text'
+import { mockBi } from '@/components/placement/report/report-data'
 import { cn } from '@/lib/utils'
 
 const TXT = {
@@ -103,7 +104,7 @@ export function SideCards({ className }: { className?: string }) {
             <Tr b={note} />
           </p>
           <p className="mt-2 text-[12px] text-gray-500">
-            <Tr b={TXT.verify} /> · {pratigya.portalLabel}
+            <Tr b={TXT.verify} /> · <Tr b={mockBi(pratigya.portalLabel)} />
           </p>
         </section>
       )}

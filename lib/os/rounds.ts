@@ -15,38 +15,39 @@ export type RoundId =
 export interface RoundDef {
   id: RoundId
   label: Bi
-  short: string
+  /** Short rail label (Bi; Hindi short forms). */
+  short: Bi
   route: string
   optional?: boolean
 }
 
 export const ROUNDS: RoundDef[] = [
-  { id: 'eligibility', label: { en: 'Eligibility', hi: 'पात्रता' }, short: 'Eligibility', route: '/placement' },
-  { id: 'aptitude', label: { en: 'Aptitude', hi: 'अभिरुचि' }, short: 'Aptitude', route: '/placement/drive/aptitude' },
-  { id: 'technical', label: { en: 'Technical', hi: 'तकनीकी' }, short: 'Technical', route: '/placement/drive/technical' },
+  { id: 'eligibility', label: { en: 'Eligibility', hi: 'पात्रता' }, short: { en: 'Eligibility', hi: 'पात्रता' }, route: '/placement' },
+  { id: 'aptitude', label: { en: 'Aptitude', hi: 'अभिरुचि' }, short: { en: 'Aptitude', hi: 'अभिरुचि' }, route: '/placement/drive/aptitude' },
+  { id: 'technical', label: { en: 'Technical', hi: 'तकनीकी' }, short: { en: 'Technical', hi: 'तकनीकी' }, route: '/placement/drive/technical' },
   {
     id: 'communication',
     label: { en: 'Communication', hi: 'संवाद' },
-    short: 'Comm.',
+    short: { en: 'Comm.', hi: 'संवाद' },
     route: '/placement/drive/communication',
   },
   {
     id: 'gd',
     label: { en: 'Group discussion', hi: 'समूह चर्चा' },
-    short: 'GD',
+    short: { en: 'GD', hi: 'समूह चर्चा' },
     route: '/placement/drive/gd',
     optional: true,
   },
   {
     id: 'techInterview',
     label: { en: 'Technical interview', hi: 'तकनीकी इंटरव्यू' },
-    short: 'Tech interview',
+    short: { en: 'Tech interview', hi: 'टेक इंटरव्यू' },
     route: '/placement/drive/interview',
   },
   {
     id: 'hrInterview',
     label: { en: 'HR interview', hi: 'एचआर इंटरव्यू' },
-    short: 'HR',
+    short: { en: 'HR', hi: 'एचआर' },
     route: '/placement/drive/hr',
   },
 ]

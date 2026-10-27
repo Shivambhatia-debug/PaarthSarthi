@@ -315,6 +315,22 @@ function buildPoolContrib(): Record<string, number> {
   const parts = allocate(d2.readyCount, weights)
   const out: Record<string, number> = {}
   ids.forEach((id, i) => (out[id] = parts[i]))
+  // Purnea CE contributes only its Mechanical branch to a core-mech pool (about 9 of its 45 onboarded ME
+  // students are interview-ready). Move the rest to the host polytechnic so the total stays d2.readyCount.
+  const PURNEA_CAP = 9
+  if (typeof out['pce-purnea'] === 'number' && out['pce-purnea'] > PURNEA_CAP) {
+    let extra = out['pce-purnea'] - PURNEA_CAP
+    out['pce-purnea'] = PURNEA_CAP
+    // Host polytechnic first, then the others; never above a college's own interview-ready count.
+    const order = ['gp-muzaffarpur', ...ids.filter((id) => id !== 'gp-muzaffarpur' && id !== 'pce-purnea')]
+    for (const id of order) {
+      if (extra <= 0 || typeof out[id] !== 'number') continue
+      const give = Math.min(extra, Math.max(0, batchOf(institutionById(id)!).interviewReady - out[id]))
+      out[id] += give
+      extra -= give
+    }
+    if (extra > 0) out['pce-purnea'] += extra
+  }
   return out
 }
 

@@ -54,8 +54,8 @@ const CODES: Record<string, string> = {
 }
 
 const SHORT_EN: Record<string, string> = {
-  'west-champaran': 'W. Champaran',
-  'east-champaran': 'E. Champaran',
+  'west-champaran': 'W Champaran',
+  'east-champaran': 'E Champaran',
 }
 
 const NO_DATA: Bi = { en: 'No matching institutions', hi: 'कोई मेल खाता संस्थान नहीं' }
@@ -79,10 +79,24 @@ function luminance(hex: string): number {
   return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
 }
 
+const WARM_A = [190, 72, 94] // rose
+const WARM_B = [196, 132, 40] // amber
+function mixHex(a: number[], b: number[], f: number): string {
+  const h = (n: number) => Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, '0')
+  return `#${h(a[0] + (b[0] - a[0]) * f)}${h(a[1] + (b[1] - a[1]) * f)}${h(a[2] + (b[2] - a[2]) * f)}`
+}
+/** seqColor, with an optional warm (rose -> amber) band for the bottom `warm` share of the range. */
+function tileColor(t: number, warm?: number): string {
+  const w = typeof warm === 'number' && warm > 0 && warm < 1 ? warm : 0
+  if (!w) return seqColor(t)
+  if (t < w) return mixHex(WARM_A, WARM_B, Math.max(0, t) / w)
+  return seqColor((t - w) / (1 - w))
+}
+
 function modeFor(tileW: number, showLabels: boolean): LabelMode {
   if (!showLabels) return 'none'
   if (tileW >= 64) return 'full'
-  if (tileW >= 36) return 'code'
+  if (tileW >= 30) return 'code'
   if (tileW >= 26) return 'value'
   return 'none'
 }
@@ -117,6 +131,11 @@ export interface BiharTileMapProps {
   showRiver?: boolean
   /** Optional (additive): extra legend content (right side). */
   legendExtra?: ReactNode
+  /**
+   * Optional (additive): when low values are bad (e.g. PRI), tint the bottom `warmLow` share of the range
+   * (0..1, e.g. 0.3) rose -> amber so the weakest districts read as "act here".
+   */
+  warmLow?: number
   className?: string
 }
 
@@ -137,6 +156,7 @@ export function BiharTileMap({
   showLegend,
   showRiver,
   legendExtra,
+  warmLow,
   className,
 }: BiharTileMapProps) {
   const lang = useLang()
@@ -197,7 +217,7 @@ export function BiharTileMap({
     const raw = vals[g.id]
     const v = typeof raw === 'number' && Number.isFinite(raw) ? raw : null
     const t = v == null ? 0 : (v - lo) / (hi - lo)
-    const bg = v == null ? '#1f2530' : seqColor(t)
+    const bg = v == null ? '#1f2530' : tileColor(t, warmLow)
     const darkText = v != null && luminance(bg) > 0.3
     const isSel = !!selected && selected === g.id
     const isHl = !!hlSet && hlSet.has(g.id)
@@ -226,7 +246,7 @@ export function BiharTileMap({
             <span
               lang={nameDeva ? 'hi' : 'en'}
               className={cn(
-                'block truncate text-[12px] font-medium leading-tight',
+                'line-clamp-2 break-words text-[12px] font-medium leading-tight',
                 darkText ? 'text-slate-900/80' : 'text-white/80',
                 nameDeva && 'font-deva',
               )}
@@ -359,7 +379,14 @@ export function BiharTileMap({
     )
   }
 
-  const stops = [0, 0.2, 0.4, 0.6, 0.8, 1].map((s) => seqColor(s))
+  const wl = typeof warmLow === 'number' && warmLow > 0 && warmLow < 1 ? warmLow : 0
+  const stops = wl
+    ? [
+        `${mixHex(WARM_A, WARM_B, 0)} 0%`,
+        `${mixHex(WARM_A, WARM_B, 1)} ${(wl * 100).toFixed(0)}%`,
+        ...[0, 0.25, 0.5, 0.75, 1].map((x) => `${seqColor(x)} ${((wl + (1 - wl) * x) * 100).toFixed(0)}%`),
+      ]
+    : [0, 0.2, 0.4, 0.6, 0.8, 1].map((x) => seqColor(x))
   const metricDeva = isDevanagari(metric)
 
   return (

@@ -48,8 +48,8 @@ function ChromeInner({ children }: { children: ReactNode }) {
       <Toaster
         position="top-right"
         closeButton
-        offset={{ top: 100, right: 20 }}
-        mobileOffset={{ top: 100, left: 12, right: 12 }}
+        offset={{ top: 56, right: 20 }}
+        mobileOffset={{ top: 56, left: 12, right: 12 }}
       />
     </div>
   )

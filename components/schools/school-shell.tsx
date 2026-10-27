@@ -204,7 +204,7 @@ export function SchoolShell({ children }: { children: ReactNode }) {
     prevStep.current = step
     const el = anchorRef.current
     if (!el) return
-    const top = el.getBoundingClientRect().top + window.scrollY - 150
+    const top = el.getBoundingClientRect().top + window.scrollY - 102
     if (window.scrollY > top + 8) window.scrollTo({ top: Math.max(0, top), behavior: lite ? 'auto' : 'smooth' })
   }, [step, lite])
 
@@ -452,7 +452,7 @@ function StepRail() {
   return (
     <nav
       aria-label={L(UI.steps)}
-      className="no-print sticky top-[92px] z-30 -mx-4 mt-4 border-b border-white/[0.06] bg-[#0d1117]/85 px-4 py-2 backdrop-blur-xl sm:mx-0 sm:rounded-2xl sm:border sm:border-white/10 sm:px-2"
+      className="no-print sticky top-[44px] z-30 -mx-4 mt-4 border-b border-white/[0.06] bg-[#0d1117]/85 px-4 py-2 backdrop-blur-xl sm:mx-0 sm:rounded-2xl sm:border sm:border-white/10 sm:px-2"
     >
       <div className="flex items-center gap-2">
         <ol

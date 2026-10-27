@@ -137,6 +137,8 @@ export const BLUEPRINTS: Blueprint[] = [
       s('Aptitude', 20, 20),
       s('Core Mechanical MCQ', 30, 30),
       s('Shop-floor Case', 1, 10),
+      s('Communication (advisory)', 4, 10),
+      s('Technical Interview', 1, 15),
       s('HR Interview (in Hindi)', 1, 15),
     ],
     typicalBand: 'Graduate / Diploma Engineer Trainee-equivalent tracks',
