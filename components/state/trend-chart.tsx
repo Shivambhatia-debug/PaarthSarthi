@@ -3,12 +3,12 @@
 import { useMemo } from 'react'
 import { TrendingUp } from 'lucide-react'
 import {
-  Area,
   Bar,
   CartesianGrid,
   Cell,
   ComposedChart,
   ErrorBar,
+  LabelList,
   ResponsiveContainer,
   Tooltip as RTooltip,
   XAxis,
@@ -35,7 +35,9 @@ const T = {
 
 interface Row {
   year: string
-  value: number | null
+  /** Reported value, or [low, high] for the scenario year (drawn as a ghost range bar). */
+  value: number | [number, number] | null
+  scLabel?: string
   err: [number, number] | null
   band: [number, number] | null
   high: number | null
@@ -77,9 +79,18 @@ export function TrendChart({ className, index = 0 }: { className?: string; index
         projected: false,
       }
     })
-    rows.push({ year: projYear, value: null, err: null, band: [proj.low, proj.high], high: null, last: false, projected: true })
+    rows.push({
+      year: projYear,
+      value: [proj.low, proj.high],
+      scLabel: t(T.scenario),
+      err: null,
+      band: [proj.low, proj.high],
+      high: null,
+      last: false,
+      projected: true,
+    })
     return rows
-  }, [pts, proj.low, proj.high, projYear])
+  }, [pts, proj.low, proj.high, projYear, t])
 
   const growth = pts.length > 1 ? last.value / pts[0].value : null
 
@@ -139,8 +150,8 @@ export function TrendChart({ className, index = 0 }: { className?: string; index
                 if (!r) return null
                 let line: string
                 if (r.projected) line = `${t(T.scenario)}: ${fmtIN(proj.low)}–${fmtIN(proj.high)}`
-                else if (r.high != null) line = `${fmtIN(r.value ?? 0)}–${fmtIN(r.high)} (${t(T.range).toLowerCase()})`
-                else line = fmtIN(r.value ?? 0)
+                else if (r.high != null) line = `${fmtIN(typeof r.value === 'number' ? r.value : 0)}–${fmtIN(r.high)} (${t(T.range).toLowerCase()})`
+                else line = fmtIN(typeof r.value === 'number' ? r.value : 0)
                 return (
                   <div className="rounded-lg border border-white/10 bg-[#11161f] px-3 py-2 text-[12px] shadow-xl">
                     <div className="font-semibold text-white">{r.year}</div>
@@ -154,24 +165,16 @@ export function TrendChart({ className, index = 0 }: { className?: string; index
                 )
               }}
             />
-            <Area
-              type="linear"
-              dataKey="band"
-              stroke="#22d3ee"
-              strokeWidth={1.5}
-              strokeDasharray="6 4"
-              fill="url(#state-proj-fill)"
-              connectNulls={false}
-              dot={false}
-              activeDot={false}
-              isAnimationActive={!reduced}
-              animationDuration={900}
-            />
             <Bar dataKey="value" radius={[6, 6, 0, 0]} maxBarSize={46} isAnimationActive={!reduced} animationDuration={800}>
-              {data.map((r) => (
-                <Cell key={`c-${r.year}`} fill={r.last ? '#94a3b8' : '#475569'} />
-              ))}
+              {data.map((r) =>
+                r.projected ? (
+                  <Cell key={`c-${r.year}`} fill="url(#state-proj-fill)" stroke="#22d3ee" strokeWidth={1.5} strokeDasharray="5 4" />
+                ) : (
+                  <Cell key={`c-${r.year}`} fill={r.last ? '#94a3b8' : '#475569'} />
+                ),
+              )}
               <ErrorBar dataKey="err" width={12} strokeWidth={2.5} stroke="#fbbf24" direction="y" />
+              <LabelList dataKey="scLabel" position="top" fill="#67e8f9" fontSize={12} />
             </Bar>
           </ComposedChart>
         </ResponsiveContainer>

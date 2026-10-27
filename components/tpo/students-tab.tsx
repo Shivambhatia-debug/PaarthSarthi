@@ -172,10 +172,12 @@ export function StudentsTab({ collegeId, inst, b }: StudentsTabProps) {
     return all
       .filter(
         (r) =>
-          (risk === 'all' || r.risk === risk) &&
-          (branch === 'all' || r.branch === branch) &&
-          (band === 'all' || bandFor(r.pri).id === band) &&
-          (!q || r.name.toLowerCase().includes(q)),
+          // The pinned demo student (Rahul / Priya) stays visible under every chip filter; search still narrows.
+          (r.id === pinId && !q) ||
+          ((risk === 'all' || r.risk === risk) &&
+            (branch === 'all' || r.branch === branch) &&
+            (band === 'all' || bandFor(r.pri).id === band) &&
+            (!q || r.name.toLowerCase().includes(q))),
       )
       .sort(
         (a, c) =>
@@ -445,7 +447,7 @@ export function StudentsTab({ collegeId, inst, b }: StudentsTabProps) {
 
       {/* Table */}
       <div className="mt-3 overflow-hidden rounded-xl border border-white/[0.07]">
-        <Table className="min-w-[1080px] text-[13px]">
+        <Table className="min-w-[1000px] text-[13px]">
           <TableHeader className="bg-white/[0.03]">
             <TableRow className="border-white/[0.07] hover:bg-transparent">
               <TableHead className="h-10 w-10 px-3">
@@ -502,7 +504,7 @@ export function StudentsTab({ collegeId, inst, b }: StudentsTabProps) {
                     />
                   </TableCell>
                   <TableCell className="px-3 py-3">
-                    <div className="flex min-w-[190px] flex-col gap-1">
+                    <div className="flex min-w-[170px] flex-col gap-1">
                       <span className="flex flex-wrap items-center gap-1.5">
                         <span className="font-semibold text-white">{row.name}</span>
                         {row.status === 'recovered' && (
@@ -560,7 +562,7 @@ export function StudentsTab({ collegeId, inst, b }: StudentsTabProps) {
                     {reasons.length === 0 ? (
                       <Tr b={UI.none} className="text-gray-600" />
                     ) : (
-                      <div className="flex min-w-[180px] max-w-[240px] flex-wrap gap-1">
+                      <div className="flex min-w-[150px] max-w-[200px] flex-wrap gap-1">
                         {reasons.slice(0, 2).map((r, i) => (
                           <span
                             key={i}
@@ -585,7 +587,7 @@ export function StudentsTab({ collegeId, inst, b }: StudentsTabProps) {
                     <Tr b={lastActive(row.lastActiveDays)} />
                   </TableCell>
                   <TableCell className="px-3 py-3">
-                    <span className="inline-flex min-w-[150px] items-start gap-1.5 text-cyan-100">
+                    <span className="inline-flex min-w-[130px] items-start gap-1.5 text-cyan-100">
                       <Sparkles aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cyan-300" />
                       <Tr b={aiActionFor(row)} className="leading-snug" />
                     </span>

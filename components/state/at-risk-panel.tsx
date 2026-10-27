@@ -154,7 +154,7 @@ export function AtRiskPanel({ className, index = 0 }: { className?: string; inde
           <span className="tabular-nums text-gray-500">({rows.length})</span>
         </button>
       )}
-      <SimulatedNotice className="mt-3" />
+      <SimulatedNotice className="mt-3" text={{ en: "Anonymised cohorts · illustrative data", hi: "अनाम समूह · सांकेतिक डेटा" }} />
       <span className="sr-only">{t(T.sub)}</span>
     </PanelCard>
   )

@@ -395,7 +395,7 @@ export function pathWhy(placeHi: string, placeEn: string, p = NUSRAT_PROFILE, km
 
 export function pathEvidence(p = NUSRAT_PROFILE, km = HOME_TO_GP_KM): Bi[] {
   return [
-    { en: `Interest: R ${p.riasec.R}, I ${p.riasec.I} (top two)`, hi: `रुचि: R ${p.riasec.R}, I ${p.riasec.I} (सबसे ऊँची दो)` },
+    { en: `Interest: R ${p.riasec.R}, I ${p.riasec.I} (top two interests)`, hi: `रुचि: R ${p.riasec.R}, I ${p.riasec.I} (दो सबसे बड़ी रुचियाँ)` },
     {
       en: `Aptitude: numerical ${p.aptitude.numerical}, mechanical ${p.aptitude.mechanical}`,
       hi: `योग्यता: संख्यात्मक ${p.aptitude.numerical}, यांत्रिक ${p.aptitude.mechanical}`,

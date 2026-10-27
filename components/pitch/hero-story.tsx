@@ -76,7 +76,7 @@ const STATS: { id: string; Icon: typeof Mic; label: Bi; value: number; decimals:
   {
     id: 'interviews',
     Icon: Mic,
-    label: { en: 'AI interviews today', hi: 'आज AI इंटरव्यू', hinglish: 'Aaj AI interviews' },
+    label: { en: 'Interviews today', hi: 'आज AI इंटरव्यू', hinglish: 'AI interviews' },
     value: PREVIEW.today.aiInterviews,
     decimals: 0,
     tone: 'text-violet-300 bg-violet-400/10 ring-violet-400/25',
@@ -84,7 +84,7 @@ const STATS: { id: string; Icon: typeof Mic; label: Bi; value: number; decimals:
   {
     id: 'ready',
     Icon: GraduationCap,
-    label: { en: 'Newly interview-ready', hi: 'नए तैयार छात्र', hinglish: 'Naye interview-ready' },
+    label: { en: 'Newly ready', hi: 'नए तैयार छात्र', hinglish: 'Naye ready' },
     value: PREVIEW.today.newlyReady,
     decimals: 0,
     tone: 'text-cyan-300 bg-cyan-400/10 ring-cyan-400/25',
@@ -92,11 +92,11 @@ const STATS: { id: string; Icon: typeof Mic; label: Bi; value: number; decimals:
   {
     id: 'pri',
     Icon: TrendingUp,
-    label: { en: 'Avg PRI, state', hi: 'राज्य का औसत PRI', hinglish: 'State avg PRI' },
+    label: { en: 'State avg PRI', hi: 'राज्य का औसत PRI', hinglish: 'State PRI' },
     value: PREVIEW.avgPri,
     decimals: 1,
     sub: {
-      en: `+${fmtNum(PREVIEW.avgPri - PREVIEW.baselinePri, 1)} vs baseline`,
+      en: `+${fmtNum(PREVIEW.avgPri - PREVIEW.baselinePri, 1)} vs base`,
       hi: `बेसलाइन से +${fmtNum(PREVIEW.avgPri - PREVIEW.baselinePri, 1)}`,
     },
     tone: 'text-emerald-300 bg-emerald-400/10 ring-emerald-400/25',
@@ -155,6 +155,14 @@ export function HeroStory({ onReady, className }: HeroStoryProps) {
     return () => clearTimeout(id)
   }, [markReady])
 
+  // Below lg the headline sits above the boot console (QR landing on phones),
+  // so it should not wait for the boot to finish.
+  const [mobileStory, setMobileStory] = useState(false)
+  useEffect(() => {
+    if (!window.matchMedia('(min-width: 1024px)').matches) setMobileStory(true)
+  }, [])
+  const storyIn = ready || mobileStory
+
   const h1 = H1[lang] ?? H1.en
   const h1Deva = isDevanagari(h1.a)
 
@@ -174,8 +182,8 @@ export function HeroStory({ onReady, className }: HeroStoryProps) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,0.88fr)] lg:gap-x-10 lg:gap-y-5">
-        {/* 1 · Boot console (top on mobile, right column on desktop) */}
-        <div className="min-w-0 lg:col-start-2 lg:row-start-1">
+        {/* 1 · Boot console (below the headline on mobile, right column on desktop) */}
+        <div className="order-2 min-w-0 lg:order-none lg:col-start-2 lg:row-start-1">
           <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-3 shadow-[0_24px_60px_-34px_rgba(34,211,238,0.35)] sm:p-4">
             <div className="mb-3 flex items-center gap-3">
               <AIOrb state={ready ? 'idle' : 'thinking'} size={40} label="" />
@@ -205,21 +213,21 @@ export function HeroStory({ onReady, className }: HeroStoryProps) {
         </div>
 
         {/* 2 · Story */}
-        <div className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-center">
-          <Rise i={0} ready={ready}>
+        <div className="order-1 min-w-0 lg:order-none lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-center">
+          <Rise i={0} ready={storyIn}>
             <Tr b={EYEBROW} className="text-[12px] font-semibold uppercase tracking-[0.14em] text-cyan-300/90" />
           </Rise>
 
-          <Rise i={1} ready={ready} className="mt-3">
+          <Rise i={1} ready={storyIn} className="mt-3">
             <h1
               lang={h1Deva ? 'hi' : 'en'}
               className={cn(
                 'text-[30px] font-semibold leading-[1.12] tracking-tight text-white sm:text-[40px] lg:text-[46px]',
-                h1Deva && 'font-deva leading-[1.3]',
+                h1Deva && 'font-deva leading-[1.2] lg:text-[42px] [text-wrap:balance]',
               )}
             >
-              <span className="block text-gray-300">{h1.a}</span>
-              <span className="mt-1 block">
+              <span className="block text-gray-300 [text-wrap:balance]">{h1.a}</span>
+              <span className="mt-1 block [text-wrap:balance]">
                 {h1.b}
                 <span className="ai-gradient-text">{h1.k}</span>
                 {h1.c}
@@ -227,15 +235,15 @@ export function HeroStory({ onReady, className }: HeroStoryProps) {
             </h1>
           </Rise>
 
-          <Rise i={2} ready={ready} className="mt-5">
+          <Rise i={2} ready={storyIn} className="mt-5">
             <Tr as="p" b={SUBLINE} className="max-w-xl text-[15px] leading-relaxed text-gray-300 sm:text-[16px]" />
           </Rise>
-          <Rise i={3} ready={ready} className="mt-3">
+          <Rise i={3} ready={storyIn} className="mt-3">
             <Tr as="p" b={TAGLINE_HI} className="text-[16px] font-medium text-emerald-200/90 sm:text-[17px]" />
           </Rise>
 
           {/* CTAs */}
-          <Rise i={4} ready={ready} className="mt-7 flex flex-wrap items-center gap-3">
+          <Rise i={4} ready={storyIn} className="mt-7 flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={startDemo}
@@ -263,7 +271,7 @@ export function HeroStory({ onReady, className }: HeroStoryProps) {
         </div>
 
         {/* 3 · Streaming pulse */}
-        <div className="min-w-0 lg:col-start-2 lg:row-start-2">
+        <div className="order-3 min-w-0 lg:order-none lg:col-start-2 lg:row-start-2">
           {ready ? (
             <AISurface
               title={PULSE_TITLE}
@@ -281,11 +289,11 @@ export function HeroStory({ onReady, className }: HeroStoryProps) {
               >
                 {STATS.map((s) => (
                   <div key={s.id} className="min-w-0 rounded-lg border border-white/[0.07] bg-white/[0.025] px-2.5 py-2">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-start gap-1.5">
                       <span className={cn('grid h-5 w-5 shrink-0 place-items-center rounded-md ring-1', s.tone)}>
                         <s.Icon className="h-3 w-3" aria-hidden />
                       </span>
-                      <Tr b={s.label} className="min-w-0 truncate text-[12px] text-gray-400" />
+                      <Tr b={s.label} className="line-clamp-2 min-w-0 whitespace-normal text-[12px] leading-tight text-gray-400" />
                     </div>
                     <div className="mt-1 text-[20px] font-semibold leading-none tracking-tight text-white">
                       {streamed ? (
@@ -294,7 +302,7 @@ export function HeroStory({ onReady, className }: HeroStoryProps) {
                         <span className="tabular-nums">0</span>
                       )}
                     </div>
-                    {s.sub && <Tr b={s.sub} className="mt-1 block truncate text-[12px] text-emerald-300/90" />}
+                    {s.sub && <Tr b={s.sub} className="mt-1 line-clamp-2 block whitespace-normal text-[12px] leading-tight text-emerald-300/90" />}
                   </div>
                 ))}
               </div>

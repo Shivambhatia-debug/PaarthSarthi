@@ -94,6 +94,11 @@ function Hub() {
   const router = useRouter()
   const { persona, personaId, rounds, state, set, setRound, includeGd, lang, t } = useDemo()
 
+  // Login / persona switch: start at the top (name + header), not mid-profile where the login card was.
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
+
   // Opened again after eligibility was cleared: show the check as done, hall ticket ready.
   const [initiallyCleared] = useState(() => rounds.eligibility?.status === 'cleared')
   const [ready, setReady] = useState(false)

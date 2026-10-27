@@ -99,7 +99,14 @@ export function FunnelPanel({ className, index = 0 }: { className?: string; inde
                     )}
                     style={{ width: grown ? `${w}%` : '0%', transitionDelay: reduced ? '0ms' : `${i * 70}ms` }}
                   />
-                  <span className="absolute inset-y-0 left-2.5 flex items-center text-[13px] font-semibold tabular-nums text-white drop-shadow">
+                  {/* Narrow bars: the number sits just outside the bar end instead of straddling it. */}
+                  <span
+                    className={cn(
+                      'absolute inset-y-0 flex items-center whitespace-nowrap text-[13px] font-semibold tabular-nums',
+                      w < 28 ? 'text-gray-200' : 'left-2.5 text-white drop-shadow',
+                    )}
+                    style={w < 28 ? { left: `calc(${grown ? w : 0}% + 8px)` } : undefined}
+                  >
                     {fmtIN(s.value)}
                   </span>
                 </div>

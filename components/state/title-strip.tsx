@@ -69,7 +69,7 @@ export function PanelCard({
     >
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-white/0 via-white/10 to-white/0" />
       <header className="mb-4 flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
+        <div className="flex min-w-0 flex-1 basis-[16rem] items-start gap-3">
           {Icon && (
             <span className={cn('grid h-9 w-9 shrink-0 place-items-center rounded-xl ring-1', ACCENT[accent])}>
               <Icon aria-hidden className="h-[18px] w-[18px]" />
@@ -242,7 +242,8 @@ export function TitleStrip({ filter, onFilterChange, showFilters = true, aside, 
           )}
         </div>
 
-        {aside && <div className="min-w-0 lg:col-span-5">{aside}</div>}
+        {/* The aside places its own grid items (Ask Sarthi: a 5-col card, plus a full-width answer row). */}
+        {aside}
       </div>
     </section>
   )

@@ -255,7 +255,6 @@ export default function TechnicalPage() {
   const onCoreFinish = useCallback(
     (r: CoreResult) => {
       const pid = personaRef.current
-      const sc = ROUND_TARGETS[pid]?.technical ?? ROUND_TARGETS.priya.technical
       const tk = CORE_ITEMS[r.trackId]
       for (const s of tk.signals) {
         if (s.kind === 'gap' && r.correct === r.total) continue
@@ -264,8 +263,8 @@ export default function TechnicalPage() {
       const chip = r.hasCase && r.missed.length === 0 ? (tk.signalChipCovered ?? tk.signalChip) : tk.signalChip
       setRound('technical', {
         status: 'cleared',
-        score: sc,
-        detail: { signalChip: chip, track: r.trackId, mcq: `${r.correct}/${r.total}` },
+        score: r.score,
+        detail: { signalChip: chip, track: r.trackId, mcq: `${r.correct}/${r.total}`, answers: r.answers, caseText: r.caseText },
       })
       setDoneFor(pid)
     },
@@ -369,6 +368,8 @@ export default function TechnicalPage() {
                 track={CORE_ITEMS[id as CoreTrackId]}
                 active={track === id}
                 restoreDone={storeDone && clearedTrack === id}
+                restoreAnswers={typeof rs?.detail?.answers === 'string' ? rs.detail.answers : undefined}
+                restoreCaseText={typeof rs?.detail?.caseText === 'string' ? rs.detail.caseText : undefined}
                 score={score}
                 elapsedRef={elapsedRef}
                 onFinish={onCoreFinish}

@@ -35,7 +35,7 @@ const UI = {
   share: { en: 'Share with parent', hi: 'अभिभावक से साझा करें' } as Bi,
   shareHint: { en: 'Print, or save as PDF for WhatsApp', hi: 'प्रिंट करें, या PDF बनाकर WhatsApp पर भेजें' } as Bi,
   radar: { en: 'Interest map (RIASEC)', hi: 'रुचि का नक्शा (RIASEC)' } as Bi,
-  code: { en: 'Your top two', hi: 'आपकी सबसे ऊँची दो' } as Bi,
+  code: { en: 'Your top two interests', hi: 'आपकी दो सबसे बड़ी रुचियाँ' } as Bi,
   apt: { en: 'Abilities vs district and state', hi: 'क्षमता: ज़िले और राज्य से तुलना' } as Bi,
   you: { en: 'You', hi: 'आप' } as Bi,
   district: { en: 'District avg.', hi: 'ज़िला औसत' } as Bi,
@@ -107,7 +107,7 @@ export function ShaktiReport() {
           <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 via-cyan-300 to-emerald-400 text-[15px] font-bold text-[#04121a]">
             {NUSRAT.avatarInitials}
           </span>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[12rem] flex-1">
             <p className="text-[17px] font-semibold text-white">
               <T b={{ en: NUSRAT.name, hi: NUSRAT.nameHi }} />
             </p>

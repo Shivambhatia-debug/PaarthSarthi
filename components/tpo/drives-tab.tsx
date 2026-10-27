@@ -23,6 +23,7 @@ const UI = {
   sub: { en: 'Grouped by stage. Select a drive to draft its notice.', hi: 'चरण के अनुसार। सूचना बनाने के लिए ड्राइव चुनें।' },
   newJd: { en: 'New drive from JD', hi: 'JD से नई ड्राइव' },
   eligible: { en: 'eligible', hi: 'पात्र' },
+  statewideEligible: { en: 'statewide eligible', hi: 'राज्य भर में पात्र' },
   ready: { en: 'ready', hi: 'तैयार' },
   empty: {
     en: 'No upcoming drives match this college yet. Create one from a JD.',
@@ -99,7 +100,7 @@ export function DrivesTab({ collegeId, inst, b }: DrivesTabProps) {
                 <ul className="space-y-2">
                   {g.items.map((d) => (
                     <li key={d.id}>
-                      <DriveRow d={d} lang={ol} active={selected?.id === d.id} onSelect={() => setSelId(d.id)} />
+                      <DriveRow d={d} lang={ol} collegeId={collegeId} active={selected?.id === d.id} onSelect={() => setSelId(d.id)} />
                     </li>
                   ))}
                 </ul>
@@ -109,8 +110,8 @@ export function DrivesTab({ collegeId, inst, b }: DrivesTabProps) {
         )}
       </TpoCard>
 
-      <div className="min-w-0 lg:col-span-5">
-        <DriveNotice drive={selected} inst={inst} />
+      <div className="min-w-0 lg:sticky lg:top-24 lg:col-span-5 lg:self-start">
+        <DriveNotice drive={selected} inst={inst} className="h-auto" />
       </div>
 
       <PoolDriveBuilder collegeId={collegeId} className="lg:col-span-12" />
@@ -120,9 +121,23 @@ export function DrivesTab({ collegeId, inst, b }: DrivesTabProps) {
   )
 }
 
-function DriveRow({ d, lang, active, onSelect }: { d: Drive; lang: 'en' | 'hi'; active: boolean; onSelect: () => void }) {
+function DriveRow({
+  d,
+  lang,
+  collegeId,
+  active,
+  onSelect,
+}: {
+  d: Drive
+  lang: 'en' | 'hi'
+  collegeId: string
+  active: boolean
+  onSelect: () => void
+}) {
   const bp = blueprintById(d.blueprintId)
   const host = institutionById(d.hostInstitutionId)
+  const own = d.institutionIds.includes(collegeId)
+  const n = d.institutionIds.length
   const tier = TIER[d.tier] ?? TIER.Regular
   const pct = d.eligibleCount > 0 ? Math.round((d.readyCount / d.eligibleCount) * 100) : 0
   return (
@@ -141,10 +156,20 @@ function DriveRow({ d, lang, active, onSelect }: { d: Drive; lang: 'en' | 'hi'; 
           <span className={cn('rounded-full border px-2 py-px text-[12px] font-medium', tier.cls)}>
             <Tr b={tier.label} />
           </span>
-          {d.pool && (
+          {d.pool && n > 1 && (
             <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-px text-[12px] font-medium text-emerald-200">
               <Layers aria-hidden className="h-3 w-3" />
-              <Tr b={{ en: `Pool · ${d.institutionIds.length} institutions`, hi: `पूल · ${d.institutionIds.length} संस्थान` }} />
+              <Tr b={{ en: `Pool · ${n} institutions`, hi: `पूल · ${n} संस्थान` }} />
+            </span>
+          )}
+          {!own && host && (
+            <span className="inline-flex items-center rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-px text-[12px] font-medium text-amber-100">
+              <Tr b={{ en: `Open · hosted by ${host.short}`, hi: `खुली ड्राइव · मेज़बान ${host.short}` }} />
+            </span>
+          )}
+          {own && d.pool && n === 1 && host && (
+            <span className="inline-flex items-center rounded-full border border-white/15 bg-white/[0.05] px-2 py-px text-[12px] font-medium text-gray-300">
+              <Tr b={{ en: `Hosted at ${host.short}`, hi: `${host.short} में आयोजित` }} />
             </span>
           )}
         </div>
@@ -157,7 +182,7 @@ function DriveRow({ d, lang, active, onSelect }: { d: Drive; lang: 'en' | 'hi'; 
             ·
           </span>
           <span className="min-w-0 truncate">{bp.label}</span>
-          {host && (
+          {host && own && !(d.pool && n === 1) && (
             <>
               <span aria-hidden className="text-gray-600">
                 ·
@@ -170,7 +195,7 @@ function DriveRow({ d, lang, active, onSelect }: { d: Drive; lang: 'en' | 'hi'; 
       <div className="flex items-center gap-3 sm:justify-end">
         <div className="text-[12.5px] tabular-nums">
           <span className="font-semibold text-gray-100">{fmtIN(d.eligibleCount)}</span>{' '}
-          <Tr b={UI.eligible} className="text-gray-500" />
+          <Tr b={own ? UI.eligible : UI.statewideEligible} className="text-gray-500" />
           <span className="mx-1.5 text-gray-600">·</span>
           <span className="font-semibold text-emerald-300">{fmtIN(d.readyCount)}</span> <Tr b={UI.ready} className="text-gray-500" />
         </div>

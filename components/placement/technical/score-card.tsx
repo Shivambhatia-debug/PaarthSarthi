@@ -34,6 +34,7 @@ const CHIP_ICON: Record<ScoreChipTone, typeof CheckCircle2> = {
 
 const T = {
   round: { en: 'Round score', hi: 'राउंड स्कोर', hinglish: 'Round score' },
+  ring: { en: 'Score', hi: 'स्कोर', hinglish: 'Score' },
   outOf: { en: 'out of 100', hi: '100 में से', hinglish: '100 mein se' },
 } satisfies Record<string, Bi>
 
@@ -70,7 +71,7 @@ export function ScoreCard({ score, title, subtitle, chips, actions, instant = fa
           stroke={10}
           showBand={false}
           durationMs={instant ? 1 : 1200}
-          label={T.round}
+          label={T.ring}
           className="shrink-0"
         />
         <div className="min-w-0 flex-1 text-center sm:text-left">

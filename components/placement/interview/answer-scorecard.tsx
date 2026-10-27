@@ -115,7 +115,7 @@ export function AnswerScorecard({ q, result, stage, liveStar, gender, showLangFa
       </div>
 
       {showLangFair && (
-        <div className="mb-3 flex items-start gap-2 rounded-lg border border-emerald-400/20 bg-emerald-400/[0.06] px-2.5 py-2 text-[12px] leading-snug text-emerald-200">
+        <div className="mb-3 flex items-start gap-2 rounded-lg border border-emerald-400/20 bg-emerald-400/[0.06] px-2.5 py-2 text-[13px] leading-snug text-emerald-200">
           <Languages className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
           <Tr b={L.fair} />
         </div>
@@ -143,17 +143,17 @@ export function AnswerScorecard({ q, result, stage, liveStar, gender, showLangFa
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-xl border border-emerald-400/20 bg-emerald-400/[0.05] px-3 py-2">
               <p className="text-2xl font-bold tabular-nums text-emerald-300">{result.content}</p>
-              <p className="text-[12px] leading-tight text-gray-300">
+              <p className="text-[13px] leading-tight text-gray-300">
                 <Tr b={L.content} />
               </p>
-              <Tr b={L.contentSub} as="p" className="text-[12px] leading-tight text-gray-500" />
+              <Tr b={L.contentSub} as="p" className="text-[13px] leading-tight text-gray-500" />
             </div>
             <div className="rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-3 py-2">
               <p className="text-2xl font-bold tabular-nums text-amber-300">{result.delivery}</p>
-              <p className="text-[12px] leading-tight text-gray-300">
+              <p className="text-[13px] leading-tight text-gray-300">
                 <Tr b={L.delivery} />
               </p>
-              <Tr b={L.deliverySub} as="p" className="text-[12px] leading-tight text-gray-500" />
+              <Tr b={L.deliverySub} as="p" className="text-[13px] leading-tight text-gray-500" />
             </div>
           </div>
 

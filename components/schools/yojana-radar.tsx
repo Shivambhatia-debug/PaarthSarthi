@@ -80,9 +80,12 @@ const CHANNELS: { id: 'sms' | 'whatsapp' | 'ivr'; label: Bi; Icon: LucideIcon }[
   { id: 'ivr', label: { en: 'IVR call', hi: 'IVR कॉल' }, Icon: PhoneCall },
 ]
 
+const STATUS_ORDER: Record<MatchStatus, number> = { eligible: 0, maybe: 1, no: 2, paused: 3 }
+
 export function YojanaRadar() {
   const { L, lang, lite } = useSchool()
-  const rows = yojanaRows()
+  // Lead with what she unlocks: eligible, then maybe, then not eligible / paused (stable sort).
+  const rows = [...yojanaRows()].sort((a, b) => STATUS_ORDER[a.match.status] - STATUS_ORDER[b.match.status])
   const [scanned, setScanned] = useState(lite)
   const total = rows.reduce((s, r) => s + (r.match.status === 'eligible' || r.match.status === 'maybe' ? r.match.grant ?? 0 : 0), 0)
   const loan = rows.reduce((m, r) => Math.max(m, r.match.loan ?? 0), 0)

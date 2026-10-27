@@ -9,6 +9,7 @@ import { AlertTriangle, BadgeIndianRupee, BrainCircuit, CalendarRange, Graduatio
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { KpiTile } from '@/components/os/kpi-tile'
 import { Tr } from '@/components/os/tr-text'
+import { IllustrativeChip } from '@/components/os/illustrative-chip'
 import { OfficerScope } from '@/lib/os/demo-store'
 import { useQueryParam } from '@/hooks/use-query-param'
 import { batchOf, institutionById } from '@/lib/mock/institutions'
@@ -21,6 +22,7 @@ import { StudentsTab } from '@/components/tpo/students-tab'
 import { DrivesTab } from '@/components/tpo/drives-tab'
 import { ReportsTab } from '@/components/tpo/reports-tab'
 import { DEFAULT_COLLEGE, resolveCollege } from '@/components/tpo/tpo-data'
+import { NextStop } from '@/components/os/next-stop'
 
 type TabId = 'overview' | 'students' | 'drives' | 'reports'
 const TAB_IDS: TabId[] = ['overview', 'students', 'drives', 'reports']
@@ -69,33 +71,34 @@ function TpoConsole() {
       <TpoHeader inst={inst} b={b} />
 
       {/* KPI tiles (fix 23): all from batchOf(inst), tagged illustrative */}
-      <section aria-label="Batch 2027 KPIs" className="mt-4 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-4">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <Tr b={{ en: 'Batch 2027 · final year', hi: 'बैच 2027 · अंतिम वर्ष' }} className="text-[12px] font-semibold uppercase tracking-[0.12em] text-gray-400" />
+        <IllustrativeChip />
+      </div>
+      <section aria-label="Batch 2027 KPIs" className="mt-2 grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 md:grid-cols-4">
         <KpiTile
           key={`fy-${inst.id}`}
-          label={{ en: 'Batch 2027 · Final-year', hi: 'बैच 2027 · अंतिम वर्ष' }}
+          label={{ en: 'Final-year', hi: 'अंतिम वर्ष' }}
           value={b.finalYear}
           icon={GraduationCap}
-          tag="illustrative"
         />
         <KpiTile
           key={`on-${inst.id}`}
-          label={{ en: 'Batch 2027 · Onboarded', hi: 'बैच 2027 · ऑनबोर्ड' }}
+          label={{ en: 'Onboarded', hi: 'ऑनबोर्ड' }}
           value={b.onboarded}
           sub={{ en: `${pct(b.onboarded, b.finalYear)} of final-year`, hi: `अंतिम वर्ष का ${pct(b.onboarded, b.finalYear)}` }}
           icon={UserCheck}
-          tag="illustrative"
         />
         <KpiTile
           key={`wa-${inst.id}`}
-          label={{ en: 'Batch 2027 · Weekly active', hi: 'बैच 2027 · साप्ताहिक सक्रिय' }}
+          label={{ en: 'Weekly active', hi: 'साप्ताहिक सक्रिय' }}
           value={b.weeklyActive}
           sub={`(${pct(b.weeklyActive, b.onboarded)})`}
           icon={Activity}
-          tag="illustrative"
         />
         <KpiTile
           key={`pri-${inst.id}`}
-          label={{ en: 'Batch 2027 · Avg PRI', hi: 'बैच 2027 · औसत PRI' }}
+          label={{ en: 'Avg PRI', hi: 'औसत PRI' }}
           value={b.pri}
           decimals={priDecimals}
           format={priDecimals ? 'decimal' : 'int'}
@@ -104,39 +107,34 @@ function TpoConsole() {
           deltaLabel={{ en: 'since the diagnostic', hi: 'डायग्नोस्टिक से' }}
           icon={BrainCircuit}
           tone="ai"
-          tag="illustrative"
         />
         <KpiTile
           key={`ir-${inst.id}`}
-          label={{ en: 'Batch 2027 · Interview-ready', hi: 'बैच 2027 · इंटरव्यू के लिए तैयार' }}
+          label={{ en: 'Interview-ready', hi: 'इंटरव्यू के लिए तैयार' }}
           value={b.interviewReady}
           sub={{ en: `${pct(b.interviewReady, b.onboarded)} of onboarded`, hi: `ऑनबोर्ड का ${pct(b.interviewReady, b.onboarded)}` }}
           icon={Target}
           tone="good"
-          tag="illustrative"
         />
         <KpiTile
           key={`ar-${inst.id}`}
-          label={{ en: 'Batch 2027 · At-risk', hi: 'बैच 2027 · जोखिम में' }}
+          label={{ en: 'At-risk', hi: 'जोखिम में' }}
           value={b.atRisk}
           icon={AlertTriangle}
           tone="warn"
-          tag="illustrative"
         />
         <KpiTile
           key={`dr-${inst.id}`}
-          label={{ en: 'Batch 2027 · Upcoming drives', hi: 'बैच 2027 · आगामी ड्राइव' }}
+          label={{ en: 'Upcoming drives', hi: 'आगामी ड्राइव' }}
           value={upcoming}
           icon={CalendarRange}
-          tag="illustrative"
         />
         <KpiTile
           key={`of-${inst.id}`}
-          label={{ en: 'Batch 2027 · Offers', hi: 'बैच 2027 · ऑफ़र' }}
+          label={{ en: 'Offers', hi: 'ऑफ़र' }}
           value={b.offers}
           icon={BadgeIndianRupee}
           tone="good"
-          tag="illustrative"
         />
       </section>
 
@@ -169,6 +167,7 @@ function TpoConsole() {
           <ReportsTab key={inst.id} collegeId={inst.id} inst={inst} b={b} />
         </TabsContent>
       </Tabs>
+      <NextStop href="/state/" label={{ en: 'DSTTE State view', hi: 'DSTTE राज्य दृश्य' }} sub={{ en: 'Every college, one dashboard', hi: 'हर कॉलेज, एक डैशबोर्ड' }} />
     </div>
   )
 }

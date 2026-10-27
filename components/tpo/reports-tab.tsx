@@ -98,9 +98,12 @@ export function ReportsTab({ collegeId, inst, b }: ReportsTabProps) {
   const [naacOpen, setNaacOpen] = useState(false)
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-      <OfferTracker collegeId={collegeId} className="lg:col-span-8" />
+      <OfferTracker collegeId={collegeId} className="lg:col-span-12" />
 
-      <TpoCard title={UI.naacTitle} sub={UI.naacSub} icon={ShieldCheck} tone="ai" className="lg:col-span-4">
+      <BranchPlacement collegeId={collegeId} className="lg:col-span-8" />
+
+      <div className="flex min-w-0 flex-col gap-4 lg:col-span-4">
+      <TpoCard title={UI.naacTitle} sub={UI.naacSub} icon={ShieldCheck} tone="ai">
         <ul className="mb-4 space-y-2 text-[13px] text-gray-300">
           {[
             { i: Table2, l: UI.naacP1 },
@@ -127,9 +130,7 @@ export function ReportsTab({ collegeId, inst, b }: ReportsTabProps) {
         </p>
       </TpoCard>
 
-      <BranchPlacement collegeId={collegeId} className="lg:col-span-7" />
-
-      <TpoCard title={UI.inputsTitle} sub={UI.inputsSub} icon={BookOpenCheck} className="lg:col-span-5">
+      <TpoCard title={UI.inputsTitle} sub={UI.inputsSub} icon={BookOpenCheck} className="flex-1">
         <ul className="space-y-2">
           {INPUTS.map((x) => (
             <li key={x.id} className="flex items-center gap-3 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-2.5">
@@ -145,6 +146,7 @@ export function ReportsTab({ collegeId, inst, b }: ReportsTabProps) {
           ))}
         </ul>
       </TpoCard>
+      </div>
 
       <NaacDialog collegeId={collegeId} inst={inst} b={b} open={naacOpen} onOpenChange={setNaacOpen} />
     </div>
@@ -288,7 +290,7 @@ function NaacDialog({
               {[
                 { v: b.finalYear, l: { en: 'Final-year students', hi: 'अंतिम वर्ष के छात्र' } as Bi },
                 { v: b.offers, l: { en: 'Offers so far', hi: 'अब तक के ऑफ़र' } as Bi },
-                { v: placed.length, l: { en: 'Rows in this sheet', hi: 'इस शीट की पंक्तियाँ' } as Bi },
+                { v: placed.length, l: { en: 'Accepted offers listed', hi: 'सूचीबद्ध स्वीकृत ऑफ़र' } as Bi },
               ].map((x, i) => (
                 <div key={i} className="rounded border border-gray-300 px-2 py-1.5">
                   <p className="text-[16px] font-bold tabular-nums text-gray-900">{fmtIN(x.v)}</p>
@@ -296,13 +298,21 @@ function NaacDialog({
                 </div>
               ))}
             </div>
+            <p className="mt-1.5 text-[12px] leading-snug text-gray-500">
+              <Tr
+                b={{
+                  en: `This sheet lists accepted and upgraded offers only. Pending and declined offers are added as offer letters are filed (${fmtIN(b.offers)} offers recorded in total).`,
+                  hi: `इस शीट में केवल स्वीकृत और अपग्रेड ऑफ़र हैं। लंबित और अस्वीकृत ऑफ़र, ऑफ़र लेटर जमा होने पर जोड़े जाते हैं (कुल ${fmtIN(b.offers)} ऑफ़र दर्ज)।`,
+                }}
+              />
+            </p>
 
             <div className="mt-4 overflow-x-auto">
               <table className="w-full min-w-[560px] border-collapse text-left text-[12px] text-gray-900">
                 <thead>
                   <tr className="bg-gray-100">
                     {[null, UI.colStudent, UI.colProg, UI.colEmployer, UI.colPkg, UI.colYear].map((h, i) => (
-                      <th key={i} className="border border-gray-300 px-2 py-1.5 font-semibold">
+                      <th key={i} className="whitespace-nowrap border border-gray-300 px-2 py-1.5 font-semibold">
                         {h ? <Tr b={h} /> : '#'}
                       </th>
                     ))}
@@ -320,7 +330,7 @@ function NaacDialog({
                         <Tr b={o.sector} />
                       </td>
                       <td className="whitespace-nowrap border border-gray-300 px-2 py-1.5 tabular-nums">{o.band}</td>
-                      <td className="border border-gray-300 px-2 py-1.5 tabular-nums">{ACADEMIC_YEAR}</td>
+                      <td className="whitespace-nowrap border border-gray-300 px-2 py-1.5 tabular-nums">{ACADEMIC_YEAR}</td>
                     </tr>
                   ))}
                 </tbody>

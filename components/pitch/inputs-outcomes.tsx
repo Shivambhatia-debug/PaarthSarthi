@@ -222,10 +222,12 @@ export function InputsOutcomes({ className }: { className?: string }) {
             <Tr as="p" b={CORE_SUB} className="relative mt-0.5 text-[12px] uppercase tracking-[0.14em] text-gray-500" />
             <div className="relative mt-4 flex w-full flex-col gap-2">
               {PILLS.map((p) => (
-                <div key={p.id} className={cn('flex min-w-0 items-center gap-2.5 rounded-lg border px-3 py-2 text-left', p.cls)}>
-                  <p.Icon className="h-4 w-4 shrink-0" aria-hidden />
-                  <Tr b={p.label} className="shrink-0 text-[13px] font-semibold" />
-                  <Tr b={p.line} className="min-w-0 truncate text-[12px] text-gray-400" />
+                <div key={p.id} className={cn('flex min-w-0 items-start gap-2.5 rounded-lg border px-3 py-2 text-left', p.cls)}>
+                  <p.Icon className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                  <div className="flex min-w-0 flex-col items-start gap-0.5">
+                    <Tr b={p.label} className="text-[13px] font-semibold leading-tight" />
+                    <Tr b={p.line} className="text-[12px] leading-snug text-gray-400" />
+                  </div>
                 </div>
               ))}
             </div>

@@ -4,14 +4,14 @@ import { useRef } from 'react'
 import { Download, FileBadge2, ShieldAlert } from 'lucide-react'
 import { useDemo } from '@/lib/os/demo-store'
 import { fmtDate, type Bi } from '@/lib/os/i18n'
-import { OFFER_BAND_NOTE, bandFor, offerBandFor } from '@/lib/os/scoring'
+import { OFFER_BAND_NOTE, bandFor } from '@/lib/os/scoring'
 import { printOnly } from '@/lib/os/print'
 import { DEMO_TODAY } from '@/lib/mock/state'
 import { institutionById } from '@/lib/mock/institutions'
 import { blueprintById } from '@/lib/mock/blueprints'
 import { drivesFor } from '@/lib/mock/drives'
 import { Tr } from '@/components/os/tr-text'
-import { OFFER_ROLE } from '@/components/placement/report/report-data'
+import { OFFER_ROLE, offerBandForPersona } from '@/components/placement/report/report-data'
 
 const TXT = {
   heading: { en: 'Simulated offer band', hi: 'सिम्युलेटेड ऑफ़र बैंड', hinglish: 'Simulated offer band' },
@@ -62,9 +62,9 @@ export function OfferLetter({ pri }: { pri: number }) {
   const ref = `PS-SIM-${persona.avatarInitials}-${last4}-${DEMO_TODAY.replace(/-/g, '')}`
 
   return (
-    <section className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+    <section id="offer" className="flex h-full scroll-mt-24 flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
       <div className="flex flex-wrap items-start gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[15rem] flex-1">
           <div className="flex items-center gap-2">
             <FileBadge2 className="h-4 w-4 text-cyan-300" aria-hidden />
             <Tr b={TXT.heading} as="h2" className="text-[15px] font-semibold text-white" />
@@ -86,9 +86,10 @@ export function OfferLetter({ pri }: { pri: number }) {
         <div className="relative overflow-hidden">
           {/* Diagonal watermark (prints: print-color-adjust is exact) */}
           <div aria-hidden className="pointer-events-none absolute inset-0 z-0 flex select-none items-center justify-center">
-            <span className="-rotate-[26deg] whitespace-nowrap rounded-md border-[3px] border-rose-600/25 px-4 py-1.5 text-[22px] font-black uppercase tracking-[0.14em] text-rose-600/[0.16] sm:text-[34px]">
-              Simulated · not an actual offer
-            </span>
+            <Tr
+              b={{ en: 'Simulated · not an actual offer', hi: 'सिम्युलेटेड · असली ऑफ़र नहीं', hinglish: 'Simulated · asli offer nahi' }}
+              className="-rotate-[26deg] whitespace-nowrap rounded-md border-[3px] border-rose-600/25 px-4 py-1.5 text-[22px] font-black uppercase tracking-[0.14em] text-rose-600/[0.16] sm:text-[34px]"
+            />
           </div>
 
           <div className="relative z-10">
@@ -127,7 +128,7 @@ export function OfferLetter({ pri }: { pri: number }) {
               <p className="text-[12px] font-semibold uppercase tracking-[0.12em] text-cyan-800">
                 <Tr b={TXT.band} />
               </p>
-              <Tr b={offerBandFor(pri)} as="p" className="mt-1 text-[18px] font-bold leading-snug text-gray-900 sm:text-[20px]" />
+              <Tr b={offerBandForPersona(persona.kind, pri).full} as="p" className="mt-1 text-[18px] font-bold leading-snug text-gray-900 sm:text-[20px]" />
               <p className="mt-1 text-[12px] text-gray-500">
                 <Tr b={OFFER_BAND_NOTE} />
               </p>

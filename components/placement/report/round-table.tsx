@@ -33,6 +33,12 @@ const STATUS: Record<RoundStatus, { label: Bi; cls: string }> = {
   locked: { label: { en: 'Not taken', hi: 'नहीं दिया' }, cls: 'border-white/10 bg-white/[0.03] text-gray-400' },
 }
 
+/** Below an advisory (non-eliminating) cutoff, e.g. Communication in a core drive: never shown as 'Cleared'. */
+const ADVISORY_STATUS: { label: Bi; cls: string } = {
+  label: { en: 'Advisory', hi: 'सलाहकारी' },
+  cls: 'border-amber-400/30 bg-amber-400/[0.08] text-amber-200',
+}
+
 /** A round with no recorded score falls back to today's attempt (persona targets), so the report renders cold. */
 function effectiveRound(id: RoundId, rs: RoundState | undefined, personaId: 'priya' | 'rahul'): RoundState {
   const hasScore = typeof rs?.score === 'number' || rs?.detail?.versant !== undefined
@@ -75,7 +81,7 @@ export function RoundTable() {
       </div>
 
       <div className="-mx-1 mt-3 overflow-x-auto px-1">
-        <table className="w-full min-w-[440px] text-[13px]">
+        <table className="w-full text-[13px]">
           <thead>
             <tr className="text-left text-[12px] uppercase tracking-[0.08em] text-gray-500">
               <th className="pb-2 pr-2 font-semibold">
@@ -84,13 +90,13 @@ export function RoundTable() {
               <th className="pb-2 pr-2 text-right font-semibold">
                 <Tr b={TXT.score} />
               </th>
-              <th className="pb-2 pr-2 font-semibold">
+              <th className="hidden pb-2 pr-2 font-semibold sm:table-cell">
                 <Tr b={TXT.cutoff} />
               </th>
               <th className="pb-2 pr-2 font-semibold">
                 <Tr b={TXT.status} />
               </th>
-              <th className="pb-2 text-right font-semibold">
+              <th className="hidden pb-2 text-right font-semibold sm:table-cell">
                 <Tr b={TXT.rank} />
               </th>
             </tr>
@@ -98,10 +104,12 @@ export function RoundTable() {
           <tbody>
             {list.map((r) => {
               const rs = effectiveRound(r.id, rounds?.[r.id], personaId)
-              const st = STATUS[rs.status] ?? STATUS.cleared
               const cut = ROUND_CUTOFF[r.id]
               const top = ROUND_TOP_PCT[personaId]?.[r.id]
               const isComm = r.id === 'communication'
+              const commScore = isComm ? Number(rs.detail?.versant ?? rs.score) : NaN
+              const belowAdvisory = isComm && core && cut !== undefined && Number.isFinite(commScore) && commScore < cut
+              const st = belowAdvisory ? ADVISORY_STATUS : (STATUS[rs.status] ?? STATUS.cleared)
               return (
                 <tr key={r.id} className="border-t border-white/[0.06] align-middle">
                   <td className="py-2.5 pr-2">
@@ -113,8 +121,13 @@ export function RoundTable() {
                     ) : (
                       formatRoundScore(r.id, rs)
                     )}
+                    {r.id !== 'eligibility' && cut !== undefined && (
+                      <span className="block text-[12px] font-normal text-gray-500 sm:hidden">
+                        <Tr b={TXT.cutoff} /> {isComm ? `${cut}/80` : cut}
+                      </span>
+                    )}
                   </td>
-                  <td className="py-2.5 pr-2 text-gray-400">
+                  <td className="hidden py-2.5 pr-2 text-gray-400 sm:table-cell">
                     {r.id === 'eligibility' ? (
                       <span className="text-[12.5px]">{eligText}</span>
                     ) : isComm ? (
@@ -137,7 +150,7 @@ export function RoundTable() {
                       <Tr b={st.label} />
                     </span>
                   </td>
-                  <td className="py-2.5 text-right tabular-nums text-gray-300">{top !== undefined ? `Top ${top}%` : '—'}</td>
+                  <td className="hidden py-2.5 text-right tabular-nums text-gray-300 sm:table-cell">{top !== undefined ? `Top ${top}%` : '—'}</td>
                 </tr>
               )
             })}

@@ -607,7 +607,7 @@ export function CommRound({ onDone }: CommRoundProps) {
 function Stepper({ idx, phase, stage }: { idx: number; phase: Phase; stage: Stage }) {
   const steps = [...COMM_ITEMS.map((it) => ({ key: it.id, label: it.step, Icon: PART_ICON[it.kind] })), { key: 'R', label: TXT.result, Icon: Gauge }]
   return (
-    <ol className="grid grid-cols-4 gap-1.5 sm:gap-2" aria-label="Round 3 parts">
+    <ol className="grid grid-cols-2 gap-1.5 sm:grid-cols-4 sm:gap-2" aria-label="Round 3 parts">
       {steps.map((s, i) => {
         const isResult = i === steps.length - 1
         let state: 'done' | 'current' | 'todo'

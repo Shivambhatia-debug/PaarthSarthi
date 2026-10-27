@@ -3,7 +3,7 @@
 import type { Bi } from '@/lib/os/i18n'
 import { fmtDate } from '@/lib/os/i18n'
 import type { RoundId } from '@/lib/os/rounds'
-import { PILLAR_KEYS, PILLAR_LABELS } from '@/lib/os/scoring'
+import { PILLAR_KEYS, PILLAR_LABELS, offerBandFor } from '@/lib/os/scoring'
 import { isoDaysBefore } from '@/lib/mock/state'
 import type { Attempt, Drive, PersonaRunId, PillarKey, Pillars } from '@/lib/mock/types'
 
@@ -363,4 +363,32 @@ function week(i: number, focus: Bi, tasks: PlanTask[]): PlanWeek {
     focus,
     tasks,
   }
+}
+
+/**
+ * Simulated offer band. Diploma (polytechnic) students are benchmarked on diploma pool-drive salaries
+ * (≈ ₹1.8-3.6 LPA), never on the engineering bands that offerBandFor() uses.
+ */
+export function offerBandForPersona(kind: string | undefined, pri: number): { full: Bi; short: Bi } {
+  if (kind === 'polytechnic') {
+    return pri < 65
+      ? {
+          full: { en: 'Diploma trainee band (≈ ₹1.8-2.4 LPA equivalent)', hi: 'डिप्लोमा ट्रेनी बैंड (≈ ₹1.8-2.4 LPA समतुल्य)' },
+          short: { en: 'Diploma trainee · ₹1.8-2.4 LPA', hi: 'डिप्लोमा ट्रेनी · ₹1.8-2.4 LPA' },
+        }
+      : {
+          full: { en: 'Diploma core band (≈ ₹2.4-3.6 LPA equivalent)', hi: 'डिप्लोमा कोर बैंड (≈ ₹2.4-3.6 LPA समतुल्य)' },
+          short: { en: 'Diploma core · ₹2.4-3.6 LPA', hi: 'डिप्लोमा कोर · ₹2.4-3.6 LPA' },
+        }
+  }
+  const full = offerBandFor(pri)
+  const short: Bi =
+    pri < 50
+      ? { en: 'Not yet · 30-day plan', hi: 'अभी नहीं · 30-दिन योजना' }
+      : pri < 65
+        ? { en: 'Mass-recruiter · ₹3.3-4.5 LPA', hi: 'मास-रिक्रूटर · ₹3.3-4.5 LPA' }
+        : pri < 80
+          ? { en: 'Higher-tier · ₹6-7.5 LPA', hi: 'उच्च-स्तरीय · ₹6-7.5 LPA' }
+          : { en: 'Top-track · ₹9 LPA+', hi: 'टॉप-ट्रैक · ₹9 LPA+' }
+  return { full, short }
 }

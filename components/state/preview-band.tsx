@@ -69,10 +69,10 @@ export function PreviewBand({ className }: { className?: string }) {
         </div>
       </header>
 
-      <div className="relative grid grid-cols-1 gap-3 min-[480px]:grid-cols-2 xl:grid-cols-4">
+      <div className="relative grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         <Tile index={3}>
           <KpiTile
-            className="h-full"
+            className="h-full max-sm:[&_.text-3xl]:text-2xl max-sm:[&_.mt-auto.pt-3]:hidden"
             icon={UserPlus}
             label={PREVIEW.onboardedLabel}
             value={PREVIEW.onboarded}
@@ -82,7 +82,7 @@ export function PreviewBand({ className }: { className?: string }) {
         </Tile>
         <Tile index={4}>
           <KpiTile
-            className="h-full"
+            className="h-full max-sm:[&_.text-3xl]:text-2xl max-sm:[&_.mt-auto.pt-3]:hidden"
             icon={Activity}
             label={T.weekly}
             value={PREVIEW.weeklyActive}
@@ -94,7 +94,7 @@ export function PreviewBand({ className }: { className?: string }) {
         </Tile>
         <Tile index={5}>
           <KpiTile
-            className="h-full"
+            className="h-full max-sm:[&_.text-3xl]:text-2xl max-sm:[&_.mt-auto.pt-3]:hidden"
             icon={Gauge}
             tone="ai"
             label={T.avgPri}
@@ -109,7 +109,7 @@ export function PreviewBand({ className }: { className?: string }) {
         </Tile>
         <Tile index={6}>
           <KpiTile
-            className="h-full"
+            className="h-full max-sm:[&_.text-3xl]:text-2xl max-sm:[&_.mt-auto.pt-3]:hidden"
             icon={Mic}
             tone="ai"
             label={T.ai}
@@ -125,7 +125,7 @@ export function PreviewBand({ className }: { className?: string }) {
         </Tile>
         <Tile index={7}>
           <KpiTile
-            className="h-full"
+            className="h-full max-sm:[&_.text-3xl]:text-2xl max-sm:[&_.mt-auto.pt-3]:hidden"
             icon={BadgeCheck}
             tone="good"
             label={T.ready}
@@ -145,7 +145,7 @@ export function PreviewBand({ className }: { className?: string }) {
         </Tile>
         <Tile index={8}>
           <KpiTile
-            className="h-full"
+            className="h-full max-sm:[&_.text-3xl]:text-2xl max-sm:[&_.mt-auto.pt-3]:hidden"
             icon={Award}
             tone="good"
             label={T.offers}
@@ -156,7 +156,7 @@ export function PreviewBand({ className }: { className?: string }) {
         </Tile>
         <Tile index={9}>
           <KpiTile
-            className="h-full"
+            className="h-full max-sm:[&_.text-3xl]:text-2xl max-sm:[&_.mt-auto.pt-3]:hidden"
             icon={Users2}
             tone="warn"
             label={T.girls}
@@ -185,7 +185,7 @@ export function PreviewBand({ className }: { className?: string }) {
         </Tile>
         <Tile index={10}>
           <KpiTile
-            className="h-full"
+            className="h-full max-sm:[&_.text-3xl]:text-2xl max-sm:[&_.mt-auto.pt-3]:hidden"
             icon={ShieldCheck}
             label={T.consent}
             value={PREVIEW.consentPct}

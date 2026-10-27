@@ -8,10 +8,25 @@ import { labelOf } from '@/components/placement/interview/script'
 import { cn } from '@/lib/utils'
 
 const TITLE: Bi = { en: 'Keywords Sarthi listens for', hi: 'सारथी किन कीवर्ड को सुन रहा है', hinglish: 'Keywords Sarthi sun raha hai' }
-const NOTE: Bi = {
-  en: 'Matched in English or Devanagari (e.g. "ईएसपी 32" = ESP32).',
-  hi: 'अंग्रेज़ी या देवनागरी, दोनों में पहचान (जैसे "ईएसपी 32" = ESP32)।',
-  hinglish: 'English ya Devanagari dono mein match (jaise "ईएसपी 32" = ESP32).',
+const DEVA = /[\u0900-\u097F]/
+
+/** The note's example comes from this question's own keywords (Rahul: "बीएमएस" = BMS), falling back to ESP32. */
+function noteFor(keywords: ReadonlyArray<KeywordSpec>): Bi {
+  let ex = { alias: 'ईएसपी 32', label: 'ESP32' }
+  for (const k of keywords) {
+    if (typeof k === 'string') continue
+    const alias = k.aliases?.find((a) => DEVA.test(a))
+    if (alias) {
+      ex = { alias, label: k.label }
+      break
+    }
+  }
+  const e = `"${ex.alias}" = ${ex.label}`
+  return {
+    en: `Matched in English or Devanagari (e.g. ${e}).`,
+    hi: `अंग्रेज़ी या देवनागरी, दोनों में पहचान (जैसे ${e})।`,
+    hinglish: `English ya Devanagari dono mein match (jaise ${e}).`,
+  }
 }
 
 export interface KeywordChipsProps {
@@ -66,7 +81,7 @@ export function KeywordChips({ keywords, hit, className }: KeywordChipsProps) {
           })}
         </ul>
       )}
-      <Tr b={NOTE} as="p" className="mt-3 text-[12px] leading-snug text-gray-500" />
+      <Tr b={noteFor(keywords)} as="p" className="mt-3 text-[12px] leading-snug text-gray-500" />
     </section>
   )
 }

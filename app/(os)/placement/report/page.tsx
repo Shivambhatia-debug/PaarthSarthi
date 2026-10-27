@@ -17,6 +17,7 @@ import { CompanyFit } from '@/components/placement/report/company-fit'
 import { OfferLetter } from '@/components/placement/report/offer-letter'
 import { Roadmap } from '@/components/placement/report/roadmap'
 import { Opportunities } from '@/components/placement/report/opportunities'
+import { NextStop } from '@/components/os/next-stop'
 
 const STUDENTS = fmtIN(PREVIEW.onboarded)
 
@@ -55,6 +56,11 @@ export default function ReportPage() {
   const { persona, personaId, attempt, prevAttempt, integrity, hydrated, lite } = useDemo()
   const [logDone, setLogDone] = useState(false)
   const [forced, setForced] = useState(false)
+
+  // Arriving from 'View my report' keeps the old scroll: always open at the top (back link visible).
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [])
 
   // Safety net: the report always appears, even if the agent log never reports done.
   useEffect(() => {
@@ -142,6 +148,7 @@ export default function ReportPage() {
           <Reveal i={8}>
             <Opportunities />
           </Reveal>
+          <NextStop href="/tpo/" label={{ en: 'College T&P view', hi: 'कॉलेज T&P दृश्य', hinglish: 'College T&P view' }} sub={{ en: 'The whole batch, as the TPO sees it', hi: 'पूरा बैच, जैसा TPO देखते हैं', hinglish: 'Poora batch, jaise TPO dekhte hain' }} className="mt-4" />
         </div>
       )}
     </div>

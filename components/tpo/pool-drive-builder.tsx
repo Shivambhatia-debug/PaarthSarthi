@@ -19,7 +19,7 @@ import { institutionById } from '@/lib/mock/institutions'
 import { fmtDate, fmtIN, type Bi } from '@/lib/os/i18n'
 import { cn } from '@/lib/utils'
 import { TpoCard, btnAi, btnGhost, useAiDelay } from '@/components/tpo/tpo-header'
-import { BRANCH_NAME, poolContribution, poolDefaultSelection, poolOptionsFor, poolPreview } from '@/components/tpo/tpo-data'
+import { BRANCH_NAME, poolContribution, poolDefaultSelection, poolOptionsFor, poolPinned, poolPreview } from '@/components/tpo/tpo-data'
 
 const DEFAULT_BLUEPRINT = 'core-mech-oem-style'
 
@@ -40,6 +40,9 @@ const UI = {
   ranking: { en: 'Sarthi AI is ranking the pool…', hi: 'सारथी AI पूल की रैंकिंग कर रहा है…' },
   none: { en: 'Select at least one institution.', hi: 'कम से कम एक संस्थान चुनें।' },
   host: { en: 'host', hi: 'मेज़बान' },
+  pinned: { en: 'Your demo student', hi: 'आपका डेमो छात्र' },
+  pinnedNote: { en: '· near-ready, 2-week sprint', hi: '· लगभग तैयार, 2-सप्ताह स्प्रिंट' },
+  readySuffix: { en: 'ready', hi: 'तैयार' },
 } satisfies Record<string, Bi>
 
 export function PoolDriveBuilder({ collegeId, className }: { collegeId: string; className?: string }) {
@@ -52,7 +55,8 @@ export function PoolDriveBuilder({ collegeId, className }: { collegeId: string; 
   const [selected, setSelected] = useState<string[]>(() => poolDefaultSelection())
 
   const ready = poolReady(selected)
-  const preview = useMemo(() => poolPreview(selected, 6), [selected])
+  const preview = useMemo(() => poolPreview(selected, 6, collegeId), [selected, collegeId])
+  const pinned = useMemo(() => poolPinned(selected), [selected])
   const bp = blueprintById(bpId)
   const host = institutionById(d2?.hostInstitutionId)
   const date = d2?.date
@@ -170,7 +174,9 @@ export function PoolDriveBuilder({ collegeId, className }: { collegeId: string; 
                           </span>
                         )}
                       </span>
-                      <span className="shrink-0 tabular-nums text-[12px] text-emerald-300/90">+{poolContribution(id)}</span>
+                      <span className="shrink-0 whitespace-nowrap tabular-nums text-[12px] text-emerald-300/90">
+                        {poolContribution(id)} <Tr b={UI.readySuffix} />
+                      </span>
                     </label>
                   </li>
                 )
@@ -212,14 +218,12 @@ export function PoolDriveBuilder({ collegeId, className }: { collegeId: string; 
             {selected.length === 0 ? (
               <Tr as="p" b={UI.none} className="text-[13px] text-amber-300" />
             ) : (
+              <>
               <ol className="space-y-1.5">
                 {preview.map((r, i) => (
                   <li
                     key={`${r.id}-${i}`}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg border px-3 py-2 text-[13px]',
-                      r.id === 'rahul' ? 'border-cyan-400/30 bg-cyan-400/[0.06]' : 'border-white/[0.08] bg-white/[0.02]',
-                    )}
+                    className="flex items-center gap-3 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-[13px]"
                   >
                     <span className="w-4 shrink-0 text-right text-[12px] tabular-nums text-gray-500">{i + 1}</span>
                     <span className="min-w-0 flex-1 truncate text-gray-100">
@@ -229,6 +233,19 @@ export function PoolDriveBuilder({ collegeId, className }: { collegeId: string; 
                   </li>
                 ))}
               </ol>
+              {pinned && (
+                <div className="mt-2 flex items-center gap-3 rounded-lg border border-cyan-400/30 bg-cyan-400/[0.06] px-3 py-2 text-[13px]">
+                  <span className="shrink-0 rounded bg-cyan-400/15 px-1.5 py-px text-[12px] font-semibold text-cyan-200">
+                    <Tr b={UI.pinned} />
+                  </span>
+                  <span className="min-w-0 flex-1 text-gray-100">
+                    {pinned.name} <span className="text-gray-400">({pinned.instShort})</span> · PRI {pinned.pri}
+                    <Tr b={UI.pinnedNote} className="ml-1 text-[12px] text-cyan-200/80" />
+                  </span>
+                  <BandBadge pri={pinned.pri} className="hidden shrink-0 sm:inline-flex" />
+                </div>
+              )}
+              </>
             )}
           </div>
 

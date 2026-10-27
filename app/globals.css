@@ -279,6 +279,8 @@
 
 /* Presenter dock rises above a DriveShell's sticky footer. */
 body[data-drive-footer] .ps-dock { bottom: 84px; }
+/* Reserve room so the last controls on a page can scroll clear of the presenter dock. */
+@media screen { body:has(.ps-dock) { padding-bottom: 72px; } }
 
 /* Print (printOnly() in lib/os/print.ts) */
 @page {

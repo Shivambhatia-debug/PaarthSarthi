@@ -96,6 +96,8 @@ export interface PilotKpi {
   id: string
   metric: Bi
   target: Bi
+  /** Compact target for the printed leave-behind. */
+  targetShort?: Bi
   how: Bi
 }
 
@@ -134,12 +136,14 @@ export const PILOT_KPIS: PilotKpi[] = [
     id: 'offers',
     metric: { en: 'Offers and internships', hi: 'ऑफ़र और इंटर्नशिप' },
     target: { en: 'Up vs previous batch', hi: 'पिछले बैच से अधिक' },
+    targetShort: { en: 'Above last batch', hi: 'पिछले बैच से ऊपर' },
     how: { en: "Colleges' own records", hi: 'कॉलेजों के अपने रिकॉर्ड' },
   },
   {
     id: 'evaluator',
     metric: { en: 'Independent evaluator', hi: 'स्वतंत्र मूल्यांकनकर्ता' },
     target: { en: 'Nominated by the Department', hi: 'विभाग द्वारा नामित' },
+    targetShort: { en: 'Dept-nominated', hi: 'विभाग द्वारा' },
     how: { en: 'EdTech Tulna-style / NITI results-based', hi: 'EdTech Tulna-शैली / NITI परिणाम-आधारित' },
   },
 ]

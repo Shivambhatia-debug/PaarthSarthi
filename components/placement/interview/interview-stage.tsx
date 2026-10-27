@@ -9,11 +9,12 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import {
   ArrowRight,
   Bot,
   CircleStop,
+  FastForward,
   FileText,
   GitBranch,
   Loader2,
@@ -113,7 +114,39 @@ const C = {
   gap: { en: 'Gap to work on', hi: 'सुधार की ज़रूरत', hinglish: 'Sudhaar ki zaroorat' },
   behaviour: { en: 'Behaviour flag', hi: 'व्यवहार संकेत', hinglish: 'Behaviour flag' },
   noHesitation: { en: 'No hesitation', hi: 'कोई झिझक नहीं', hinglish: 'Koi jhijhak nahi' },
+  finish: { en: 'Finish & score (F)', hi: 'इंटरव्यू पूरा करें (F)', hinglish: 'Finish & score (F)' },
+  followShort: { en: 'follow-up', hi: 'फ़ॉलो-अप', hinglish: 'follow-up' },
+  guestShort: { en: 'guest', hi: 'अतिथि', hinglish: 'guest' },
 } satisfies Record<string, Bi>
+
+// Chip sizing: 12px on phones, projector-readable 14px from lg up.
+const CHIP = 'px-2.5 py-1 text-[12px] lg:px-3 lg:py-1.5 lg:text-[14px]'
+const CHIP_ICON = 'h-3.5 w-3.5 lg:h-4 lg:w-4'
+
+function useMedia(query: string, fallback: boolean): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      try {
+        const mq = window.matchMedia(query)
+        mq.addEventListener('change', cb)
+        return () => mq.removeEventListener('change', cb)
+      } catch {
+        return () => {}
+      }
+    },
+    () => {
+      try {
+        return window.matchMedia(query).matches
+      } catch {
+        return fallback
+      }
+    },
+    () => fallback,
+  )
+}
+
+/** Rahul (Hindi-medium diploma) defaults to हिंदी once per browser session, unless a language was already chosen. */
+const HI_AUTO_KEY = 'ps_interview_hi_auto'
 
 const ROUND_FOR: Record<Phase, RoundId> = { tech: 'techInterview', hr: 'hrInterview' }
 
@@ -256,7 +289,7 @@ function MicPill() {
 // ---------------------------------------------------------------------------
 
 export function InterviewStage({ phase }: { phase: Phase }) {
-  const { personaId, rounds, setRound } = useDemo()
+  const { personaId, persona, lang, rounds, setRound, set } = useDemo()
   const [resetKey, setResetKey] = useState(0)
   const rid = ROUND_FOR[phase]
   const status = rounds[rid]?.status
@@ -276,14 +309,36 @@ export function InterviewStage({ phase }: { phase: Phase }) {
   }
 
   return (
-    <DriveShell round={rid} title={TITLE} subtitle={phase === 'hr' ? C.subtitleHr : C.subtitleTech} detectTabs={false}>
+    <DriveShell
+      round={rid}
+      title={TITLE}
+      subtitle={phase === 'hr' ? C.subtitleHr : C.subtitleTech}
+      detectTabs={false}
+      showProctor={false}
+    >
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <PhaseTabs phase={phase} />
           <LanguageSwitcher size="sm" showPlanned={false} />
           <MicPill />
         </div>
-        <AudioGate key={`${personaId}:${phase}:${resetKey}`} title={C.gateTitle} body={gateBody} startLabel={C.start}>
+        <AudioGate
+          key={`${personaId}:${phase}:${resetKey}`}
+          title={C.gateTitle}
+          body={gateBody}
+          startLabel={C.start}
+          onStart={() => {
+            // Plan Flow 2: Rahul's interview runs in Hindi. Only from the default Hinglish, once per session.
+            if (persona?.kind !== 'polytechnic' || lang !== 'hinglish') return
+            try {
+              if (window.sessionStorage.getItem(HI_AUTO_KEY)) return
+              window.sessionStorage.setItem(HI_AUTO_KEY, '1')
+            } catch {
+              /* storage blocked: still switch */
+            }
+            set({ lang: 'hi' })
+          }}
+        >
           <InterviewRoom phase={phase} />
         </AudioGate>
       </div>
@@ -350,11 +405,21 @@ function Caption({ text, count }: { text: string; count: number }) {
 
 function InterviewRoom({ phase }: { phase: Phase }) {
   const router = useRouter()
-  const { lang, persona, rounds } = useDemo()
+  const { lang, persona, rounds, presenter, voiceMode } = useDemo()
   const [muted, setMuted] = useState(false)
   const eng = useInterviewEngine({ phase, voiceOn: !muted })
   const { snap, current, actions, currentResult } = eng
   const gender = persona?.gender === 'M' ? 'M' : 'F'
+  const isSm = useMedia('(min-width: 640px)', true)
+  const isXl = useMedia('(min-width: 1280px)', false)
+  const orbSize = !isSm ? 120 : isXl ? 160 : 200
+
+  // Question badge: N = planned questions only, so the denominator never changes when a follow-up / guest is inserted.
+  const planned = snap.queue.filter((q) => q.kind !== 'followup' && q.kind !== 'guest')
+  const plannedIdx = current
+    ? planned.findIndex((q) => q.id === (current.kind === 'followup' ? current.parentId : current.id))
+    : -1
+  const badgeNum = plannedIdx >= 0 ? plannedIdx + 1 : Math.min(snap.index + 1, planned.length)
 
   const stage = snap.stage
   const listening = stage === 'listening'
@@ -409,9 +474,23 @@ function InterviewRoom({ phase }: { phase: Phase }) {
     stage === 'scored' && currentResult?.followUp && !snap.results[currentResult.followUp.id] ? currentResult.followUp : null
 
   const hesitationResult = current?.hesitationCheck ? currentResult : undefined
+  const hesRef = useRef<HTMLDivElement>(null)
+  const hasHes = !!hesitationResult
+  useEffect(() => {
+    if (!hasHes) return
+    const t = window.setTimeout(() => hesRef.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 120)
+    return () => window.clearTimeout(t)
+  }, [hasHes])
 
   const canScripted = !snap.phaseDone && (stage === 'speaking' || (listening && snap.source === 'live'))
   const canSkip = snap.started && !!current && stage !== 'thinking' && !(snap.phaseDone && stage === 'scored')
+  // Follow-up in a demo (presenter / scripted): one click to fill the rest and show the split card (same as 'F').
+  const showFinish =
+    snap.started && !snap.phaseDone && current?.kind === 'followup' && (presenter || voiceMode === 'scripted')
+  const onSkip = () => {
+    if (presenter && phase === 'tech' && current?.kind === 'followup') actions.fastForward()
+    else actions.skip()
+  }
 
   // Big button
   let big: { icon: ReactNode; label: Bi; onClick?: () => void; tone: 'ai' | 'rec' | 'muted' } | null = null
@@ -463,7 +542,7 @@ function InterviewRoom({ phase }: { phase: Phase }) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[230px_minmax(0,1fr)_300px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[260px_minmax(0,1fr)_340px]">
         {/* Left: delivery meters (last on mobile) */}
         <div className="order-3 xl:order-1">
           <DeliveryMeters meters={eng.meters} className="xl:sticky xl:top-[120px]" />
@@ -500,10 +579,16 @@ function InterviewRoom({ phase }: { phase: Phase }) {
               <div className="relative flex items-center justify-between gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-[#0d1117]/60 px-2.5 py-1 text-[12px] font-semibold text-gray-200">
                   <Tr b={C.question} />
-                  <span className="tabular-nums text-white">
-                    {Math.min(snap.index + 1, snap.queue.length)}/{snap.queue.length}
-                  </span>
-                  {current && <span className="text-gray-500">· {current.id}</span>}
+                  {current?.kind === 'followup' || current?.kind === 'guest' ? (
+                    <span className="text-white">
+                      {current.kind === 'followup' && <span className="tabular-nums">{badgeNum} · </span>}
+                      <Tr b={current.kind === 'followup' ? C.followShort : C.guestShort} />
+                    </span>
+                  ) : (
+                    <span className="tabular-nums text-white">
+                      {badgeNum}/{planned.length}
+                    </span>
+                  )}
                 </span>
                 <div className="flex items-center gap-2">
                   <span
@@ -534,23 +619,39 @@ function InterviewRoom({ phase }: { phase: Phase }) {
               {/* Tags */}
               <div className="relative mt-3 flex min-h-[28px] flex-wrap items-center justify-center gap-1.5">
                 {signal && (
-                  <span className="animate-in fade-in inline-flex max-w-full items-center gap-1.5 rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] px-2.5 py-1 text-[12px] text-cyan-100 duration-300">
-                    <Radio className="h-3.5 w-3.5 shrink-0 text-cyan-300" aria-hidden />
+                  <span className={cn('animate-in fade-in inline-flex max-w-full items-center gap-1.5 rounded-full border border-cyan-400/25 bg-cyan-400/[0.07] text-cyan-100 duration-300', CHIP)}>
+                    <Radio className={cn(CHIP_ICON, 'shrink-0 text-cyan-300')} aria-hidden />
                     <span className="min-w-0 truncate">
-                      {`Using signal from Round ${signal.round}: `}
+                      {tr(
+                        {
+                          en: `Using signal from Round ${signal.round}: `,
+                          hi: `राउंड ${signal.round} के सिग्नल से: `,
+                          hinglish: `Round ${signal.round} ka signal: `,
+                        },
+                        lang,
+                      )}
                       <span className="font-semibold text-white">{signal.chip}</span>
                     </span>
                   </span>
                 )}
                 {current?.kind === 'followup' && (
                   <>
-                    <span className="animate-in fade-in zoom-in-95 inline-flex items-center gap-1.5 rounded-full border border-violet-400/35 bg-violet-500/15 px-2.5 py-1 text-[12px] font-semibold text-violet-100 duration-300">
-                      <GitBranch className="h-3.5 w-3.5" aria-hidden />
+                    <span className={cn('animate-in fade-in zoom-in-95 inline-flex items-center gap-1.5 rounded-full border border-violet-400/35 bg-violet-500/15 font-semibold text-violet-100 duration-300', CHIP)}>
+                      <GitBranch className={CHIP_ICON} aria-hidden />
                       <Tr b={C.followTag} />
                     </span>
-                    <span className="animate-in fade-in inline-flex max-w-full items-center rounded-full border border-violet-400/20 bg-violet-500/[0.06] px-2.5 py-1 text-[12px] text-violet-200 duration-500">
+                    <span className={cn('animate-in fade-in inline-flex max-w-full items-center rounded-full border border-violet-400/20 bg-violet-500/[0.06] text-violet-200 duration-500', CHIP)}>
                       {current.because ? (
-                        <span className="min-w-0 truncate">{`Because you said: "${current.because}"`}</span>
+                        <span className="min-w-0 truncate">
+                          {tr(
+                            {
+                              en: `Because you said: "${current.because}"`,
+                              hi: `क्योंकि आपने कहा: "${current.because}"`,
+                              hinglish: `Kyunki aapne kaha: "${current.because}"`,
+                            },
+                            lang,
+                          )}
+                        </span>
                       ) : (
                         <Tr b={C.genericFollow} className="min-w-0 truncate" />
                       )}
@@ -558,8 +659,8 @@ function InterviewRoom({ phase }: { phase: Phase }) {
                   </>
                 )}
                 {current?.kind === 'guest' && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-300/[0.08] px-2.5 py-1 text-[12px] font-semibold text-amber-100">
-                    <UserRound className="h-3.5 w-3.5" aria-hidden />
+                  <span className={cn('inline-flex items-center gap-1.5 rounded-full border border-amber-300/30 bg-amber-300/[0.08] font-semibold text-amber-100', CHIP)}>
+                    <UserRound className={CHIP_ICON} aria-hidden />
                     <Tr b={C.guestTag} />
                   </span>
                 )}
@@ -567,7 +668,7 @@ function InterviewRoom({ phase }: { phase: Phase }) {
 
               {/* Orb */}
               <div className="relative mt-2 flex justify-center">
-                <AIOrb state={orbState} level={orbLevel} size={200} label={`Sarthi ${orbState}`} />
+                <AIOrb state={orbState} level={orbLevel} size={orbSize} label={`Sarthi ${orbState}`} />
               </div>
 
               {/* Status */}
@@ -643,8 +744,18 @@ function InterviewRoom({ phase }: { phase: Phase }) {
                   icon={<FileText className="h-3.5 w-3.5" aria-hidden />}
                   label={C.useScripted}
                 />
+                {showFinish && (
+                  <button
+                    type="button"
+                    onClick={actions.fastForward}
+                    className="inline-flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg bg-gradient-to-r from-violet-500 to-cyan-500 px-3.5 text-[13px] font-semibold text-white shadow-[0_0_24px_-8px_rgba(139,92,246,0.9)] transition-transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <FastForward className="h-3.5 w-3.5" aria-hidden />
+                    <Tr b={C.finish} />
+                  </button>
+                )}
                 <SecondaryButton
-                  onClick={actions.skip}
+                  onClick={onSkip}
                   disabled={!canSkip}
                   icon={<SkipForward className="h-3.5 w-3.5" aria-hidden />}
                   label={C.skip}
@@ -672,9 +783,8 @@ function InterviewRoom({ phase }: { phase: Phase }) {
 
         {/* Right: transcript, keywords, scorecard */}
         <div className="order-2 min-w-0 space-y-4 xl:order-3">
-          <TranscriptPanel entries={entries} />
-          {current && <KeywordChips keywords={current.keywords} hit={eng.keywordsHit} />}
           {hesitationResult && (
+            <div ref={hesRef} className="scroll-mt-24">
             <AISurface
               key={`hes:${current?.id}`}
               tone="violet"
@@ -688,7 +798,10 @@ function InterviewRoom({ phase }: { phase: Phase }) {
                 className={cn('text-[13px] leading-relaxed', hesitationResult.hesitant ? 'text-amber-100' : 'text-emerald-100')}
               />
             </AISurface>
+            </div>
           )}
+          <TranscriptPanel entries={entries} />
+          {current && <KeywordChips keywords={current.keywords} hit={eng.keywordsHit} />}
           {current && (
             <AnswerScorecard
               key={current.id}

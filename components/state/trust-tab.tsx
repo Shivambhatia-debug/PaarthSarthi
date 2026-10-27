@@ -100,7 +100,7 @@ export function TrustTab({ className }: { className?: string }) {
   const pct = PREVIEW.consentPct
 
   return (
-    <div className={cn('grid grid-cols-1 gap-4 xl:grid-cols-12', className)}>
+    <div className={cn('grid grid-cols-1 gap-4 xl:grid-cols-12 xl:items-start', className)}>
       <PanelCard index={0} className="xl:col-span-4" icon={ShieldCheck} accent="emerald" title={T.consent} subtitle={T.consentSub}>
         <div className="flex items-baseline gap-2">
           <span className="text-3xl font-semibold tabular-nums text-white">
@@ -206,7 +206,7 @@ export function TrustTab({ className }: { className?: string }) {
       </PanelCard>
 
       <PanelCard index={4} className="xl:col-span-12" icon={ClipboardList} accent="emerald" title={T.commit} subtitle={T.commitSub}>
-        <ul className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-5">
           {TRUST_COMMITMENTS.map((c) => {
             const st = STATUS[c.status] ?? STATUS.planned
             return (

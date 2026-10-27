@@ -19,17 +19,23 @@ const T = {
     en: 'Average pillar score per branch and skill · 50 is the readiness line',
     hi: 'हर शाखा और कौशल का औसत स्तंभ स्कोर · 50 तैयारी रेखा है',
   },
-  legend: { en: 'Pillar score (0–100)', hi: 'स्तंभ स्कोर (0–100)' },
+  legend: { en: 'Pillar score (0–100 scale; colour 35–70)', hi: 'स्तंभ स्कोर (0–100 पैमाना; रंग 35–70)' },
   caption: { en: 'Branch × skill readiness (pillar scale)', hi: 'शाखा × कौशल तैयारी (स्तंभ पैमाना)' },
   below: { en: 'below the readiness line', hi: 'तैयारी रेखा से नीचे' },
   above: { en: 'at or above the readiness line', hi: 'तैयारी रेखा पर या ऊपर' },
 } satisfies Record<string, Bi>
 
+/** Short column heads so 'Communication' / 'Core subjects' are not truncated in 9 columns. */
+const SHORT_COL: Partial<Record<SkillKey, Bi>> = {
+  core: { en: 'Core', hi: 'कोर' },
+  communication: { en: 'Comm.', hi: 'संवाद' },
+}
+
 export function SkillGapPanel({ className, index = 0 }: { className?: string; index?: number }) {
   const { t, lang } = useDemo()
   const bs = PREVIEW.branchSkill
   const insight = useMemo(() => skillGapInsight(), [])
-  const colLabels = useMemo(() => bs.cols.map((c: SkillKey) => SKILL_LABEL[c] ?? c), [bs.cols])
+  const colLabels = useMemo(() => bs.cols.map((c: SkillKey) => SHORT_COL[c] ?? SKILL_LABEL[c] ?? c), [bs.cols])
 
   return (
     <PanelCard
@@ -45,8 +51,8 @@ export function SkillGapPanel({ className, index = 0 }: { className?: string; in
         rows={bs.rows}
         cols={bs.cols}
         values={bs.values}
-        min={0}
-        max={100}
+        min={35}
+        max={70}
         colLabels={colLabels}
         legendLabel={T.legend}
         caption={T.caption}
