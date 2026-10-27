@@ -261,6 +261,8 @@ export function OverviewTab({ collegeId, inst, b, firstView, onSeen }: OverviewT
           rows={matrix.rows}
           cols={matrix.cols}
           values={matrix.values}
+          min={35}
+          max={65}
           caption={heatCaption}
           onCellClick={(row, col, v) => {
             const skill = SKILL_NAME[col as SkillKey] ?? { en: col, hi: col }

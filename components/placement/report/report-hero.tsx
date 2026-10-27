@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { Calculator, Check, ChevronDown, Send, ShieldCheck, TrendingUp } from 'lucide-react'
+import { Building2, Calculator, Check, ChevronDown, FileBadge2, Send, ShieldCheck, TrendingUp } from 'lucide-react'
 import { useDemo } from '@/lib/os/demo-store'
 import { fmtDate, fmtNum, type Bi } from '@/lib/os/i18n'
 import { PILLAR_KEYS, PILLAR_LABELS, PILLAR_WEIGHTS, INTEGRITY_FLOOR } from '@/lib/os/scoring'
@@ -15,7 +15,8 @@ import { aiToast } from '@/components/ai/ai-toast'
 import { BandBadge } from '@/components/os/band-badge'
 import { IllustrativeChip } from '@/components/os/illustrative-chip'
 import { Tr } from '@/components/os/tr-text'
-import { buildSummary } from '@/components/placement/report/report-data'
+import { DRIVE_COUNTS, drivesFor } from '@/lib/mock/drives'
+import { buildSummary, offerBandForPersona } from '@/components/placement/report/report-data'
 import { cn } from '@/lib/utils'
 
 const TXT = {
@@ -64,6 +65,8 @@ export function ReportHero({ live, pri, attempt, first, prev }: ReportHeroProps)
   const rows = PILLAR_KEYS.map((k) => ({ k, w: PILLAR_WEIGHTS[k], v: live[k], pts: (live[k] * PILLAR_WEIGHTS[k]) / 100 }))
   const sum = rows.reduce((s, r) => s + r.pts, 0)
   const integrityScore = Math.round(integrity?.score ?? 100)
+  const driveCount = useMemo(() => DRIVE_COUNTS[personaId] ?? { before: null, now: drivesFor(personaId).length }, [personaId])
+  const offerShort = offerBandForPersona(persona.kind, pri).short
 
   const share = () => {
     aiToast(`TPO notified · ${instShort || 'your college'}`, {
@@ -182,6 +185,49 @@ export function ReportHero({ live, pri, attempt, first, prev }: ReportHeroProps)
               <Tr b={shared ? TXT.shared : TXT.share} />
               {instShort && <span className="hidden font-normal opacity-80 sm:inline">· {instShort}</span>}
             </button>
+          </div>
+
+          {/* Headline outcomes, above the fold: anchors to the full cards below */}
+          <div className="grid gap-2 sm:grid-cols-2">
+            <a
+              href="#company-fit"
+              className="group flex min-w-0 items-center gap-3 rounded-xl border border-emerald-400/25 bg-emerald-400/[0.06] px-3.5 py-2.5 transition-colors hover:border-emerald-300/50 hover:bg-emerald-400/10"
+            >
+              <Building2 className="h-5 w-5 shrink-0 text-emerald-300" aria-hidden />
+              <span className="min-w-0">
+                <span className="block text-[12px] font-semibold uppercase tracking-[0.1em] text-emerald-300/80">
+                  <Tr b={{ en: 'Eligible drives', hi: 'पात्र ड्राइव', hinglish: 'Eligible drives' }} />
+                </span>
+                <span className="block text-[15px] font-semibold text-white">
+                  <span className="tabular-nums">{driveCount.now}</span>{' '}
+                  <Tr b={{ en: 'drives', hi: 'ड्राइव', hinglish: 'drives' }} />
+                  {driveCount.before !== null && (
+                    <span className="font-normal text-gray-300">
+                      {' · '}
+                      <Tr
+                        b={{
+                          en: `was ${driveCount.before} on ${fmtDate(first.date, 'en')}`,
+                          hi: `${fmtDate(first.date, 'hi')} को ${driveCount.before}`,
+                          hinglish: `${fmtDate(first.date, 'en')} ko ${driveCount.before} thi`,
+                        }}
+                      />
+                    </span>
+                  )}
+                </span>
+              </span>
+            </a>
+            <a
+              href="#offer"
+              className="group flex min-w-0 items-center gap-3 rounded-xl border border-cyan-400/25 bg-cyan-400/[0.06] px-3.5 py-2.5 transition-colors hover:border-cyan-300/50 hover:bg-cyan-400/10"
+            >
+              <FileBadge2 className="h-5 w-5 shrink-0 text-cyan-300" aria-hidden />
+              <span className="min-w-0">
+                <span className="block text-[12px] font-semibold uppercase tracking-[0.1em] text-cyan-300/80">
+                  <Tr b={{ en: 'Offer band (simulated)', hi: 'ऑफ़र बैंड (सिम्युलेटेड)', hinglish: 'Offer band (simulated)' }} />
+                </span>
+                <Tr b={offerShort} className="block text-[15px] font-semibold text-white" />
+              </span>
+            </a>
           </div>
 
           <div className={cn('grid transition-[grid-template-rows] duration-300 ease-out', whyOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>

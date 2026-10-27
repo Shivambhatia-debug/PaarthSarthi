@@ -28,6 +28,11 @@ const T = {
   oneEach: { en: 'An engineering college in every district', hi: 'हर ज़िले में एक इंजीनियरिंग कॉलेज' },
 } satisfies Record<string, Bi>
 
+/** '2025-26' with a non-breaking hyphen so the year never splits across lines next to the chip. */
+function nbYear(y: string): string {
+  return y.replace(/-/g, '\u2011')
+}
+
 function SeatBar({ label, pct, filled, total }: { label: Bi; pct: number; filled: number; total: number }) {
   return (
     <div className="space-y-1">
@@ -80,7 +85,7 @@ export function ReportedBand({ className }: { className?: string }) {
           <KpiTile
             className="h-full"
             icon={Users}
-            label={{ en: `${T.placements.en} ${last.year}`, hi: `${T.placements.hi} ${last.year}` }}
+            label={{ en: `${T.placements.en} ${nbYear(last.year)}`, hi: `${T.placements.hi} ${nbYear(last.year)}` }}
             valueText={`${fmtIN(last.value)}–${fmtIN(last.high ?? last.value)}`}
             sub={T.sourcesDiffer}
             tag="reported"

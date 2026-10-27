@@ -11,6 +11,8 @@ import { InputsOutcomes } from '@/components/pitch/inputs-outcomes'
 import { ViewCards } from '@/components/pitch/view-cards'
 import { PreflightPanel } from '@/components/pitch/preflight-panel'
 import { LiveTicker } from '@/components/ai/live-ticker'
+import { QrCode, DEMO_LINK_TEXT } from '@/components/pitch/leave-behind'
+import { Tr } from '@/components/os/tr-text'
 import { useQueryParam } from '@/hooks/use-query-param'
 import { cn } from '@/lib/utils'
 
@@ -48,7 +50,26 @@ export default function PlacementOSPage() {
         <ViewCards active={ready} />
       </div>
 
-      <Reveal ready={ready} i={3} className="no-print mt-12">
+      <Reveal ready={ready} i={3} className="mt-12">
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center sm:flex-row sm:text-left">
+          <QrCode size={104} />
+          <div className="min-w-0">
+            <Tr
+              as="p"
+              b={{ en: 'Open this demo on your phone', hi: 'यह डेमो अपने फ़ोन पर खोलें', hinglish: 'Yeh demo apne phone par kholiye' }}
+              className="text-[16px] font-semibold text-white"
+            />
+            <Tr
+              as="p"
+              b={{ en: 'Every screen in this pitch, with illustrative data.', hi: 'इस प्रस्तुति की हर स्क्रीन, उदाहरण डेटा के साथ।', hinglish: 'Is pitch ki har screen, illustrative data ke saath.' }}
+              className="mt-1 text-[14px] text-gray-400"
+            />
+            <p className="mt-1 break-all font-mono text-[13px] text-cyan-300">{DEMO_LINK_TEXT}</p>
+          </div>
+        </div>
+      </Reveal>
+
+      <Reveal ready={ready} i={4} className="no-print mt-12">
         <LiveTicker />
       </Reveal>
     </div>

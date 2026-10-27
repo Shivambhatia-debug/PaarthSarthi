@@ -356,7 +356,7 @@ function buildAuditLog(): AuditEvent[] {
     {
       id: 'a1',
       date: DEMO_TODAY,
-      time: '10:42',
+      time: '09:24',
       actor: bi(`TPO ${pce?.short ?? ''}`, `TPO ${pce?.short ?? ''}`),
       action: bi(
         `exported drive shortlist (${fmtIN(d1?.readyCount ?? 0)} rows)`,
@@ -367,7 +367,7 @@ function buildAuditLog(): AuditEvent[] {
     {
       id: 'a2',
       date: DEMO_TODAY,
-      time: '10:15',
+      time: '09:07',
       actor: bi('State analyst, DSTTE', 'राज्य विश्लेषक, DSTTE'),
       action: bi('viewed district aggregates (minimum cell 20)', 'ज़िला-स्तरीय कुल आँकड़े देखे (न्यूनतम सेल 20)'),
       scope: 'aggregate',
@@ -375,7 +375,7 @@ function buildAuditLog(): AuditEvent[] {
     {
       id: 'a3',
       date: DEMO_TODAY,
-      time: '09:58',
+      time: '08:52',
       actor: bi(`TPO ${gpMuz?.short ?? ''}`, `TPO ${gpMuz?.short ?? ''}`),
       action: bi(
         `added ${fmtIN(gpm)} students to the ${d2?.title.en ?? 'pool drive'}`,
@@ -386,7 +386,7 @@ function buildAuditLog(): AuditEvent[] {
     {
       id: 'a4',
       date: DEMO_TODAY,
-      time: '09:31',
+      time: '08:31',
       actor: bi('Sarthi AI', 'सारथी AI'),
       action: bi(
         `flagged ${fmtIN(PREVIEW.today.newlyReady)} newly interview-ready students for TPO review (advisory)`,
@@ -1115,6 +1115,121 @@ function findDistrictMention(input: string): District | null {
   return null
 }
 
+// Free-text intents: a skill gap ("Which district needs help with DSA?") and "weakest district".
+const SKILL_INTENTS: { skill: SkillKey; aliases: string[] }[] = [
+  { skill: 'dsa', aliases: ['dsa', 'डीएसए', 'coding', 'कोडिंग', 'data structures', 'algorithms'] },
+  { skill: 'cad', aliases: ['cad', 'कैड', 'autocad', 'design software'] },
+  { skill: 'aptitude', aliases: ['aptitude', 'एप्टीट्यूड', 'अभिरुचि', 'reasoning', 'quant'] },
+  { skill: 'sql', aliases: ['sql', 'एसक्यूएल', 'database'] },
+  { skill: 'python', aliases: ['python', 'पायथन'] },
+  { skill: 'plc', aliases: ['plc', 'पीएलसी', 'automation'] },
+  { skill: 'excel', aliases: ['excel', 'एक्सेल', 'spreadsheet'] },
+  { skill: 'core', aliases: ['core subject', 'core subjects', 'कोर विषय', 'core skills'] },
+  { skill: 'communication', aliases: ['communication', 'संवाद', 'कम्युनिकेशन', 'speaking', 'spoken', 'बोलचाल', 'english', 'अंग्रेज़ी', 'अंग्रेजी'] },
+]
+
+const WEAKEST_KW: KeywordSpec[] = [
+  {
+    label: 'weakest',
+    aliases: ['weakest', 'lowest', 'worst', 'needs help', 'need help', 'needs support', 'struggling', 'सबसे कमज़ोर', 'सबसे कमजोर', 'सबसे कम', 'सबसे पीछे', 'मदद', 'सहायता'],
+  },
+]
+const DISTRICT_KW: KeywordSpec[] = [{ label: 'district', aliases: ['district', 'districts', 'ज़िला', 'ज़िले', 'जिला', 'जिले', 'ज़िलों', 'जिलों'] }]
+
+function skillQA(skill: SkillKey): AskQA {
+  const L = SKILL_LABEL[skill]
+  const ds = districtsRanked().filter((d) => d.topGap === skill)
+  const bs = PREVIEW.branchSkill
+  const ci = bs.cols.indexOf(skill)
+  const branches = ci < 0 ? [] : bs.rows.map((r, ri) => ({ branch: r as string, value: bs.values[ri][ci] })).sort((a, b) => a.value - b.value)
+  const top = ds.slice(0, 6)
+  const lowB = branches.slice(0, 2)
+  const lowBEn = lowB.map((b) => `${b.branch} (${fmtNum(b.value, 0)})`).join(' and ')
+  const lowBHi = lowB.map((b) => `${b.branch} (${fmtNum(b.value, 0)})`).join(' और ')
+  const first = top[0]
+  return {
+    id: `skill-${skill}`,
+    qLang: 'en',
+    q: bi(`Which district needs help with ${L.en}?`, `${L.hi} में किस ज़िले को मदद चाहिए?`),
+    keywords: [],
+    answer: () => {
+      const headEn = top.length
+        ? `${L.en} is the top gap in ${ds.length} district${ds.length === 1 ? '' : 's'}. Lowest simulated PRI first:\n${top.map((d) => `• ${d.name}: PRI ${fmtNum(d.pri)}`).join('\n')}`
+        : `No district has ${L.en} as its single biggest gap this week.`
+      const headHi = top.length
+        ? `${ds.length} ज़िलों में ${L.hi} सबसे बड़ी कमी है। सबसे कम सिम्युलेटेड PRI पहले:\n${top.map((d) => `• ${d.nameHi}: PRI ${fmtNum(d.pri)}`).join('\n')}`
+        : `इस सप्ताह किसी भी ज़िले में ${L.hi} अकेली सबसे बड़ी कमी नहीं है।`
+      const brEn = lowB.length ? `\nAt branch level, the weakest ${L.en} scores statewide are ${lowBEn}.` : ''
+      const brHi = lowB.length ? `\nशाखा स्तर पर, राज्य में ${L.hi} स्कोर सबसे कम ${lowBHi} में है।` : ''
+      const whereEn = first ? first.name : 'the weakest branches'
+      const whereHi = first ? first.nameHi : 'सबसे कमज़ोर शाखाओं'
+      return bi(
+        `${headEn}${brEn}\nWhat to do: start ${GAP_FIX[skill].en} in ${whereEn} first, assign mentors to the at-risk students there, and review progress in 4 weeks.`,
+        `${headHi}${brHi}\nक्या करें: पहले ${whereHi} में ${GAP_FIX[skill].hi} शुरू करें, वहाँ जोखिम वाले छात्रों को मेंटर दें, और 4 सप्ताह में प्रगति की समीक्षा करें।`,
+      )
+    },
+    chart: () =>
+      top.length
+        ? {
+            data: top.map((d, i) => ({ id: d.id, name: bi(d.name, d.nameHi), value: d.pri, hl: i === 0 })),
+            unit: bi(`Districts with a ${L.en} gap · simulated PRI`, `${L.hi} की कमी वाले ज़िले · सिम्युलेटेड PRI`),
+            ref: { value: PREVIEW.avgPri, label: bi('State avg', 'राज्य औसत') },
+            decimals: 1,
+          }
+        : {
+            data: branches.slice(0, 6).map((b, i) => ({ id: b.branch, name: bi(b.branch, b.branch), value: b.value, hl: i === 0 })),
+            unit: bi(`${L.en} score by branch`, `शाखावार ${L.hi} स्कोर`),
+            ref: { value: 50, label: bi('Readiness line', 'तैयारी रेखा') },
+          },
+    actions: [
+      bi(`Start ${L.en} sprint${first ? ` in ${first.name}` : ''}`, `${first ? `${first.nameHi} में ` : ''}${L.hi} अभ्यास शुरू करें`),
+      bi('Assign mentors to at-risk students', 'जोखिम वाले छात्रों को मेंटर दें'),
+      bi('Schedule nodal-officer review', 'नोडल अधिकारी समीक्षा तय करें'),
+    ],
+    why: () => ({
+      filters: bi(`Whole state · districts whose top gap is ${L.en}`, `पूरा राज्य · जिन ज़िलों में ${L.hi} सबसे बड़ी कमी है`),
+      n: top.length ? sum(ds.map((d) => d.studentsAssessed)) : PREVIEW.onboarded,
+      nLabel: bi('student records', 'छात्र रिकॉर्ड'),
+      confidence: 0.8,
+    }),
+    focus: () => top.map((d) => d.id),
+  }
+}
+
+function weakestQA(): AskQA {
+  const ranked = districtsRanked()
+  const low = ranked.slice(0, 5)
+  return {
+    id: 'weakest-districts',
+    qLang: 'en',
+    q: bi('Which districts are weakest?', 'कौन से ज़िले सबसे कमज़ोर हैं?'),
+    keywords: [],
+    answer: () =>
+      bi(
+        `Lowest simulated PRI this week (state average ${fmtNum(PREVIEW.avgPri)}):\n${low.map((d) => `• ${d.name}: PRI ${fmtNum(d.pri)} · top gap ${SKILL_LABEL[d.topGap].en}`).join('\n')}\nWhat to do: a targeted sprint on each district's top gap, mentors for at-risk students, and a fortnightly nodal-officer review until each crosses the state average.`,
+        `इस सप्ताह सबसे कम सिम्युलेटेड PRI (राज्य औसत ${fmtNum(PREVIEW.avgPri)}):\n${low.map((d) => `• ${d.nameHi}: PRI ${fmtNum(d.pri)} · सबसे बड़ी कमी ${SKILL_LABEL[d.topGap].hi}`).join('\n')}\nक्या करें: हर ज़िले की सबसे बड़ी कमी पर लक्षित अभ्यास, जोखिम वाले छात्रों को मेंटर, और राज्य औसत पार होने तक हर पखवाड़े नोडल अधिकारी समीक्षा।`,
+      ),
+    chart: () => ({
+      data: low.map((d, i) => ({ id: d.id, name: bi(d.name, d.nameHi), value: d.pri, hl: i < 2 })),
+      unit: bi('Lowest districts · simulated PRI', 'सबसे कम ज़िले · सिम्युलेटेड PRI'),
+      ref: { value: PREVIEW.avgPri, label: bi('State avg', 'राज्य औसत') },
+      decimals: 1,
+    }),
+    actions: [
+      bi(`Start sprints in ${low[0]?.name ?? 'the lowest districts'}`, `${low[0]?.nameHi ?? 'सबसे कमज़ोर ज़िलों'} में अभ्यास शुरू करें`),
+      bi('Assign mentors to at-risk students', 'जोखिम वाले छात्रों को मेंटर दें'),
+      bi('Schedule nodal-officer review', 'नोडल अधिकारी समीक्षा तय करें'),
+    ],
+    why: () => ({
+      filters: bi('Whole state · all institutions · ranked by PRI', 'पूरा राज्य · सभी संस्थान · PRI के क्रम में'),
+      n: sum(low.map((d) => d.studentsAssessed)),
+      nLabel: bi('student records', 'छात्र रिकॉर्ड'),
+      confidence: 0.82,
+    }),
+    focus: () => low.map((d) => d.id),
+  }
+}
+
 /** Resolve a typed or chip question to a canned answer (free text: matchCanned, then district name, then fallback). */
 export function findAsk(input: string): { item: AskQA; lang: OfficerLang } {
   const raw = (input ?? '').trim()
@@ -1122,12 +1237,44 @@ export function findAsk(input: string): { item: AskQA; lang: OfficerLang } {
   const norm = normalizeText(raw)
   const exact = ASK_QA.find((q) => normalizeText(q.q.en) === norm || normalizeText(q.q.hi) === norm)
   if (exact) return { item: exact, lang }
+  // A named district or division, or a canned question with 2+ keyword hits, wins over the generic intents.
+  const strong = ASK_QA.find((q) => detectKeywords(raw, q.keywords).length >= 2)
+  if (strong) return { item: strong, lang }
+  const mentioned = findDistrictMention(raw)
+  const skill = SKILL_INTENTS.find((s) => detectKeywords(raw, [{ label: s.skill, aliases: s.aliases }]).length > 0)
+  if (skill && !mentioned && !(skill.skill === 'communication' && detectKeywords(raw, Q_PURNIA.keywords).length > 1)) {
+    return { item: skillQA(skill.skill), lang }
+  }
+  if (!mentioned && detectKeywords(raw, WEAKEST_KW).length && detectKeywords(raw, DISTRICT_KW).length) {
+    return { item: weakestQA(), lang }
+  }
   const hit = matchCanned<AskQA, null>(raw, ASK_QA, null)
   if (hit) return { item: hit, lang }
   const d = findDistrictMention(raw)
   if (d) return { item: districtQA(d), lang }
   return { item: ASK_FALLBACK, lang }
 }
+
+/** Rebuild an answer from its id (Ask Sarthi -> weekly brief hand-off via sessionStorage). */
+export function askById(id: string): AskQA | null {
+  if (!id) return null
+  const canned = ASK_QA.find((q) => q.id === id)
+  if (canned) return canned
+  if (id === ASK_FALLBACK.id) return ASK_FALLBACK
+  if (id === 'weakest-districts') return weakestQA()
+  if (id.startsWith('skill-')) {
+    const k = id.slice(6) as SkillKey
+    return SKILL_LABEL[k] ? skillQA(k) : null
+  }
+  if (id.startsWith('district-')) {
+    const d = districtById(id.slice(9))
+    return d ? districtQA(d) : null
+  }
+  return null
+}
+
+/** sessionStorage key for the Ask Sarthi answer added to the weekly brief. */
+export const BRIEF_ASK_KEY = 'ps_brief_ask'
 
 export function askSteps(answerLang: OfficerLang): Bi[] {
   return [
@@ -1375,4 +1522,5 @@ export function buildBrief(variant: BriefVariant): BriefDoc {
 export const BRIEF = { build: buildBrief }
 
 /** Reveal order on /state/brief: header, numbers, wins+risks, decisions, table+chart, footer. */
-export const BRIEF_SECTIONS = 6
+/** Header, headlines, wins/risks, Added from Ask Sarthi (empty slot when nothing was added), decisions, table, footer. */
+export const BRIEF_SECTIONS = 7

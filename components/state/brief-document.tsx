@@ -1,10 +1,11 @@
 'use client'
 
-import { useMemo, type ReactNode } from 'react'
-import { AlertTriangle, CheckCircle2, Gavel, Sparkles, TrendingUp } from 'lucide-react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { AlertTriangle, CheckCircle2, Gavel, MessageSquareText, Sparkles, TrendingUp, X } from 'lucide-react'
 import { SimulatedNotice } from '@/components/os/illustrative-chip'
 import { SIMULATED_RANKING_NOTE } from '@/lib/mock/state'
-import { BRIEF, type BriefDoc, type BriefTableRow, type BriefVariant } from '@/components/state/state-data'
+import { isDevanagari } from '@/lib/os/i18n'
+import { BRIEF, BRIEF_ASK_KEY, askById, type AskQA, type BriefDoc, type BriefTableRow, type BriefVariant } from '@/components/state/state-data'
 import { cn } from '@/lib/utils'
 
 export interface BriefDocumentProps {
@@ -86,15 +87,15 @@ function DivisionBars({ doc }: { doc: BriefDoc }) {
                 style={{ width: `${(r.value / max) * 100}%` }}
               />
               <span
-                className="absolute inset-y-0 pl-1 text-[12px] leading-[14px] tabular-nums text-gray-800"
+                className="absolute inset-y-0 z-10 pl-1.5 text-[12px] leading-[14px] tabular-nums text-gray-800"
                 style={{ left: `${(r.value / max) * 100}%` }}
               >
-                {r.label}
+                <span className="rounded bg-white px-1 shadow-[0_0_0_1px_rgba(229,231,235,1)]">{r.label}</span>
               </span>
             </span>
           </div>
         ))}
-        <div className="pointer-events-none absolute inset-y-0 left-[calc(6.5rem+0.5rem)] right-0" aria-hidden>
+        <div className="pointer-events-none absolute inset-y-0 left-[calc(6.5rem+0.5rem)] right-0 z-0" aria-hidden>
           <span className="absolute inset-y-0 border-l border-dashed border-violet-500" style={{ left: `${refPct}%` }} />
         </div>
       </div>
@@ -106,11 +107,90 @@ function DivisionBars({ doc }: { doc: BriefDoc }) {
   )
 }
 
+interface BriefAsk {
+  item: AskQA
+  question: string
+}
+
+function readBriefAsk(): BriefAsk | null {
+  try {
+    const raw = window.sessionStorage.getItem(BRIEF_ASK_KEY)
+    if (!raw) return null
+    const v = JSON.parse(raw) as { id?: string; question?: string }
+    const item = askById(String(v?.id ?? ''))
+    return item ? { item, question: String(v?.question ?? '') } : null
+  } catch {
+    return null
+  }
+}
+
+/** Two short lines from an answer: its first plain sentence and its first two bullets. */
+function answerSummary(text: string): string[] {
+  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean)
+  const bullets = lines.filter((l) => l.startsWith('•')).map((l) => l.replace(/^•\s*/, ''))
+  const plain = lines.filter((l) => !l.startsWith('•') && !/^\d+\./.test(l) && !l.endsWith(':'))
+  const out = [plain[0], bullets.length ? bullets.slice(0, 2).join('; ') : plain[1]].filter((l): l is string => !!l)
+  return out.slice(0, 2)
+}
+
+function AskAdded({ ask, lang, onRemove }: { ask: BriefAsk; lang: 'en' | 'hi'; onRemove: () => void }) {
+  const hi = lang === 'hi'
+  const qHi = isDevanagari(ask.question) ? ask.question : ask.item.q.hi
+  const qEn = isDevanagari(ask.question) ? ask.item.q.en : ask.question || ask.item.q.en
+  const summary = answerSummary(ask.item.answer()[lang])
+  return (
+    <>
+      <H icon={<MessageSquareText aria-hidden className="h-3.5 w-3.5 text-violet-600" />}>
+        <span className="flex-1">{hi ? 'सारथी से पूछें से जोड़ा गया' : 'Added from Ask Sarthi'}</span>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[12px] font-medium normal-case tracking-normal text-gray-400 hover:bg-gray-100 hover:text-gray-700 print:hidden"
+        >
+          <X aria-hidden className="h-3 w-3" />
+          {hi ? 'हटाएँ' : 'Remove'}
+        </button>
+      </H>
+      <div className="rounded-lg border border-violet-200 bg-violet-50/60 px-3 py-2.5">
+        <p lang="hi" className="font-deva text-[14px] font-semibold text-gray-900">
+          “{qHi}”
+        </p>
+        {!hi && <p className="text-[12px] italic text-gray-600">{qEn}</p>}
+        <div className="mt-1.5 space-y-0.5 text-gray-800">
+          {summary.map((l, i) => (
+            <p key={`s-${i}`}>{l}</p>
+          ))}
+        </div>
+        <ol className="mt-2 flex flex-wrap gap-1.5">
+          {ask.item.actions.slice(0, 3).map((a, i) => (
+            <li key={a.en} className="inline-flex items-center gap-1.5 rounded-full border border-violet-200 bg-white px-2.5 py-0.5 text-[12px] text-gray-800">
+              <span className="font-bold text-violet-700">{i + 1}</span>
+              {a[lang]}
+            </li>
+          ))}
+        </ol>
+      </div>
+    </>
+  )
+}
+
 /** One A4 'print-page' of the Secretary's weekly brief (fix 38). Content comes from BRIEF.build(variant). */
 export function BriefDocument({ variant, revealed, className }: BriefDocumentProps) {
   const doc = useMemo(() => BRIEF.build(variant), [variant])
   const hi = doc.lang === 'hi'
   const s = (i: number) => revealed > i
+  const [ask, setAsk] = useState<BriefAsk | null>(null)
+  useEffect(() => {
+    setAsk(readBriefAsk())
+  }, [])
+  const removeAsk = () => {
+    try {
+      window.sessionStorage.removeItem(BRIEF_ASK_KEY)
+    } catch {
+      // ignore
+    }
+    setAsk(null)
+  }
 
   return (
     <article
@@ -192,8 +272,15 @@ export function BriefDocument({ variant, revealed, className }: BriefDocumentPro
         </div>
       </Section>
 
-      {/* 3 · Decisions */}
-      <Section shown={s(3)} className="mt-5">
+      {/* 3 · Added from Ask Sarthi (only when an answer was added on /state) */}
+      {ask && (
+        <Section shown={s(3)} className="mt-5">
+          <AskAdded ask={ask} lang={doc.lang === 'hi' ? 'hi' : 'en'} onRemove={removeAsk} />
+        </Section>
+      )}
+
+      {/* 4 · Decisions */}
+      <Section shown={s(4)} className="mt-5">
         <H icon={<Gavel aria-hidden className="h-3.5 w-3.5 text-cyan-700" />}>{doc.sec.decisions}</H>
         <ol className="space-y-1.5">
           {doc.decisions.map((d, i) => (
@@ -206,8 +293,8 @@ export function BriefDocument({ variant, revealed, className }: BriefDocumentPro
         </ol>
       </Section>
 
-      {/* 4 · Districts table + chart */}
-      <Section shown={s(4)} className="mt-5">
+      {/* 5 · Districts table + chart */}
+      <Section shown={s(5)} className="mt-5">
         <H>{doc.sec.table}</H>
         <SimulatedNotice
           text={{ en: SIMULATED_RANKING_NOTE[doc.lang], hi: SIMULATED_RANKING_NOTE[doc.lang] }}
@@ -222,8 +309,8 @@ export function BriefDocument({ variant, revealed, className }: BriefDocumentPro
         </div>
       </Section>
 
-      {/* 5 · Footer */}
-      <Section shown={s(5)} className="mt-6">
+      {/* 6 · Footer */}
+      <Section shown={s(6)} className="mt-6">
         <footer className="space-y-1 border-t border-gray-300 pt-3 text-[12px] leading-snug text-gray-600">
           <p>{doc.footer.reported}</p>
           <p>{doc.footer.sources}</p>

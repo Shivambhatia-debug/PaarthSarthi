@@ -135,7 +135,7 @@ export function DistrictSheet({ districtId, open, onOpenChange }: DistrictSheetP
                   {fmtPct(d.girlsPct)}
                 </Stat>
               </div>
-              <SimulatedNotice className="relative mt-3" />
+              <SimulatedNotice className="relative mt-3" text={{ en: "Simulated readiness, not an assessment of any institution", hi: "सिम्युलेटेड तैयारी, किसी संस्थान का मूल्यांकन नहीं" }} />
             </div>
 
             <div className="space-y-5 px-5 py-5 sm:px-6">

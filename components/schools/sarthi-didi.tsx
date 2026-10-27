@@ -244,6 +244,17 @@ function DidiChat() {
   recRef.current = rec
   const wasListening = useRef(false)
   const scriptedIdx = useRef(0)
+  const silentStop = useRef(false)
+
+  // Scripted question: the next demo chip, in order (used by the scripted mic and the live-mic fallback).
+  const askScripted = () => {
+    const order = [DIDI_DEMO_CHIP, 0, 2]
+    const c = chips[order[scriptedIdx.current % order.length] ?? 0] ?? chips[0]
+    scriptedIdx.current += 1
+    if (c) askRef.current(tr2(c.text, langRef.current), qaById(c.qa))
+  }
+  const askScriptedRef = useRef(askScripted)
+  askScriptedRef.current = askScripted
 
   // When live recognition ends, send what was heard.
   useEffect(() => {
@@ -255,9 +266,15 @@ function DidiChat() {
     wasListening.current = false
     const r = recRef.current
     const heard = `${r.finalText} ${r.interim}`.trim()
+    const watchdog = silentStop.current
+    silentStop.current = false
     r.reset()
     if (heard) askRef.current(heard)
-    else if (!r.error || r.error === 'no-speech') aiToast(tr2(UI.notHeard, langRef.current), { tone: 'warn', id: 'didi-mic' })
+    else if (!r.error || r.error === 'no-speech' || watchdog) {
+      aiToast(tr2(UI.notHeard, langRef.current), { tone: 'warn', id: 'didi-mic' })
+      // Nothing came back (slow network speech service, quiet room): keep the demo moving.
+      if (watchdog) askScriptedRef.current()
+    }
   }, [rec.listening])
 
   // Auto-stop after a short silence once something was heard, and after 15 s at most.
@@ -268,6 +285,12 @@ function DidiChat() {
       const r = recRef.current
       const now = Date.now()
       const quiet = r.lastResultAt != null && now - r.lastResultAt > 1800 && `${r.finalText}${r.interim}`.trim().length > 0
+      // Watchdog: no result at all within 6 s, stop and fall back to the scripted question.
+      if (r.lastResultAt == null && `${r.finalText}${r.interim}`.trim().length === 0 && now - startedAt > 6000) {
+        silentStop.current = true
+        r.stop()
+        return
+      }
       if (quiet || now - startedAt > 15000) r.stop()
     }, 300)
     return () => window.clearInterval(id)
@@ -297,12 +320,9 @@ function DidiChat() {
     if (fakeListening) return
     cancel()
     setFakeListening(true)
-    const order = [DIDI_DEMO_CHIP, 0, 2]
-    const c = chips[order[scriptedIdx.current % order.length] ?? 0] ?? chips[0]
-    scriptedIdx.current += 1
     later(() => {
       setFakeListening(false)
-      if (c) askRef.current(tr2(c.text, langRef.current), qaById(c.qa))
+      askScriptedRef.current()
     }, lite ? 400 : 1600)
   }
 

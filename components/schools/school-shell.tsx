@@ -29,7 +29,6 @@ import { NUSRAT } from '@/lib/mock/personas'
 import { setQueryParam, useQueryParam } from '@/hooks/use-query-param'
 import { useSpeak } from '@/hooks/use-speech'
 import { Tr } from '@/components/os/tr-text'
-import { IllustrativeChip } from '@/components/os/illustrative-chip'
 import { LanguageSwitcher } from '@/components/os/language-switcher'
 import { aiToast } from '@/components/ai/ai-toast'
 import { cn } from '@/lib/utils'
@@ -96,7 +95,7 @@ function clampStep(n: number | undefined): StepId {
 
 const UI = {
   framingA: 'School-to-Skill feeder',
-  framingB: { en: 'with the Education Department', hi: 'शिक्षा विभाग के साथ' } as Bi,
+  framingB: { en: 'with the Education Department / BEPC', hi: 'शिक्षा विभाग के साथ' } as Bi,
   framingC: '(with Education Department / BEPC)',
   title: { en: 'Disha: your path after Class 10', hi: 'दिशा: 10वीं के बाद का रास्ता' } as Bi,
   sub: {
@@ -245,7 +244,7 @@ export function SchoolShell({ children }: { children: ReactNode }) {
 // -----------------------------------------------------------------------------
 
 function FramingBanner() {
-  const { L } = useSchool()
+  const { L, lang } = useSchool()
   return (
     <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
       <p className="inline-flex min-w-0 max-w-full flex-wrap items-center gap-x-1.5 gap-y-0.5 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5 text-[12px] leading-snug text-gray-300 sm:text-[13px]">
@@ -257,11 +256,12 @@ function FramingBanner() {
           ·
         </span>
         <Tr b={L(UI.framingB)} className="text-gray-200" />
-        <span lang="en" className="text-gray-400">
-          {UI.framingC}
-        </span>
+        {lang === 'hi' && (
+          <span lang="en" className="text-gray-400">
+            {UI.framingC}
+          </span>
+        )}
       </p>
-      <IllustrativeChip responsive />
     </div>
   )
 }
@@ -474,6 +474,7 @@ function StepRail() {
                   type="button"
                   data-active={active ? 'true' : undefined}
                   aria-current={active ? 'step' : undefined}
+                  title={active ? undefined : L(s.label)}
                   onClick={() => goTo(s.id)}
                   className={cn(
                     'flex h-11 items-center gap-2 whitespace-nowrap rounded-xl px-2.5 text-[13px] font-medium transition-colors',
@@ -497,7 +498,7 @@ function StepRail() {
                   >
                     {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : s.id}
                   </span>
-                  <T b={s.label} />
+                  <T b={s.label} className={cn(!active && 'sr-only')} />
                 </button>
               </li>
             )

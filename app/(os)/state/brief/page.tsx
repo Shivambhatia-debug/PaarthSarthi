@@ -15,6 +15,7 @@ import type { Bi } from '@/lib/os/i18n'
 import { BriefDocument } from '@/components/state/brief-document'
 import { BRIEF_SECTIONS, type BriefVariant } from '@/components/state/state-data'
 import { cn } from '@/lib/utils'
+import { NextStop } from '@/components/os/next-stop'
 
 const T = {
   back: { en: 'Back to Command Centre', hi: 'कमांड सेंटर पर वापस' },
@@ -207,6 +208,7 @@ function BriefView() {
           />
         ))}
       </div>
+      <NextStop href="/schools/" label={{ en: 'School feeder view', hi: 'स्कूल फीडर दृश्य' }} sub={{ en: 'With the Education Department', hi: 'शिक्षा विभाग के साथ' }} className="mx-auto max-w-[794px]" />
     </div>
     </div>
   )

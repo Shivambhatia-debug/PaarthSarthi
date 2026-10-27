@@ -28,7 +28,7 @@ import { aiPolicyInsight, aiPolicyStats, aiPolicyTargetLine } from '@/components
 const T = {
   title: { en: 'AI Policy tracker', hi: 'AI नीति ट्रैकर' },
   sub: { en: 'Students trained in AI skills this year', hi: 'इस वर्ष AI कौशल में प्रशिक्षित छात्र' },
-  ofTarget: { en: "of this year's target", hi: 'इस वर्ष के लक्ष्य का' },
+  ofTarget: { en: 'of target', hi: 'लक्ष्य का' },
   trained: { en: 'trained', hi: 'प्रशिक्षित' },
   target: { en: 'target', hi: 'लक्ष्य' },
   monthly: { en: 'Trained per month', hi: 'प्रति माह प्रशिक्षित' },
@@ -43,6 +43,9 @@ export function AiPolicyTracker({ className, index = 0 }: { className?: string; 
     () => s.months.map((m, i) => ({ id: m.month, label: tr(m.label, lang), value: m.value, last: i === s.months.length - 1 })),
     [s.months, lang],
   )
+  // Even ticks (0, 4k, 8k, 12k, 16k for the current data) instead of recharts' auto ticks.
+  const yMax = Math.max(4000, Math.ceil(Math.max(0, ...s.months.map((m) => m.value)) / 4000) * 4000)
+  const yTicks = [0, yMax / 4, yMax / 2, (yMax * 3) / 4, yMax]
   const insight = aiPolicyInsight()
 
   return (
@@ -72,7 +75,7 @@ export function AiPolicyTracker({ className, index = 0 }: { className?: string; 
             <span className="text-3xl font-semibold tabular-nums text-white">
               <CountUp value={s.pct} decimals={1} format={(n) => `${fmtNum(n)}%`} />
             </span>
-            <Tr b={T.ofTarget} className="mt-1 max-w-[120px] text-[12px] leading-tight text-gray-400" />
+            <Tr b={T.ofTarget} className="mt-1 max-w-[88px] text-center text-[12px] leading-tight text-gray-400" />
           </div>
         </div>
 
@@ -102,7 +105,16 @@ export function AiPolicyTracker({ className, index = 0 }: { className?: string; 
             <BarChart data={months} margin={{ top: 6, right: 4, bottom: 0, left: 0 }}>
               <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
               <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-              <YAxis tick={{ fill: '#9ca3af', fontSize: 12 }} axisLine={false} tickLine={false} width={48} tickFormatter={(v: number) => fmtIN(v)} />
+              <YAxis
+                domain={[0, yMax]}
+                ticks={yTicks}
+                interval={0}
+                tick={{ fill: '#9ca3af', fontSize: 12 }}
+                axisLine={false}
+                tickLine={false}
+                width={48}
+                tickFormatter={(v: number) => fmtIN(v)}
+              />
               <RTooltip
                 cursor={{ fill: 'rgba(255,255,255,0.04)' }}
                 contentStyle={{ background: '#11161f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}

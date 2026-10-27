@@ -127,7 +127,7 @@ export default function PilotPage() {
           <h1 className="text-[30px] font-semibold leading-tight tracking-tight text-white sm:text-[38px]">
             Pilot proposal <span className="text-gray-500">·</span>{' '}
             <span lang="hi" className="font-deva text-gray-300">
-              प्रायोगिक प्रस्ताव
+              पायलट प्रस्ताव
             </span>
           </h1>
           <Tr as="p" b={SUBLINE} className="mt-2 text-[15px] text-emerald-200/90 sm:text-[17px]" />

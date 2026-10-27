@@ -24,7 +24,7 @@ const TXT = {
   verified: { en: 'verified', hi: 'सत्यापित' },
   ready: { en: 'integration-ready', hi: 'इंटीग्रेशन-तैयार' },
   readiness: { en: 'Placement Readiness Index', hi: 'प्लेसमेंट रेडीनेस इंडेक्स' },
-  pending: { en: 'Baseline pending', hi: 'बेसलाइन बाकी', hinglish: 'Baseline pending' },
+  pending: { en: 'Baseline', hi: 'बेसलाइन', hinglish: 'Baseline' },
   pendingNote: {
     en: "Baseline diagnostic pending: today's run sets it",
     hi: 'बेसलाइन डायग्नोस्टिक बाकी: आज का रन इसे तय करेगा',

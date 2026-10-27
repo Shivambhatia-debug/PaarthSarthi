@@ -655,23 +655,35 @@ export interface PoolPreviewRow {
 const CORE_MECH: BranchCode[] = ['ME', 'D-ME', 'D-AUTO']
 
 /** A few AI-ranked names from the selected pool; Rahul (GP Muzaffarpur) first when his college is in. */
-export function poolPreview(ids: readonly string[], limit = 6): PoolPreviewRow[] {
-  const out: PoolPreviewRow[] = []
+/**
+ * AI-ranked preview of the pool, strictly by PRI (highest first). The demo student is not ranked here
+ * (see poolPinned). `avoidCollegeId`: names already shown on that college's own lists (students, offers)
+ * are skipped so the same name never appears at two institutions on one screen.
+ */
+export function poolPreview(ids: readonly string[], limit = 6, avoidCollegeId?: string): PoolPreviewRow[] {
+  const avoid = new Set<string>()
+  if (avoidCollegeId) {
+    for (const r of studentsFor(avoidCollegeId)) avoid.add(r.name)
+    for (const o of offersFor(avoidCollegeId)) avoid.add(o.name)
+  }
+  const seen = new Set<string>()
   const lists: PoolPreviewRow[][] = []
   for (const id of ids) {
     const inst = institutionById(id)
     if (!inst) continue
-    const rows = studentsFor(id)
-    const rahul = rows.find((r) => r.id === 'rahul')
-    if (rahul) out.push({ id: rahul.id, name: rahul.name, instShort: inst.short, pri: rahul.pri, branch: rahul.branch })
-    lists.push(
-      rows
-        .filter((r) => r.id !== 'rahul' && r.id !== 'priya' && CORE_MECH.includes(r.branch) && r.pri >= 66)
-        .sort((a, b) => b.pri - a.pri)
-        .slice(0, 2)
-        .map((r) => ({ id: r.id, name: r.name, instShort: inst.short, pri: r.pri, branch: r.branch })),
-    )
+    const own = id === avoidCollegeId
+    const picked: PoolPreviewRow[] = []
+    for (const r of studentsFor(id)
+      .filter((r) => r.id !== 'rahul' && r.id !== 'priya' && CORE_MECH.includes(r.branch) && r.pri >= 66)
+      .sort((a, b) => b.pri - a.pri)) {
+      if (picked.length >= 2) break
+      if ((!own && avoid.has(r.name)) || seen.has(r.name)) continue
+      seen.add(r.name)
+      picked.push({ id: r.id, name: r.name, instShort: inst.short, pri: r.pri, branch: r.branch })
+    }
+    lists.push(picked)
   }
+  const out: PoolPreviewRow[] = []
   for (let round = 0; out.length < limit && round < 2; round++) {
     for (const l of lists) {
       if (out.length >= limit) break
@@ -679,7 +691,18 @@ export function poolPreview(ids: readonly string[], limit = 6): PoolPreviewRow[]
       if (r) out.push(r)
     }
   }
-  return out.slice(0, limit)
+  return out.slice(0, limit).sort((a, b) => b.pri - a.pri || a.name.localeCompare(b.name))
+}
+
+/** The demo student (Rahul) when his college is in the pool: shown pinned, outside the ranking. */
+export function poolPinned(ids: readonly string[]): PoolPreviewRow | null {
+  for (const id of ids) {
+    const inst = institutionById(id)
+    if (!inst) continue
+    const rahul = studentsFor(id).find((r) => r.id === 'rahul')
+    if (rahul) return { id: rahul.id, name: rahul.name, instShort: inst.short, pri: rahul.pri, branch: rahul.branch }
+  }
+  return null
 }
 
 /** Ready count of one institution inside a pool (same rule as poolReady). */

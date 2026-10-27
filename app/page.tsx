@@ -102,7 +102,7 @@ export default function HomePage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#060a13]">
+    <div className="min-h-screen overflow-x-clip bg-[#060a13]">
       {/* Moving ticker */}
       <div className="bg-emerald-600 text-white text-sm font-semibold py-1.5 overflow-hidden border-b border-emerald-500/30">
         <div className="flex animate-marquee whitespace-nowrap w-max">

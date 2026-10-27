@@ -8,10 +8,12 @@ import { Tr } from '@/components/os/tr-text'
 import { InsightCard } from '@/components/ai/insight-card'
 import { useDemo } from '@/lib/os/demo-store'
 import { type Bi } from '@/lib/os/i18n'
-import { districtPriMap } from '@/lib/mock/districts'
+import { districtPriMap, districtsRanked } from '@/lib/mock/districts'
 import { PanelCard } from '@/components/state/title-strip'
+import { cn } from '@/lib/utils'
 import { DistrictSheet } from '@/components/state/district-sheet'
-import { filterKey, filterLabel, filterPredicate, isDefaultFilter, mapCaption, type StateFilter } from '@/components/state/state-data'
+import { SKILL_LABEL, filterKey, filterLabel, filterPredicate, isDefaultFilter, mapCaption, type StateFilter } from '@/components/state/state-data'
+import { fmtNum } from '@/lib/os/i18n'
 
 const T = {
   title: { en: 'District readiness map', hi: 'ज़िलावार तैयारी मानचित्र' },
@@ -25,6 +27,8 @@ const T = {
   clear: { en: 'Clear', hi: 'हटाएँ' },
   hint: { en: 'Click any district', hi: 'किसी भी ज़िले पर क्लिक करें' },
   empty: { en: 'No district matches this filter.', hi: 'इस फ़िल्टर से कोई ज़िला मेल नहीं खाता।' },
+  lowest: { en: 'Lowest 3 in this view · open the district', hi: 'इस दृश्य में सबसे कम 3 · ज़िला खोलें' },
+  gap: { en: 'top gap', hi: 'मुख्य कमी' },
 } satisfies Record<string, Bi>
 
 export interface DistrictMapPanelProps {
@@ -45,6 +49,8 @@ export function DistrictMapPanel({ filter, pulseId, focusIds, onClearFocus, clas
   const values = useMemo(() => districtPriMap(filterPredicate(filter)), [key])
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const caption = useMemo(() => mapCaption(filter), [key])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const lowest = useMemo(() => districtsRanked(filterPredicate(filter)).slice(0, 3), [key])
   const [selected, setSelected] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const scope = filterLabel(filter)
@@ -52,8 +58,10 @@ export function DistrictMapPanel({ filter, pulseId, focusIds, onClearFocus, clas
 
   return (
     <PanelCard
+      id="district-map"
       index={index}
-      className={className}
+      className={cn('scroll-mt-20', className)}
+      bodyClassName="flex flex-col"
       icon={MapIcon}
       accent="cyan"
       title={T.title}
@@ -120,6 +128,33 @@ export function DistrictMapPanel({ filter, pulseId, focusIds, onClearFocus, clas
         />
       ) : (
         <Tr as="p" b={T.empty} className="mt-4 block text-[13px] text-gray-500" />
+      )}
+
+      {lowest.length > 0 && (
+        <div className="mt-auto pt-4">
+          <Tr as="p" b={T.lowest} className="mb-2 block text-[12px] font-medium uppercase tracking-[0.1em] text-gray-500" />
+          <div className="grid gap-2 sm:grid-cols-3">
+            {lowest.map((d) => (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => {
+                  setSelected(d.id)
+                  setOpen(true)
+                }}
+                className="group flex min-w-0 flex-col items-start rounded-xl border border-amber-400/20 bg-amber-400/[0.05] px-3 py-2 text-left transition-colors hover:border-amber-300/50 hover:bg-amber-400/[0.09] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300/60"
+              >
+                <span className="flex w-full items-baseline justify-between gap-2">
+                  <Tr b={{ en: d.name, hi: d.nameHi }} className="truncate text-[13px] font-semibold text-white" />
+                  <span className="shrink-0 text-[13px] font-semibold tabular-nums text-amber-200">{fmtNum(d.pri)}</span>
+                </span>
+                <span className="text-[12px] text-gray-400">
+                  <Tr b={T.gap} />: <Tr b={SKILL_LABEL[d.topGap]} />
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       <DistrictSheet districtId={selected} open={open} onOpenChange={setOpen} />

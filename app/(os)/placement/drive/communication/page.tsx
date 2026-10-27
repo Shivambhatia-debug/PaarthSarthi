@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, ArrowRight, CheckCircle2 } from 'lucide-react'
 import { DriveShell } from '@/components/os/drive-shell'
 import { AudioGate } from '@/components/os/audio-gate'
 import { Tr } from '@/components/os/tr-text'
 import { CommRound } from '@/components/placement/communication/comm-round'
 import { useDemo } from '@/lib/os/demo-store'
 import { ROUNDS, VERSANT_TARGETS, nextRoute } from '@/lib/os/rounds'
+import { ROUND_CUTOFF } from '@/components/placement/report/report-data'
 import type { Bi } from '@/lib/os/i18n'
 
 const TITLE: Bi = { en: 'Communication · Versant/SVAR-style', hi: 'संवाद · Versant/SVAR-शैली', hinglish: 'Communication · Versant/SVAR-style' }
@@ -42,19 +43,27 @@ export default function CommunicationPage() {
     ? { en: `Next: ${nextDef.label.en}`, hi: `अगला: ${nextDef.label.hi}`, hinglish: `Next: ${nextDef.label.en}` }
     : { en: 'View my report', hi: 'मेरी रिपोर्ट देखें', hinglish: 'Meri report dekhiye' }
   const versant = VERSANT_TARGETS[personaId] ?? 50
+  const belowCutoff = versant < (ROUND_CUTOFF.communication ?? 50)
 
   const footer = done ? (
     <div className="flex flex-wrap items-center gap-3">
-      <div className="flex min-w-0 flex-1 items-center gap-2 text-[13px] text-gray-300">
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden />
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-gray-300">
+        {belowCutoff ? (
+          <AlertCircle className="h-4 w-4 shrink-0 text-amber-400" aria-hidden />
+        ) : (
+          <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" aria-hidden />
+        )}
         <Tr
-          b={{
-            en: `Round 3 cleared · ${versant}/80`,
-            hi: `राउंड 3 पूरा · ${versant}/80`,
-            hinglish: `Round 3 cleared · ${versant}/80`,
-          }}
-          className="truncate"
+          b={
+            belowCutoff
+              ? { en: 'Round 3 done ·', hi: 'राउंड 3 पूरा ·', hinglish: 'Round 3 done ·' }
+              : { en: 'Round 3 cleared ·', hi: 'राउंड 3 पूरा ·', hinglish: 'Round 3 cleared ·' }
+          }
         />
+        <span className="shrink-0 font-semibold tabular-nums text-white">{versant}/80</span>
+        {belowCutoff && (
+          <Tr b={{ en: '· advisory', hi: '· सलाहकारी', hinglish: '· advisory' }} className="shrink-0 text-amber-200" />
+        )}
       </div>
       <button
         type="button"

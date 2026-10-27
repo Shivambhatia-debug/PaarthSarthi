@@ -42,7 +42,7 @@ export function Opportunities() {
       <div aria-hidden className="pointer-events-none absolute -bottom-20 -right-16 h-52 w-52 rounded-full bg-emerald-400/[0.07] blur-3xl" />
 
       <div className="relative flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[15rem] flex-1">
           <div className="flex items-center gap-2">
             <Gift className="h-4 w-4 text-emerald-300" aria-hidden />
             <Tr b={TXT.title} as="h2" className="text-[15px] font-semibold text-white" />

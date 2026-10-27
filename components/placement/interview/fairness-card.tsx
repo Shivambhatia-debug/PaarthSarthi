@@ -63,32 +63,32 @@ export function FairnessCard({ personaId, className }: { personaId: PersonaRunId
       <div className="relative mt-4 grid grid-cols-1 items-center gap-4 sm:grid-cols-[minmax(0,1fr)_auto_auto]">
         <div className="space-y-3">
           <div>
-            <div className="mb-1 flex items-baseline justify-between gap-2 text-[13px]">
+            <div className="mb-1 flex items-baseline justify-between gap-2 text-[13px] lg:text-[15px]">
               <span className="text-gray-200">
-                <Tr b={CONTENT} /> <Tr b={CONTENT_SUB} className="text-[12px] text-gray-500" />
+                <Tr b={CONTENT} /> <Tr b={CONTENT_SUB} className="text-[13px] text-gray-400" />
               </span>
-              <span className="font-semibold tabular-nums text-emerald-300">{split.content}</span>
+              <span className="text-[20px] font-bold tabular-nums text-emerald-300">{split.content}</span>
             </div>
             <Bar value={split.content} tone="content" />
           </div>
           <div>
-            <div className="mb-1 flex items-baseline justify-between gap-2 text-[13px]">
+            <div className="mb-1 flex items-baseline justify-between gap-2 text-[13px] lg:text-[15px]">
               <span className="text-gray-200">
-                <Tr b={DELIVERY} /> <Tr b={DELIVERY_SUB} className="text-[12px] text-gray-500" />
+                <Tr b={DELIVERY} /> <Tr b={DELIVERY_SUB} className="text-[13px] text-gray-400" />
               </span>
-              <span className="font-semibold tabular-nums text-amber-300">{split.delivery}</span>
+              <span className="text-[20px] font-bold tabular-nums text-amber-300">{split.delivery}</span>
             </div>
             <Bar value={split.delivery} tone="delivery" />
           </div>
         </div>
         <ArrowRight className="mx-auto hidden h-5 w-5 text-gray-500 sm:block" aria-hidden />
         <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-[#0d1117]/60 px-4 py-3 sm:flex-col sm:gap-1 sm:text-center">
-          <span className="bg-gradient-to-br from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-3xl font-bold tabular-nums text-transparent">
+          <span className="bg-gradient-to-br from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-3xl font-bold tabular-nums text-transparent lg:text-4xl">
             {pillar}
           </span>
           <div className="sm:text-center">
-            <Tr b={PILLAR} as="p" className="text-[12px] font-medium text-gray-200" />
-            <Tr b={WEIGHT} as="p" className="text-[12px] text-gray-500" />
+            <Tr b={PILLAR} as="p" className="text-[13px] font-medium text-gray-200" />
+            <Tr b={WEIGHT} as="p" className="text-[13px] text-gray-400" />
           </div>
         </div>
       </div>

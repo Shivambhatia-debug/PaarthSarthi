@@ -34,13 +34,13 @@ const FRONT_SHAPES: Record<DrawingOptionId, { outline: Pt[]; extra?: { from: Pt;
   rect: { outline: [[0, 0], [W, 0], [W, H], [0, H]], extra: [{ from: [0, T], to: [W, T] }] },
 }
 
-function DimH({ x1, x2, y, label }: { x1: number; x2: number; y: number; label: string }) {
+function DimH({ x1, x2, y, label, below = false }: { x1: number; x2: number; y: number; label: string; below?: boolean }) {
   return (
     <g stroke={DIM} strokeWidth={0.8} fill="none">
       <line x1={x1} y1={y} x2={x2} y2={y} />
       <line x1={x1} y1={y - 3} x2={x1} y2={y + 3} />
       <line x1={x2} y1={y - 3} x2={x2} y2={y + 3} />
-      <text x={(x1 + x2) / 2} y={y - 4} fill={DIM} stroke="none" fontSize={12} textAnchor="middle" fontFamily="ui-monospace, monospace">
+      <text x={(x1 + x2) / 2} y={below ? y + 14 : y - 4} fill={DIM} stroke="none" fontSize={12} textAnchor="middle" fontFamily="ui-monospace, monospace">
         {label}
       </text>
     </g>
@@ -91,7 +91,7 @@ export function EngineeringDrawing({ className, reveal = false }: EngineeringDra
   const tw = W * S
   const th = D * S
   const vbW = sx + sw + 44
-  const vbH = ty + th + 34
+  const vbH = ty + th + 50
 
   return (
     <figure className={cn('w-full', className)}>
@@ -129,11 +129,11 @@ export function EngineeringDrawing({ className, reveal = false }: EngineeringDra
           <rect x={fx} y={ty} width={tw} height={th} fill="rgba(165,243,252,0.04)" stroke={LINE} strokeWidth={1.6} />
           <rect x={fx} y={ty} width={T * S} height={th} fill="rgba(165,243,252,0.10)" stroke="none" />
           <line x1={fx + T * S} y1={ty} x2={fx + T * S} y2={ty + th} stroke={LINE} strokeWidth={1.6} />
-          <text x={fx} y={ty + th + 26} fill={LABEL} fontSize={12} fontWeight={600} letterSpacing={1}>
+          <text x={fx} y={ty + th + 42} fill={LABEL} fontSize={12} fontWeight={600} letterSpacing={1}>
             TOP
           </text>
           <DimH x1={fx} x2={fx + T * S} y={ty - 8} label="10" />
-          <DimH x1={fx + T * S + 6} x2={fx + tw} y={ty - 8} label="60" />
+          <DimH x1={fx} x2={fx + tw} y={ty + th + 10} label="60" below />
           <DimV y1={ty} y2={ty + th} x={fx + tw + 8} label="40" />
 
           {/* Projection lines (thin) */}

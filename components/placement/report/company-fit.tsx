@@ -53,7 +53,7 @@ export function CompanyFit({ first }: CompanyFitProps) {
   const visible = expanded ? drives : drives.slice(0, COLLAPSED)
 
   return (
-    <section className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
+    <section id="company-fit" className="relative flex h-full scroll-mt-24 flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-4 sm:p-5">
       <div aria-hidden className="pointer-events-none absolute -right-20 -top-20 h-48 w-48 rounded-full bg-blue-500/[0.08] blur-3xl" />
 
       <div className="relative flex items-center gap-2">

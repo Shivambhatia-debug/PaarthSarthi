@@ -307,7 +307,7 @@ function Sheet({ lang, index }: { lang: L; index: number }) {
             <ul className="mt-0.5 space-y-0.5">
               {PILOT_KPIS.map((k) => (
                 <li key={k.id} className="flex gap-2 leading-snug">
-                  <span className="w-[88px] shrink-0 font-semibold tabular-nums text-slate-900">{t(k.target)}</span>
+                  <span className="w-[112px] shrink-0 font-semibold tabular-nums text-slate-900">{t(k.targetShort ?? k.target)}</span>
                   <span className="min-w-0 text-slate-700">{t(k.metric)}</span>
                 </li>
               ))}

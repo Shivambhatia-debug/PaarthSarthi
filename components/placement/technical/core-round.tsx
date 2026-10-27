@@ -76,6 +76,11 @@ const T = {
     hinglish: 'Is browser mein speech recognition nahi hai. Type karo ya scripted answer lo.',
   },
   scoredBy: { en: 'Core technical · scored by Sarthi AI', hi: 'कोर तकनीकी · सारथी AI द्वारा स्कोर', hinglish: 'Core technical · Sarthi AI ne score kiya' },
+  weighted: {
+    en: 'MCQs 30% · case 70% (safety-first root-cause order). Language-neutral: Hinglish answers lose no marks.',
+    hi: 'MCQ 30% · केस 70% (पहले सुरक्षा, फिर मूल कारण का क्रम)। भाषा-निरपेक्ष: हिंग्लिश जवाब पर कोई अंक नहीं कटते।',
+    hinglish: 'MCQs 30% · case 70% (safety-first root-cause order). Language-neutral: Hinglish jawab par koi marks nahi kate.',
+  },
   langNeutral: {
     en: 'Language-neutral scoring: the answer was in Hinglish and lost no marks for it.',
     hi: 'भाषा-निरपेक्ष स्कोरिंग: उत्तर हिंग्लिश में था, इसके लिए कोई अंक नहीं कटे।',
@@ -168,6 +173,34 @@ export interface CoreResult {
   missed: string[]
   hasCase: boolean
   minutes: number
+  /** Shown + stored round score: MCQs 30% · case 70% (MCQ-only tracks: MCQs scale the target). */
+  score: number
+  /** Picked options, comma-separated (-1 = unanswered), so a revisit restores this exact run. */
+  answers: string
+  /** Case answer text (restored on revisit). */
+  caseText: string
+}
+
+/**
+ * Round score from the actual answers. Calibrated so the scripted / autopilot run lands exactly on the
+ * persona's target (e.g. Rahul 5/6 + scripted case = 81), and wrong MCQs or a weaker case pull it down.
+ */
+export function coreScore(target: number, track: CoreTrack, correct: number, ev: CaseEval | null): number {
+  const items = track.items
+  const total = Math.max(1, items.length)
+  const autoCorrect = Math.max(1, items.filter((it) => (it.autopick ?? it.answer) === it.answer).length)
+  const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n)))
+  const kase = track.case
+  if (!kase) return clamp(target * (0.5 + (0.5 * correct) / autoCorrect))
+  const mcqPart = (n: number) => (30 * n) / total
+  let caseScore = (target - mcqPart(autoCorrect)) / 0.7
+  if (ev) {
+    const ref = evaluateCase(kase, kase.scripted)
+    caseScore -= 8 * Math.max(0, ev.missed.length - ref.missed.length)
+    caseScore -= 6 * Math.max(0, ref.terms.length - ev.terms.length)
+    if (ref.safety && !ev.safety) caseScore -= 12
+  }
+  return clamp(mcqPart(correct) + 0.7 * Math.max(0, Math.min(100, caseScore)))
 }
 
 export interface CoreRoundProps {
@@ -176,6 +209,9 @@ export interface CoreRoundProps {
   active: boolean
   /** The store already has this track cleared: open in the final state. */
   restoreDone: boolean
+  /** Stored run (detail.answers / detail.caseText): restore exactly what was answered, not the autopick. */
+  restoreAnswers?: string
+  restoreCaseText?: string
   score: number
   /** Seconds used so far (owned by the page's round timer). */
   elapsedRef: MutableRefObject<number>
@@ -198,7 +234,19 @@ function joinText(...parts: string[]): string {
 }
 
 /** Core-technical round: MCQs (incl. an engineering drawing) + a shop-floor case answered by text or voice. */
-export function CoreRound({ track, active, restoreDone, score, elapsedRef, onFinish, onNext, nextAction, className }: CoreRoundProps) {
+export function CoreRound({
+  track,
+  active,
+  restoreDone,
+  restoreAnswers,
+  restoreCaseText,
+  score,
+  elapsedRef,
+  onFinish,
+  onNext,
+  nextAction,
+  className,
+}: CoreRoundProps) {
   const { voiceMode, lang } = useDemo()
   const items = track.items
   const total = items.length
@@ -309,7 +357,7 @@ export function CoreRound({ track, active, restoreDone, score, elapsedRef, onFin
   // Finish
   // ---------------------------------------------------------------------------
   const finish = useCallback(
-    (ans: (number | null)[], evaluation: CaseEval | null, silent = false) => {
+    (ans: (number | null)[], evaluation: CaseEval | null, silent = false, text = '') => {
       if (finishedRef.current) return
       finishedRef.current = true
       const correct = items.filter((it, i) => ans[i] === it.answer).length
@@ -321,11 +369,14 @@ export function CoreRound({ track, active, restoreDone, score, elapsedRef, onFin
         missed: evaluation ? evaluation.missed.map((m) => m.id) : [],
         hasCase: !!kase,
         minutes,
+        score: coreScore(score, track, correct, evaluation),
+        answers: ans.map((a) => (a === null ? -1 : a)).join(','),
+        caseText: text.slice(0, 1500),
       }
       setResult(r)
       if (!silent) onFinish(r)
     },
-    [items, elapsedRef, track.id, total, kase, onFinish],
+    [items, elapsedRef, track, total, kase, onFinish, score],
   )
 
   // ---------------------------------------------------------------------------
@@ -410,26 +461,32 @@ export function CoreRound({ track, active, restoreDone, score, elapsedRef, onFin
 
   const onModelDone = useCallback(() => {
     setCaseStage((s) => (s === 'model' ? 'done' : s))
-    finish(answersRef.current, evRef.current)
+    finish(answersRef.current, evRef.current, false, caseTextRef.current)
   }, [finish])
 
   // ---------------------------------------------------------------------------
   // Presenter: fast-forward, autopilot, reset
   // ---------------------------------------------------------------------------
   const jumpToEnd = useCallback(
-    (silent: boolean) => {
+    (silent: boolean, restore?: { answers?: string; caseText?: string }) => {
       genRef.current++
       autoRef.current = false
       setAuto(false)
       setTyping(false)
       stopMicNow()
-      const ans = items.map((it) => it.autopick ?? it.answer)
+      const stored = restore?.answers?.split(',').map((x) => Number(x))
+      const valid = !!stored && stored.length === total && stored.every((n) => Number.isInteger(n))
+      const ans: (number | null)[] = valid
+        ? stored!.map((n) => (n < 0 ? null : n))
+        : items.map((it) => it.autopick ?? it.answer)
       setAnswers(ans)
       setIdx(total - 1)
       let evaluation: CaseEval | null = null
+      let text = ''
       if (kase) {
-        evaluation = evaluateCase(kase, kase.scripted)
-        setCaseText(kase.scripted)
+        text = restore?.caseText?.trim() ? restore.caseText : kase.scripted
+        evaluation = evaluateCase(kase, text)
+        setCaseText(text)
         setEv(evaluation)
         setRubricShown(4)
         setCaseStage('done')
@@ -438,7 +495,7 @@ export function CoreRound({ track, active, restoreDone, score, elapsedRef, onFin
         setStage('summary')
       }
       setInstant(true)
-      finish(ans, evaluation, silent)
+      finish(ans, evaluation, silent, text)
     },
     [items, total, kase, finish, stopMicNow],
   )
@@ -516,8 +573,9 @@ export function CoreRound({ track, active, restoreDone, score, elapsedRef, onFin
 
   // Revisit after the round was cleared: show the final state without re-writing the store.
   useEffect(() => {
-    if (restoreDone && !finishedRef.current && !touchedRef.current) jumpToEnd(true)
-  }, [restoreDone, jumpToEnd])
+    if (restoreDone && !finishedRef.current && !touchedRef.current)
+      jumpToEnd(true, { answers: restoreAnswers, caseText: restoreCaseText })
+  }, [restoreDone, jumpToEnd, restoreAnswers, restoreCaseText])
 
   // ---------------------------------------------------------------------------
   // Render
@@ -533,7 +591,7 @@ export function CoreRound({ track, active, restoreDone, score, elapsedRef, onFin
     const list: ScoreChip[] = [
       {
         id: 'mcq',
-        tone: result.correct === result.total ? 'ok' : 'info',
+        tone: result.correct === result.total ? 'ok' : result.correct < result.total - 1 ? 'warn' : 'info',
         label: { en: `MCQs ${result.correct}/${result.total}`, hi: `MCQ ${result.correct}/${result.total}`, hinglish: `MCQs ${result.correct}/${result.total}` },
       },
     ]
@@ -561,9 +619,9 @@ export function CoreRound({ track, active, restoreDone, score, elapsedRef, onFin
     <div className={cn('mx-auto w-full max-w-[920px] space-y-4', className)}>
       {finished && result && (
         <ScoreCard
-          score={score}
+          score={result.score}
           title={T.scoredBy}
-          subtitle={kase ? T.langNeutral : undefined}
+          subtitle={kase ? T.weighted : undefined}
           chips={scoreChips}
           instant={instant}
           actions={nextAction}

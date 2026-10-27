@@ -1,7 +1,7 @@
 'use client'
 
 // No fragments in this file: it imports recharts (react-is 18 under React 19 drops fragment children).
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useSyncExternalStore, type ReactNode } from 'react'
 import { PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from 'recharts'
 import { Radar as RadarIcon } from 'lucide-react'
 import { useDemo } from '@/lib/os/demo-store'
@@ -52,8 +52,28 @@ function RadarTip({ active, payload, lang }: { active?: boolean; payload?: { pay
   )
 }
 
+const LG_QUERY = '(min-width: 1024px)'
+function subscribeLg(cb: () => void) {
+  try {
+    const mq = window.matchMedia(LG_QUERY)
+    mq.addEventListener('change', cb)
+    return () => mq.removeEventListener('change', cb)
+  } catch {
+    return () => {}
+  }
+}
+function isLgNow() {
+  try {
+    return window.matchMedia(LG_QUERY).matches
+  } catch {
+    return false
+  }
+}
+
 export function PillarRadar({ live }: { live: Pillars }) {
   const { lang, lite } = useDemo()
+  // Projector (lg+): the radar fills the card with bigger labels; phones keep the compact chart.
+  const lg = useSyncExternalStore(subscribeLg, isLgNow, () => false)
   const data: Row[] = useMemo(
     () =>
       PILLAR_KEYS.map((k) => ({
@@ -98,11 +118,12 @@ export function PillarRadar({ live }: { live: Pillars }) {
         )}
       </p>
 
-      <div lang={deva ? 'hi' : undefined} className={cn('mt-2 h-[260px] w-full sm:h-[290px]', deva && 'font-deva')}>
+      <div lang={deva ? 'hi' : undefined} className={cn('mt-2 h-[260px] w-full sm:h-[290px] lg:relative lg:h-auto lg:min-h-[360px] lg:flex-1', deva && 'font-deva')}>
+        <div className="h-full w-full lg:absolute lg:inset-0">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart data={data} outerRadius="70%" margin={{ top: 8, right: 24, bottom: 8, left: 24 }}>
+          <RadarChart data={data} outerRadius={lg ? '80%' : '70%'} margin={{ top: 8, right: 24, bottom: 8, left: 24 }}>
             <PolarGrid stroke="rgba(255,255,255,0.09)" />
-            <PolarAngleAxis dataKey="axis" tick={{ fill: '#cbd5e1', fontSize: 12 }} />
+            <PolarAngleAxis dataKey="axis" tick={{ fill: '#cbd5e1', fontSize: lg ? 13 : 12 }} />
             <PolarRadiusAxis domain={[0, 100]} tick={false} axisLine={false} />
             <Radar
               name="cohort"
@@ -128,6 +149,7 @@ export function PillarRadar({ live }: { live: Pillars }) {
             <Tooltip content={(p: { active?: boolean; payload?: { payload?: Row }[] }) => <RadarTip active={p.active} payload={p.payload} lang={lang} />} />
           </RadarChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       <div className="mt-auto flex flex-wrap items-center justify-center gap-4 pt-2 text-[12.5px] text-gray-300">
