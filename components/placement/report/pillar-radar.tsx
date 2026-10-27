@@ -118,7 +118,8 @@ export function PillarRadar({ live }: { live: Pillars }) {
         )}
       </p>
 
-      <div lang={deva ? 'hi' : undefined} className={cn('mt-2 h-[260px] w-full sm:h-[290px] lg:h-auto lg:min-h-[360px] lg:flex-1', deva && 'font-deva')}>
+      <div lang={deva ? 'hi' : undefined} className={cn('mt-2 h-[260px] w-full sm:h-[290px] lg:relative lg:h-auto lg:min-h-[360px] lg:flex-1', deva && 'font-deva')}>
+        <div className="h-full w-full lg:absolute lg:inset-0">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart data={data} outerRadius={lg ? '80%' : '70%'} margin={{ top: 8, right: 24, bottom: 8, left: 24 }}>
             <PolarGrid stroke="rgba(255,255,255,0.09)" />
@@ -148,6 +149,7 @@ export function PillarRadar({ live }: { live: Pillars }) {
             <Tooltip content={(p: { active?: boolean; payload?: { payload?: Row }[] }) => <RadarTip active={p.active} payload={p.payload} lang={lang} />} />
           </RadarChart>
         </ResponsiveContainer>
+        </div>
       </div>
 
       <div className="mt-auto flex flex-wrap items-center justify-center gap-4 pt-2 text-[12.5px] text-gray-300">
