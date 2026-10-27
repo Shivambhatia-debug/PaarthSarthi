@@ -291,7 +291,7 @@ export function CoreRound({ track, active, restoreDone, score, elapsedRef, onFin
       return
     }
     if (voiceMode !== 'live') {
-      aiToast(tr(T.micOff, lang), { tone: 'info' })
+      aiToast(tr(T.micOff, lang), { tone: 'ai' })
       return
     }
     if (!sr.supported) {
