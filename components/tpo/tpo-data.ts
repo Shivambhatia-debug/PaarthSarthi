@@ -451,7 +451,8 @@ const JD_IT: JdSpec = {
     'Eligibility: B.Tech ECE/CSE/EE 2027, CGPA ≥ 6.5, no active backlogs at the time of the drive, 60% in 10th & 12th (or diploma), max 1-year gap in education.\n' +
     'Skills: good communication (Versant-style ≥ 50/80), basics of DSA/SQL, one programming language (C, Python or Java) and clear logical reasoning.\n' +
     'Role: application support and development for enterprise clients. Twelve weeks of paid training, then project allocation anywhere in India; relocation required, no service bond.\n' +
-    'Selection: online assessment (numerical, verbal, reasoning, coding), technical interview, HR interview.',
+    'Selection: online assessment (numerical, verbal, reasoning, coding), technical interview, HR interview.\n' +
+    'Benefits: medical cover, a structured first-year mentor programme and certification support. Carry college ID, APAAR ID and marksheets.',
   criteria: [
     { id: 'cgpa', label: { en: 'CGPA ≥ 6.5', hi: 'CGPA ≥ 6.5' }, match: 'CGPA ≥ 6.5' },
     { id: 'backlog', label: { en: 'No active backlogs', hi: 'कोई सक्रिय बैकलॉग नहीं' }, match: 'no active backlogs' },

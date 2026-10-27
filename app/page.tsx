@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { ChevronDown, ChevronUp } from "lucide-react"
 import { mentorAPI, courseAPI, offerAPI, settingsAPI } from "@/lib/api"
 import { HeroSection } from "@/components/home/HeroSection"
+import { PlacementOSBanner } from "@/components/home/PlacementOSBanner"
 import { OffersSlideshow } from "@/components/home/OffersSlideshow"
 import { ServicesSection } from "@/components/home/ServicesSection"
 import { AppShowcaseSection } from "@/components/home/AppShowcaseSection"
@@ -112,6 +113,8 @@ export default function HomePage() {
       </div>
 
       <HeroSection visible={visible} stats={stats} />
+
+      <PlacementOSBanner />
 
       <OffersSlideshow offers={offers} />
 

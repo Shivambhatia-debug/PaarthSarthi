@@ -145,11 +145,14 @@ export function SectionResult({ summary, instant, onRevealed, onRetake }: Sectio
   // Write the round outcome and signals once the result is revealed.
   const wrote = useRef(false)
   useEffect(() => {
-    if (!revealed || wrote.current) return
-    wrote.current = true
-    for (const s of APT_SIGNALS) addSignal({ round: 'aptitude', kind: s.kind, text: s.text })
-    setRound('aptitude', { status: integrity.tabSwitches >= 3 ? 'flagged' : 'cleared', score })
-    onRevealed?.()
+    if (!revealed) return
+    if (!wrote.current) {
+      wrote.current = true
+      for (const s of APT_SIGNALS) addSignal({ round: 'aptitude', kind: s.kind, text: s.text })
+      setRound('aptitude', { status: integrity.tabSwitches >= 3 ? 'flagged' : 'cleared', score })
+      onRevealed?.()
+    }
+    // Outside the once-guard so StrictMode's effect replay still grows the bars.
     const id = requestAnimationFrame(() => setGrow(true))
     return () => cancelAnimationFrame(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps

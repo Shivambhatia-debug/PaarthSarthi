@@ -179,7 +179,7 @@ export function TitleStrip({ filter, onFilterChange, showFilters = true, aside, 
           <Tr as="p" b={T.lede} className="mt-1.5 block max-w-[60ch] text-[14px] leading-relaxed text-gray-400" />
 
           {showFilters && (
-            <div className="mt-auto pt-5">
+            <div className="pt-5">
               <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
                 <div className="flex min-w-0 flex-col gap-1.5">
                   <GroupLabel icon={Building2} b={T.institutions} />
