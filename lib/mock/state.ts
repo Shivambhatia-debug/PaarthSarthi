@@ -62,9 +62,9 @@ export const WEEK_LABEL: Bi = {
   hi: `सप्ताह ${WEEK_NO} · ${fmtDate(DEMO_TODAY, 'hi', { year: true })}`,
 }
 
-// The GitHub repo's About link and Production deployments point to paarthsarthi.vercel.app
-// (DEPLOYMENT.md is stale and says Netlify). Change only this constant if the host differs.
-export const PUBLIC_DEMO_URL = 'https://paarthsarthi.vercel.app/placement-os/'
+// The frontend is hosted on Netlify (DEPLOYMENT.md); paarthsarthi.vercel.app is the Express API.
+// Change only this constant if the frontend host differs.
+export const PUBLIC_DEMO_URL = 'https://paarthsarthi.netlify.app/placement-os/'
 export const QR_IMAGE_PATH = '/os/qr-placement-os.png'
 
 // ---------------------------------------------------------------------------
