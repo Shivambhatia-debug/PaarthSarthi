@@ -115,7 +115,8 @@ function BriefView() {
   )
 
   return (
-    <div className="mx-auto w-full max-w-[1100px] px-4 pb-16 pt-4 sm:px-6 lg:pt-6" onClick={onPageClick}>
+    <div className="min-h-[calc(100vh-4rem)] w-full" onClick={onPageClick}>
+    <div className="mx-auto w-full max-w-[1100px] px-4 pb-16 pt-4 sm:px-6 lg:pt-6">
       {/* Controls (never printed) */}
       <div className="no-print mb-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -206,6 +207,7 @@ function BriefView() {
           />
         ))}
       </div>
+    </div>
     </div>
   )
 }

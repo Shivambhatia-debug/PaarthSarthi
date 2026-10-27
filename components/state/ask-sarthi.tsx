@@ -270,6 +270,7 @@ export function AskSarthi({ onFocus, className }: AskSarthiProps) {
                         {chart.ref ? (
                           <ReferenceLine
                             x={chart.ref.value}
+                            ifOverflow="extendDomain"
                             stroke="#a78bfa"
                             strokeDasharray="4 3"
                             label={{
