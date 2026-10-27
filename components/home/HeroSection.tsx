@@ -11,22 +11,26 @@ interface HeroSectionProps {
 
 export function HeroSection({ visible, stats }: HeroSectionProps) {
     return (
-        <section className="relative overflow-hidden">
+        <section aria-label="Mentorship, admissions, courses and startups" className="relative overflow-hidden">
+            <div className="h-px bg-gradient-to-r from-transparent via-white/[0.06] to-transparent" />
             {/* BG Orbs */}
             <div className="absolute top-0 right-[-10%] w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-blue-600/[0.07] rounded-full blur-[80px] md:blur-[120px] animate-glow" />
             <div className="absolute bottom-0 left-[-5%] w-[200px] md:w-[350px] h-[200px] md:h-[350px] bg-violet-600/[0.05] rounded-full blur-[60px] md:blur-[100px] animate-glow delay-500" />
 
             <div className="container mx-auto px-4 relative">
-                <div className="grid lg:grid-cols-[1fr,auto] gap-5 sm:gap-6 lg:gap-10 items-center pt-5 pb-8 sm:pt-8 sm:pb-12 lg:pt-14 lg:pb-16">
+                <div className="grid lg:grid-cols-[1fr,auto] gap-5 sm:gap-6 lg:gap-10 items-center pt-10 pb-8 sm:pt-12 sm:pb-12 lg:pt-12 lg:pb-14">
 
                     {/* LEFT — Text */}
                     <div className="order-1 text-left">
-                        <div className={`inline-flex items-center gap-1.5 bg-white/[0.05] border border-white/[0.08] rounded-full px-3 py-1 text-[10px] sm:text-[11px] text-gray-400 mb-3 sm:mb-4 ${visible ? 'animate-slide-left' : 'opacity-0'}`}>
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300 sm:mb-4">
+                            Also on ParthSarthi · Mentorship, admissions &amp; startups
+                        </p>
+                        <div className={`inline-flex items-center gap-1.5 bg-white/[0.05] border border-white/[0.08] rounded-full px-3 py-1 text-xs text-gray-400 mb-3 sm:mb-4 ${visible ? 'animate-slide-left' : 'opacity-0'}`}>
                             <Shield className="w-3 h-3 text-emerald-400" />
                             DPIIT Certified Startup
                         </div>
 
-                        <h1 className={`text-[1.7rem] sm:text-3xl md:text-4xl lg:text-5xl font-bold leading-[1.1] mb-3 sm:mb-4 tracking-tight ${visible ? 'animate-slide-left delay-100' : 'opacity-0'}`}>
+                        <h2 className={`text-[1.6rem] sm:text-3xl lg:text-4xl font-bold leading-[1.15] mb-3 sm:mb-4 tracking-tight ${visible ? 'animate-slide-left delay-100' : 'opacity-0'}`}>
                             <span className="text-white">Build Your </span>
                             <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-emerald-400 bg-clip-text text-transparent">
                                 Career
@@ -38,7 +42,7 @@ export function HeroSection({ visible, stats }: HeroSectionProps) {
                             <span className="text-white"> with</span>
                             <br />
                             <span className="text-gray-400">Expert Guidance</span>
-                        </h1>
+                        </h2>
 
                         <p className={`text-gray-400 text-[13px] sm:text-sm md:text-[15px] leading-relaxed mb-5 sm:mb-6 max-w-md ${visible ? 'animate-slide-left delay-200' : 'opacity-0'}`}>
                             Mentorship, admissions, skill courses & startup incubation — everything to build your future.
