@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import {
   Menu, X, User, BookOpen, ChevronDown, LogIn,
-  Users, GraduationCap, Rocket, LogOut, LayoutDashboard,
+  Users, GraduationCap, Rocket, LogOut, LayoutDashboard, Sparkles,
 } from "lucide-react"
 
 const NAV = [
@@ -18,7 +18,29 @@ const NAV = [
   { name: "Admission", href: "/admission", icon: GraduationCap },
   { name: "Courses", href: "/courses", icon: BookOpen },
   { name: "Startups", href: "/startups", icon: Rocket },
+  { name: "Placement OS", href: "/placement-os", icon: Sparkles, ai: true },
 ]
+
+const OS_PREFIXES = ["/placement-os", "/placement", "/tpo", "/state", "/schools", "/pilot"]
+
+function normPath(p: string | null): string {
+  if (!p) return "/"
+  return p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p
+}
+
+function isNavActive(path: string | null, href: string): boolean {
+  const p = normPath(path)
+  if (href === "/placement-os") return OS_PREFIXES.some((pre) => p === pre || p.startsWith(pre + "/"))
+  return p === href
+}
+
+function AiPill() {
+  return (
+    <span className="ml-1 inline-flex items-center rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 px-1 py-px text-[9px] font-bold leading-none text-white">
+      AI
+    </span>
+  )
+}
 
 export function Header() {
   const [open, setOpen] = useState(false)
@@ -50,10 +72,10 @@ export function Header() {
     router.push("/")
   }
 
-  if (!mounted) return <header className="sticky top-0 z-50 w-full h-12 border-b border-white/5 bg-[#0d1117]" />
+  if (!mounted) return <header className="site-header sticky top-0 z-50 w-full h-12 border-b border-white/5 bg-[#0d1117]" />
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-[#0d1117]/90 backdrop-blur-xl">
+    <header className="site-header sticky top-0 z-50 w-full border-b border-white/5 bg-[#0d1117]/90 backdrop-blur-xl">
       <div className="container flex h-12 items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <img src="/logo.png" alt="ParthSarthi" className="w-8 h-8 object-contain" />
@@ -65,10 +87,10 @@ export function Header() {
         <nav className="hidden md:flex items-center gap-0.5">
           {NAV.map((item) => (
             <Link key={item.href} href={item.href}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
-                path === item.href ? "bg-white/8 text-white" : "text-gray-400 hover:text-white"
+              className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+                isNavActive(path, item.href) ? "bg-white/8 text-white" : "text-gray-400 hover:text-white"
               }`}
-            >{item.name}</Link>
+            >{item.name}{item.ai && <AiPill />}</Link>
           ))}
         </nav>
 
@@ -121,9 +143,9 @@ export function Header() {
             {NAV.map((item) => (
               <Link key={item.href} href={item.href}
                 className={`flex items-center gap-2.5 px-3 py-2 rounded-md text-xs font-medium transition-colors ${
-                  path === item.href ? "bg-white/5 text-white" : "text-gray-400"
+                  isNavActive(path, item.href) ? "bg-white/5 text-white" : "text-gray-400"
                 }`}
-              ><item.icon className="w-3.5 h-3.5" />{item.name}</Link>
+              ><item.icon className="w-3.5 h-3.5" />{item.name}{item.ai && <AiPill />}</Link>
             ))}
             <div className="border-t border-white/5 my-1.5 pt-1.5">
               {user ? (

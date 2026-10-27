@@ -161,3 +161,165 @@
 .delay-800 { animation-delay: 800ms; }
 .delay-900 { animation-delay: 900ms; }
 .delay-1000 { animation-delay: 1000ms; }
+
+/* =============================================================================
+ * ParthSarthi Placement OS (foundation). Append-only additions.
+ * Layering: OSBar 40 · site header 50 · DriveShell 60 · PresenterDock 70 · overlays 100 · toasts top.
+ * ========================================================================== */
+
+.os-root {
+  font-family: var(--font-inter), var(--font-deva), system-ui, sans-serif;
+}
+
+.font-deva,
+[lang="hi"] {
+  font-family: var(--font-deva), var(--font-inter), sans-serif;
+  line-height: 1.6;
+}
+
+/* Noto Sans Devanagari (ascent .90 / descent .41) puts its baseline 0.12em higher than Inter (.97 / .24) in any
+ * box that is centred, so Hindi labels float above their icons and Latin neighbours in flex/grid rows. Nudge plain
+ * text children of centred rows down to the Latin baseline. position:relative + top never changes layout. */
+.items-center > :is(span, p, h1, h2, h3, h4, h5, h6, label, small, strong, em, b)[lang="hi"]:not(.sr-only):not([class*="absolute"]):not([class*="fixed"]):not([class*="sticky"]):not([class*="top-"]):not([class*="rounded"]) {
+  position: relative;
+  top: 0.12em;
+}
+
+/* AI-generated things only: blue-400 -> cyan-300 -> emerald-400 */
+.ai-gradient-text {
+  background-image: linear-gradient(90deg, #60a5fa 0%, #67e8f9 50%, #34d399 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* 1px gradient border. Works on a single element (padding-box fill) and with an inner #0d1117 child. */
+.ai-border {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#0d1117, #0d1117) padding-box,
+    linear-gradient(135deg, rgba(96, 165, 250, 0.7), rgba(103, 232, 249, 0.55), rgba(52, 211, 153, 0.7)) border-box;
+}
+.ai-border > .ai-border-inner {
+  background: #0d1117;
+  border-radius: inherit;
+}
+
+@keyframes orb-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+@keyframes orb-spin {
+  to { transform: rotate(360deg); }
+}
+@keyframes caret-blink {
+  0%, 45% { opacity: 1; }
+  55%, 100% { opacity: 0.1; }
+}
+@keyframes violet-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes tile-pop {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes ticker-x {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.9; }
+  80%, 100% { transform: scale(1.25); opacity: 0; }
+}
+@keyframes scan-sweep {
+  0% { top: -35%; }
+  100% { top: 100%; }
+}
+@keyframes os-skel {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes os-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.orb-breathe { animation: orb-breathe 3s ease-in-out infinite; }
+.orb-spin { animation: orb-spin 6s linear infinite; }
+.caret-blink { animation: caret-blink 1s steps(1, end) infinite; }
+.ai-shimmer {
+  background-image: linear-gradient(90deg, rgba(139, 92, 246, 0.08) 0%, rgba(167, 139, 250, 0.32) 50%, rgba(139, 92, 246, 0.08) 100%);
+  background-size: 200% 100%;
+  animation: violet-shimmer 1.6s linear infinite;
+}
+.tile-pop { animation: tile-pop 420ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+.ticker-x { animation: ticker-x 30s linear infinite; }
+.pulse-ring { animation: pulse-ring 1.6s cubic-bezier(0.2, 0.6, 0.4, 1) infinite; }
+.scan-sweep { animation: scan-sweep 2.6s linear infinite; }
+.os-skel {
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.07) 50%, rgba(255, 255, 255, 0.025) 100%);
+  background-size: 200% 100%;
+  animation: os-skel 1.4s ease-in-out infinite;
+}
+.os-rise { animation: os-rise 360ms cubic-bezier(0.16, 1, 0.3, 1) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  .orb-breathe, .orb-spin, .caret-blink, .ai-shimmer, .tile-pop, .ticker-x, .pulse-ring, .scan-sweep, .os-skel, .os-rise {
+    animation: none !important;
+  }
+  .pulse-ring, .scan-sweep { opacity: 0 !important; }
+}
+.os-lite .orb-breathe, .os-lite .orb-spin, .os-lite .caret-blink, .os-lite .ai-shimmer, .os-lite .tile-pop,
+.os-lite .ticker-x, .os-lite .pulse-ring, .os-lite .scan-sweep, .os-lite .os-skel, .os-lite .os-rise {
+  animation: none !important;
+}
+.os-lite .pulse-ring, .os-lite .scan-sweep { opacity: 0 !important; }
+
+/* Presenter dock rises above a DriveShell's sticky footer. */
+body[data-drive-footer] .ps-dock { bottom: 84px; }
+
+/* Print (printOnly() in lib/os/print.ts) */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@layer components {
+  .print-page {
+    @apply mx-auto max-w-[794px] rounded bg-white p-10 text-gray-900 shadow-xl;
+  }
+}
+
+@media print {
+  .site-header, .os-chrome, .no-print { display: none !important; }
+  html, body, .os-root { background: #fff !important; color: #111 !important; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-page { box-shadow: none; margin: 0 auto; border-radius: 0; }
+  .print-break { break-before: page; }
+  body[data-print] *:not(:has(.print-active)):not(.print-active):not(.print-active *) { display: none !important; }
+  body[data-print] *:has(.print-active) {
+    position: static !important;
+    transform: none !important;
+    overflow: visible !important;
+    max-height: none !important;
+    inset: auto !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    /* Ancestors collapse to plain blocks so the target starts at the top of the page at full width. */
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    max-width: none !important;
+  }
+  body[data-print] .print-active {
+    position: static !important;
+    transform: none !important;
+    max-width: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
