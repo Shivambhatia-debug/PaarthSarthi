@@ -246,8 +246,8 @@ export function runMockAsserts(): MockAssert[] {
     }
     return [bad.length === 0, bad.length ? bad.join(', ') : 'priya, rahul ok']
   })
-  check('Attempt dates derive from DEMO_TODAY (6 Oct, 16 Oct)', () => {
-    const ok = isoDaysBefore(22) === '2026-10-06' && isoDaysBefore(12) === '2026-10-16' && PRIYA.attempts[0].date === isoDaysBefore(22)
+  check('Attempt dates derive from DEMO_TODAY (5 Oct, 15 Oct)', () => {
+    const ok = isoDaysBefore(22) === '2026-10-05' && isoDaysBefore(12) === '2026-10-15' && PRIYA.attempts[0].date === isoDaysBefore(22)
     return [ok, `${isoDaysBefore(22)}, ${isoDaysBefore(12)} · ${WEEK_LABEL.en}`]
   })
 
@@ -344,7 +344,7 @@ export function runMockAsserts(): MockAssert[] {
     const b = fmtINR(6000)
     const c = fmtINR(400000)
     const d = fmtINR(15000000)
-    const ok = a === '1,12,480' && b === '₹6,000' && c === '₹4 lakh' && d === '₹1.5 Cr' && WEEK_LABEL.en === 'Week 44 · 28 Oct 2026'
+    const ok = a === '1,12,480' && b === '₹6,000' && c === '₹4 lakh' && d === '₹1.5 Cr' && WEEK_LABEL.en === 'Week 44 · 27 Oct 2026'
     return [ok, `${a} · ${b} · ${c} · ${d} · ${WEEK_LABEL.en}`]
   })
 

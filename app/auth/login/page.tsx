@@ -212,9 +212,9 @@ export default function AuthPage() {
         </Tabs>
 
         <p className="text-center text-xs text-gray-500 mt-4">
-          <Link href="/privacy" className="hover:underline text-gray-500">Privacy</Link>
+          <Link href="/privacy" prefetch={false} className="hover:underline text-gray-500">Privacy</Link>
           <span className="mx-2">|</span>
-          <Link href="/terms" className="hover:underline text-gray-500">Terms</Link>
+          <Link href="/terms" prefetch={false} className="hover:underline text-gray-500">Terms</Link>
         </p>
       </div>
     </div>

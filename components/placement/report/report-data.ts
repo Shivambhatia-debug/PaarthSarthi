@@ -392,3 +392,17 @@ export function offerBandForPersona(kind: string | undefined, pri: number): { fu
           : { en: 'Top-track · ₹9 LPA+', hi: 'टॉप-ट्रैक · ₹9 LPA+' }
   return { full, short }
 }
+
+/** Mock strings that are still plain English in lib/mock: Hindi for the ones shown in the student area. */
+const MOCK_HI: Record<string, string> = {
+  'Official CM Pratigya portal': 'आधिकारिक मुख्यमंत्री प्रतिज्ञा पोर्टल',
+  'Pattern inspired by publicly reported formats; not an official paper; no affiliation.':
+    'सार्वजनिक रूप से रिपोर्ट किए गए प्रारूपों से प्रेरित पैटर्न; आधिकारिक पेपर नहीं; कोई संबद्धता नहीं।',
+}
+
+/** Accepts a mock string or an already-bilingual value, so it keeps working once lib/mock ships Bi objects. */
+export function mockBi(x: string | Bi | null | undefined): Bi {
+  if (x == null) return { en: '', hi: '' }
+  if (typeof x !== 'string') return x
+  return { en: x, hi: MOCK_HI[x] ?? x }
+}

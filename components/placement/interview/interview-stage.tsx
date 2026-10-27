@@ -486,7 +486,7 @@ function InterviewRoom({ phase }: { phase: Phase }) {
   const canSkip = snap.started && !!current && stage !== 'thinking' && !(snap.phaseDone && stage === 'scored')
   // Follow-up in a demo (presenter / scripted): one click to fill the rest and show the split card (same as 'F').
   const showFinish =
-    snap.started && !snap.phaseDone && current?.kind === 'followup' && (presenter || voiceMode === 'scripted')
+    snap.started && !snap.phaseDone && current?.kind === 'followup' && (presenter || voiceMode === 'scripted' || !eng.recSupported)
   const onSkip = () => {
     if (presenter && phase === 'tech' && current?.kind === 'followup') actions.fastForward()
     else actions.skip()
@@ -513,6 +513,18 @@ function InterviewRoom({ phase }: { phase: Phase }) {
         break
     }
   }
+
+  const scorecard = current ? (
+    <AnswerScorecard
+      key={current.id}
+      q={current}
+      result={currentResult}
+      stage={stage}
+      liveStar={eng.liveStar}
+      gender={gender}
+      showLangFair={lang !== 'en'}
+    />
+  ) : null
 
   return (
     <div className="space-y-4">
@@ -626,7 +638,7 @@ function InterviewRoom({ phase }: { phase: Phase }) {
                         {
                           en: `Using signal from Round ${signal.round}: `,
                           hi: `राउंड ${signal.round} के सिग्नल से: `,
-                          hinglish: `Round ${signal.round} ka signal: `,
+                          hinglish: `Using signal from Round ${signal.round}: `,
                         },
                         lang,
                       )}
@@ -647,7 +659,7 @@ function InterviewRoom({ phase }: { phase: Phase }) {
                             {
                               en: `Because you said: "${current.because}"`,
                               hi: `क्योंकि आपने कहा: "${current.because}"`,
-                              hinglish: `Kyunki aapne kaha: "${current.because}"`,
+                              hinglish: `Because you said: "${current.because}"`,
                             },
                             lang,
                           )}
@@ -784,35 +796,25 @@ function InterviewRoom({ phase }: { phase: Phase }) {
         {/* Right: transcript, keywords, scorecard */}
         <div className="order-2 min-w-0 space-y-4 xl:order-3">
           {hesitationResult && (
-            <div ref={hesRef} className="scroll-mt-24">
-            <AISurface
-              key={`hes:${current?.id}`}
-              tone="violet"
-              title={hesitationResult.hesitant ? C.behaviour : C.noHesitation}
-              meta={false}
-            >
-              <StreamingText
-                text={hesitationResult.hesitant ? hesitationText(hesitationResult) : confidentText(hesitationResult)}
-                cps={60}
-                startDelay={300}
-                className={cn('text-[13px] leading-relaxed', hesitationResult.hesitant ? 'text-amber-100' : 'text-emerald-100')}
-              />
-            </AISurface>
+            <div key={`hes:${current?.id}`} ref={hesRef} className="scroll-mt-24">
+              <AISurface tone="violet" title={hesitationResult.hesitant ? C.behaviour : C.noHesitation} meta={false}>
+                <StreamingText
+                  text={hesitationResult.hesitant ? hesitationText(hesitationResult) : confidentText(hesitationResult)}
+                  cps={60}
+                  startDelay={300}
+                  className={cn(
+                    'text-[13px] leading-relaxed lg:text-[15px]',
+                    hesitationResult.hesitant ? 'text-amber-100' : 'text-emerald-100',
+                  )}
+                />
+              </AISurface>
             </div>
           )}
+          {/* HR relocation moment: the coaching tip sits right under the flag, above the fold */}
+          {hesitationResult && scorecard}
           <TranscriptPanel entries={entries} />
           {current && <KeywordChips keywords={current.keywords} hit={eng.keywordsHit} />}
-          {current && (
-            <AnswerScorecard
-              key={current.id}
-              q={current}
-              result={currentResult}
-              stage={stage}
-              liveStar={eng.liveStar}
-              gender={gender}
-              showLangFair={lang !== 'en'}
-            />
-          )}
+          {!hesitationResult && scorecard}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 'use client'
 
-/* /os-kit/runbook: unlinked presenter runbook for the 28 Oct DSTTE pitch. Pre-flight checklists,
+/* /os-kit/runbook: unlinked presenter runbook for the 27 Oct DSTTE pitch. Pre-flight checklists,
  * the 10-minute click path with timings, the 3-minute fallback, drop order, Q&A crib, hotkeys and the
  * printable T2 cue card (printed alone via printOnly). Checklist ticks and rehearsal laps are kept in
  * this browser only (localStorage, best effort). */
@@ -114,7 +114,7 @@ const SCRIPT: Seg[] = [
       'When she finishes, click Skip (scripted, instant).',
       'T2: read the cue card (about 18 s). Optional: Guest question, chip G, for an invited official.',
       'Watch the transcript, the "matlab" filler, ESP32 + MQTT chips, WPM.',
-      'Violet thinking → follow-up "Because you said: ESP32". Click Skip on it, then press F (fills T3-T4 instantly).',
+      'Violet thinking → follow-up "Because you said: ESP32". Click Skip on it: in presenter mode that jumps straight to the split card. Without presenter mode, press F or click "Finish & score (F)".',
       'Split card: Technical 78 (language-neutral) · English delivery 52 → 70. "Hindi-medium students are never marked down for knowledge."',
       'Continue to HR → Start → chip H2 (relocation / shifts). Hesitation flag, then the Hindi tip.',
       'If the mic fails at any point, click "Use scripted answer" silently.',
@@ -168,6 +168,7 @@ const SCRIPT: Seg[] = [
       '"योजना रडार देखें": scan, eligible schemes first (₹20,000).',
       '"राहुल का प्लेसमेंट डे खोलें": "See where this path leads: a polytechnic final-year like Rahul". Opens the /placement sign-in card as Rahul Kumar, GP Muzaffarpur (not his lobby). Then press 5.',
       'Handoff sets persona = Rahul: press Shift+R before any rerun of the Priya flow.',
+      'If you run Rahul\'s Core Mechanical round by hand: MCQ answers m1 A · m2 B · m3 A · m4 A · m5 B · m6 B. Autopilot (A) gives 81; Rahul\'s interview switches the app to हिंदी.',
     ],
     key: '5',
   },
@@ -194,7 +195,7 @@ const HOTKEYS: [string, string][] = [
   ['0-5', 'Overview · Student · College T&P · State · School · Pilot'],
   ['F', 'Fast-forward the current round (drive rounds)'],
   ['A', 'Autopilot (communication, scripted answers)'],
-  ['L', 'Cycle language EN → हिं → Hinglish'],
+  ['L', 'Cycle language EN → हिं → Hinglish (on /tpo and /state: हिंदी ↔ EN)'],
   ['Shift+R', 'Reset demo and return to /placement-os'],
 ]
 

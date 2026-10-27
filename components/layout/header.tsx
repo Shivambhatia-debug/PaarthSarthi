@@ -23,6 +23,8 @@ const NAV = [
 
 const OS_PREFIXES = ["/placement-os", "/placement", "/tpo", "/state", "/schools", "/pilot"]
 
+const OS_ROUTE_RE = /^\/(placement-os|placement|tpo|state|schools|pilot|os-kit)(\/|$)/
+
 function normPath(p: string | null): string {
   if (!p) return "/"
   return p.length > 1 && p.endsWith("/") ? p.slice(0, -1) : p
@@ -71,6 +73,9 @@ export function Header() {
     window.dispatchEvent(new Event("authChange"))
     router.push("/")
   }
+
+  // OS routes carry their own OS bar (brand, roles, language); no marketing header there.
+  if (OS_ROUTE_RE.test(path ?? "")) return null
 
   if (!mounted) return <header className="site-header sticky top-0 z-50 w-full h-12 border-b border-white/5 bg-[#0d1117]" />
 

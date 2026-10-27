@@ -150,7 +150,17 @@ export function DriveRail({ current, compact, className }: DriveRailProps) {
               <span className={cn('grid h-5 w-5 place-items-center rounded-full border', st.node)}>
                 <StatusGlyph status={status} index={i} />
               </span>
-              <span className={cn('whitespace-nowrap', isCurrent ? 'inline' : 'hidden xl:inline')}>{r.short}</span>
+              <span
+                lang={isDevanagari(t(r.short)) ? 'hi' : 'en'}
+                className={cn('whitespace-nowrap', isCurrent ? 'inline' : 'hidden xl:inline', isDevanagari(t(r.short)) && 'font-deva')}
+              >
+                {t(r.short)}
+              </span>
+              {!isCurrent && score && score !== '—' && (
+                <span className="tabular-nums text-[12px] opacity-60 xl:hidden" aria-hidden>
+                  R{i + 1}
+                </span>
+              )}
               {score && score !== '—' && <span className="tabular-nums opacity-80">{score}</span>}
               {status === 'live' && isCurrent && (
                 <span className="relative ml-0.5 flex h-1.5 w-1.5" aria-hidden>

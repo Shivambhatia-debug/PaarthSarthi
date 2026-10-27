@@ -99,6 +99,7 @@ export function DistrictMapPanel({ filter, pulseId, focusIds, onClearFocus, clas
           size="lg"
           values={values}
           metricLabel={T.metric}
+          warmLow={0.3}
           selected={open ? selected : null}
           onSelect={(id) => {
             setSelected(id)

@@ -158,7 +158,7 @@ export function DriveShell({
 
       <header className="sticky top-0 z-30 shrink-0 border-b border-white/[0.08] bg-[#0d1117]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-3 sm:px-5">
-          <span className="relative grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-blue-500 via-cyan-400 to-emerald-400 p-px shadow-[0_0_24px_-6px_rgba(34,211,238,0.7)]">
+          <span className="relative hidden h-9 w-9 shrink-0 place-items-center sm:grid rounded-xl bg-gradient-to-br from-blue-500 via-cyan-400 to-emerald-400 p-px shadow-[0_0_24px_-6px_rgba(34,211,238,0.7)]">
             <span className="grid h-full w-full place-items-center rounded-[11px] bg-[#0d1117]">
               <Sparkles className="h-4 w-4 text-cyan-300" aria-hidden />
             </span>
@@ -166,7 +166,6 @@ export function DriveShell({
           <div className="min-w-0 flex-1">
             {bpLabel && <p className="hidden truncate text-[12px] leading-tight text-gray-500 sm:block">{bpLabel}</p>}
             <h1 className="truncate text-[15px] font-semibold leading-tight text-white sm:text-base">{span(title)}</h1>
-            {subtitle && <p className="truncate text-[12px] leading-tight text-gray-400 sm:hidden">{span(subtitle)}</p>}
           </div>
 
           {timer != null && timer !== false && (
@@ -226,10 +225,25 @@ export function DriveShell({
               <button
                 type="button"
                 onClick={() => emitDemo('fastforward')}
-                className="h-7 whitespace-nowrap rounded-md px-1.5 text-[12px] text-gray-500 underline decoration-gray-600 underline-offset-2 transition-colors hover:text-gray-200"
+                aria-label={tt(TXT.skip)}
+                title={tt(TXT.skip)}
+                className="inline-flex h-7 items-center whitespace-nowrap rounded-md px-1.5 text-[12px] text-gray-500 underline decoration-gray-600 underline-offset-2 transition-colors hover:text-gray-200"
               >
-                {span(TXT.skip)}
+                <FastForward className="h-4 w-4 sm:hidden" aria-hidden />
+                {span(TXT.skip, 'hidden sm:inline')}
               </button>
+              {showProctor && !isLg && (
+                <button
+                  type="button"
+                  onClick={() => setProctorOpen(true)}
+                  aria-label={tt(TXT.proctor)}
+                  className="inline-flex h-7 shrink-0 items-center gap-1 rounded-full border border-white/15 bg-white/[0.04] px-2 text-[12px] font-medium text-gray-200"
+                >
+                  <ShieldCheck className={cn('h-3.5 w-3.5', score >= 96 ? 'text-emerald-300' : 'text-amber-300')} aria-hidden />
+                  <span className="tabular-nums text-white">{score}</span>
+                  {detectTabs && <span className="tabular-nums text-gray-400">· {integrity?.tabSwitches ?? 0}/3</span>}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -242,7 +256,7 @@ export function DriveShell({
         )}
       >
         <div className="min-w-0">
-          {subtitle && <p className="mb-4 hidden text-[13px] text-gray-400 sm:block">{span(subtitle)}</p>}
+          {subtitle && <p className="mb-4 text-[13px] text-gray-400">{span(subtitle)}</p>}
           {children}
         </div>
         {showProctor && isLg && (
@@ -260,23 +274,6 @@ export function DriveShell({
 
       {showProctor && !isLg && (
         <>
-          <button
-            type="button"
-            onClick={() => setProctorOpen(true)}
-            className={cn(
-              'fixed left-3 z-[61] inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-[#121821]/95 pl-3 pr-3.5 text-[12px] font-medium text-gray-200 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.9)] backdrop-blur',
-              hasFooter ? 'bottom-[84px]' : 'bottom-4',
-            )}
-          >
-            <ShieldCheck className={cn('h-4 w-4', score >= 96 ? 'text-emerald-300' : 'text-amber-300')} aria-hidden />
-            {span(TXT.integrity)}
-            <span className="tabular-nums text-white">{score}</span>
-            {detectTabs && (
-              <span className="tabular-nums text-gray-400">
-                · {integrity?.tabSwitches ?? 0}/3 {span(TXT.tabs)}
-              </span>
-            )}
-          </button>
           <Sheet open={proctorOpen} onOpenChange={setProctorOpen}>
             <SheetContent
               side="bottom"

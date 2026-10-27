@@ -15,7 +15,7 @@ import type {
 // ---------------------------------------------------------------------------
 // Dates. If the pitch moves, change ONLY this constant.
 // ---------------------------------------------------------------------------
-export const DEMO_TODAY = '2026-10-28'
+export const DEMO_TODAY = '2026-10-27'
 
 const DAY_MS = 86_400_000
 
@@ -56,7 +56,7 @@ function isoWeek(iso: string): number {
 
 const WEEK_NO = isoWeek(DEMO_TODAY)
 
-/** 'Week 44 · 28 Oct 2026' */
+/** 'Week 44 · 27 Oct 2026' */
 export const WEEK_LABEL: Bi = {
   en: `Week ${WEEK_NO} · ${fmtDate(DEMO_TODAY, 'en', { year: true })}`,
   hi: `सप्ताह ${WEEK_NO} · ${fmtDate(DEMO_TODAY, 'hi', { year: true })}`,

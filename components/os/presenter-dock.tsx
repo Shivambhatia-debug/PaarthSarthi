@@ -27,6 +27,7 @@ import type { Lang } from '@/lib/os/i18n'
 import { notifyUrlChange } from '@/hooks/use-query-param'
 import { markProctorGrace } from '@/hooks/use-proctor'
 import { OS_ROLES, isRoleActive, normPath } from '@/components/os/os-bar'
+import { isOfficerPath } from '@/components/os/language-switcher'
 import { cn } from '@/lib/utils'
 
 const JUMPS: { label: string; href: string }[] = [
@@ -98,7 +99,10 @@ export function PresenterDock() {
   )
 
   const cycleLang = useCallback(() => {
+    // Officer routes render Hinglish as English, so L toggles हिंदी <-> EN there (first press always visibly switches).
+    const officer = isOfficerPath(pathRef.current)
     set((s) => {
+      if (officer) return { lang: s.lang === 'hi' ? 'en' : 'hi' }
       const i = LANG_CYCLE.indexOf(s.lang)
       return { lang: LANG_CYCLE[(i + 1) % LANG_CYCLE.length] }
     })
@@ -230,7 +234,7 @@ export function PresenterDock() {
           className={cn(icon, 'border border-cyan-400/30 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20')}
         >
           <FastForward className="h-3.5 w-3.5" aria-hidden />
-          <span className="hidden sm:inline">Fast-fwd</span>
+          <span className="hidden 2xl:inline">Fast-fwd</span>
           <span className={kbd}>F</span>
         </button>
         <button
@@ -240,7 +244,7 @@ export function PresenterDock() {
           className={cn(icon, 'border border-violet-400/30 bg-violet-500/10 text-violet-100 hover:bg-violet-500/20')}
         >
           <Play className="h-3.5 w-3.5" aria-hidden />
-          <span className="hidden sm:inline">Autopilot</span>
+          <span className="hidden 2xl:inline">Autopilot</span>
           <span className={kbd}>A</span>
         </button>
         {sep}
@@ -263,7 +267,7 @@ export function PresenterDock() {
           className={cn(icon, state.lite ? 'bg-amber-400/15 text-amber-200 ring-1 ring-amber-400/30' : 'text-gray-400 hover:bg-white/[0.06] hover:text-white')}
         >
           <Feather className="h-3.5 w-3.5" aria-hidden />
-          Lite
+          <span className="hidden 2xl:inline">Lite</span>
         </button>
         <button
           type="button"
@@ -273,7 +277,7 @@ export function PresenterDock() {
         >
           <Languages className="h-3.5 w-3.5" aria-hidden />
           <span lang={state.lang === 'hi' ? 'hi' : 'en'} className={cn(state.lang === 'hi' && 'font-deva')}>
-            {LANG_SHORT[state.lang] ?? 'EN'}
+            {LANG_SHORT[isOfficerPath(pathname) && state.lang === 'hinglish' ? 'en' : state.lang] ?? 'EN'}
           </span>
         </button>
         {sep}
@@ -282,7 +286,7 @@ export function PresenterDock() {
           <DropdownMenuTrigger asChild>
             <button type="button" title="Jump to a demo moment" className={cn(icon, 'text-gray-200 hover:bg-white/[0.06]')}>
               <Navigation className="h-3.5 w-3.5" aria-hidden />
-              Jump
+              <span className="hidden 2xl:inline">Jump</span>
               <ChevronDown className="h-3.5 w-3.5 opacity-60" aria-hidden />
             </button>
           </DropdownMenuTrigger>

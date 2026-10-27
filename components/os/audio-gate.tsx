@@ -20,6 +20,8 @@ export interface AudioGateProps {
   body?: Bi | string
   startLabel?: Bi | string
   note?: Bi | string
+  /** Optional (additive): replaces the default headphones / microphone hint. */
+  hint?: Bi | string
   onStart?: () => unknown
   children: ReactNode
   /**
@@ -41,6 +43,7 @@ export function AudioGate({
   body,
   startLabel = START,
   note = SPEECH_NOTE,
+  hint,
   onStart,
   children,
   replayEvent = true,
@@ -137,7 +140,7 @@ export function AudioGate({
 
         <p className="relative mx-auto mt-4 flex max-w-sm items-start justify-center gap-1.5 text-[12px] leading-snug text-gray-500">
           <Headphones className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />
-          {span(HINT)}
+          {span(hint ?? HINT)}
         </p>
         {note && (
           <p className="relative mx-auto mt-4 flex max-w-sm items-start justify-center gap-1.5 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2 text-left text-[12px] leading-snug text-gray-400">

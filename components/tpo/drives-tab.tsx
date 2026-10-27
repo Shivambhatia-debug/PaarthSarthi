@@ -110,7 +110,7 @@ export function DrivesTab({ collegeId, inst, b }: DrivesTabProps) {
         )}
       </TpoCard>
 
-      <div className="min-w-0 lg:sticky lg:top-24 lg:col-span-5 lg:self-start">
+      <div className="min-w-0 lg:sticky lg:top-14 lg:col-span-5 lg:self-start">
         <DriveNotice drive={selected} inst={inst} className="h-auto" />
       </div>
 

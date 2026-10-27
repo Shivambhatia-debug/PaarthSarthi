@@ -8,6 +8,7 @@ import { SCHEMES, schemesFor } from '@/lib/mock/schemes'
 import type { Scheme } from '@/lib/mock/types'
 import { IntegrationChip } from '@/components/os/integration-chip'
 import { Tr } from '@/components/os/tr-text'
+import { mockBi } from '@/components/placement/report/report-data'
 import { cn } from '@/lib/utils'
 
 const TXT = {
@@ -86,7 +87,7 @@ export function Opportunities() {
               <VerifyChip />
               <span className="inline-flex items-center gap-1 text-[12px] text-gray-500">
                 <ExternalLink className="h-3.5 w-3.5" aria-hidden />
-                {cm.portalLabel}
+                <Tr b={mockBi(cm.portalLabel)} />
               </span>
             </div>
           </article>

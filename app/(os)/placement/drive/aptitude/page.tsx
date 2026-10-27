@@ -127,8 +127,9 @@ export default function AptitudePage() {
         phase === 'exam' ? (
           <ExamTimer exam={exam} />
         ) : (
-          <span className="text-emerald-200">
-            <Tr b={TXT.submitted} />
+          <span className="inline-flex items-center gap-1.5 text-emerald-200">
+            <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+            <Tr b={TXT.submitted} className="sr-only sm:not-sr-only" />
           </span>
         )
       }
