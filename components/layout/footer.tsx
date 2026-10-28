@@ -35,8 +35,8 @@ export function Footer() {
             <ul className="space-y-1.5 text-[11px]">
               <li><Link href="/auth/login" className="hover:text-white transition-colors">Login</Link></li>
               <li><Link href="/blog" className="hover:text-white transition-colors">Blog</Link></li>
-              <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link></li>
-              <li><Link href="/terms" className="hover:text-white transition-colors">Terms</Link></li>
+              <li><Link href="/privacy" prefetch={false} className="hover:text-white transition-colors">Privacy</Link></li>
+              <li><Link href="/terms" prefetch={false} className="hover:text-white transition-colors">Terms</Link></li>
             </ul>
           </div>
 
