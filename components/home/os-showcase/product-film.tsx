@@ -325,11 +325,12 @@ export function ProductFilm({ className, externalPause = false, compact = false 
             <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
           </div>
-          {/* Stage: URL pill sits left like a real browser, clear of the corner callout. */}
+          {/* Stage: URL pill sits left like a real browser (clear of the corner callout; its x never moves as
+              the route changes, so no layout shift). */}
           <div
             className={cn(
               'flex min-w-0 items-center gap-1.5 rounded-md bg-white/[0.05] px-2.5 py-[3px] text-[11.5px] text-gray-400 ring-1 ring-inset ring-white/[0.05]',
-              stage ? 'mx-auto sm:mx-0' : 'mx-auto',
+              !stage && 'mx-auto',
             )}
           >
             <Lock className="h-3 w-3 shrink-0 text-emerald-400/80" aria-hidden />
@@ -342,7 +343,7 @@ export function ProductFilm({ className, externalPause = false, compact = false 
               </span>
             </span>
           </div>
-          <span aria-hidden className={cn('w-12 shrink-0', stage && 'sm:ml-auto')} />
+          <span aria-hidden className={cn('w-12 shrink-0', stage && 'ml-auto')} />
         </div>
 
         {/* Footage: exact 16:10 box, full frame (object-contain), nothing cropped */}
