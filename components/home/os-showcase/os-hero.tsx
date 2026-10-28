@@ -30,9 +30,9 @@ export function OSHero() {
       </div>
 
       <div className="container relative mx-auto px-4">
-        <div className="mx-auto max-w-[1160px] pb-14 pt-7 sm:pt-12 lg:pb-20 lg:pt-14">
-          {/* Header: headline left, pitch + CTAs right (stacked on mobile). The film runs full width below. */}
-          <div className="grid gap-x-12 gap-y-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-end">
+        <div className="mx-auto max-w-[1280px] pb-14 pt-7 sm:pt-12 lg:pb-20 lg:pt-14">
+          {/* lg+: pitch left, product stage right. Below lg: stacked (pitch, then stage). */}
+          <div className="grid gap-y-10 sm:gap-y-14 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)] lg:items-center lg:gap-x-10 xl:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)] xl:gap-x-16">
             <div className="min-w-0">
               <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] py-1 pl-1 pr-3 text-xs text-gray-300 backdrop-blur">
                 <AIBadge className="shrink-0" />
@@ -46,21 +46,19 @@ export function OSHero() {
 
               <h1
                 id="os-hero-title"
-                className="mt-4 text-[2.3rem] font-semibold leading-[1.04] tracking-[-0.03em] text-white sm:mt-5 sm:text-5xl lg:text-[3.4rem] xl:text-[3.85rem]"
+                className="mt-4 text-[2.3rem] font-semibold leading-[1.04] tracking-[-0.03em] text-white sm:mt-5 sm:text-5xl lg:text-[3.15rem] xl:text-[3.6rem]"
               >
                 <span className="block">Har student</span>
                 <span className={`block pb-1 ${GRADIENT_TEXT}`}>interview-ready.</span>
-                <span className="mt-1.5 block text-[1.3rem] font-medium leading-tight tracking-[-0.015em] text-gray-300 sm:mt-2 sm:text-[1.6rem] xl:text-[1.8rem]">
+                <span className="mt-1.5 block text-[1.3rem] font-medium leading-tight tracking-[-0.015em] text-gray-300 sm:mt-2 sm:text-[1.6rem] xl:text-[1.7rem]">
                   Bihar&apos;s AI Placement &amp; Career OS
                 </span>
               </h1>
-            </div>
 
-            <div className="min-w-0 lg:pb-1.5">
-              <p lang="hi" className="text-base text-gray-300 sm:text-lg">
+              <p lang="hi" className="mt-5 text-base text-gray-300 sm:text-lg">
                 हर छात्र के साथ एक AI कोच, हिंदी में भी।
               </p>
-              <p className="mt-2 text-[15px] leading-relaxed text-gray-400 sm:text-base">
+              <p className="mt-2 max-w-[34rem] text-[15px] leading-relaxed text-gray-400 sm:text-base">
                 <span className="sm:hidden">Aptitude, DSA, AI voice interview, readiness index.</span>
                 <span className="hidden sm:inline">
                   Aptitude, DSA and an AI voice interview in Hindi, English or Hinglish, then a Placement Readiness Index
@@ -68,10 +66,10 @@ export function OSHero() {
                 </span>
               </p>
 
-              <div className="mt-5 grid grid-cols-2 gap-2.5 sm:mt-6 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+              <div className="mt-6 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
                 <Link
                   href="/placement/"
-                  className="group relative inline-flex h-12 min-w-0 items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500 px-3 text-[14px] font-semibold text-white shadow-[0_12px_40px_-12px_rgba(34,211,238,0.8)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a13] sm:px-6 sm:text-[15px]"
+                  className="group relative inline-flex h-12 min-w-0 items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500 px-3 text-[14px] font-semibold text-white shadow-[0_12px_40px_-12px_rgba(34,211,238,0.8)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-200 focus-visible:ring-offset-2 focus-visible:ring-offset-[#060a13] sm:px-6 sm:text-[15px] lg:px-5 xl:px-6"
                 >
                   <span
                     aria-hidden
@@ -89,7 +87,7 @@ export function OSHero() {
                     <Play className="ml-0.5 h-3.5 w-3.5" fill="currentColor" aria-hidden />
                   </span>
                   <span className="truncate">
-                    <span className="hidden sm:inline">Watch </span>70-sec demo
+                    <span className="hidden sm:inline lg:hidden xl:inline">Watch </span>70-sec demo
                   </span>
                 </button>
               </div>
@@ -111,15 +109,15 @@ export function OSHero() {
                 </Link>
               </div>
             </div>
-          </div>
 
-          {/* Product film: wide, so the recorded UI reads at near-native size */}
-          <div className="mt-8 min-w-0 sm:mt-10 lg:mt-12">
-            <ProductFilm externalPause={demoOpen} />
+            {/* Product stage: the real app, full frame, with synced callouts */}
+            <div className="min-w-0 sm:mx-auto sm:w-full sm:max-w-[680px] lg:mx-0 lg:max-w-none">
+              <ProductFilm externalPause={demoOpen} />
+            </div>
           </div>
 
           {/* Trust row */}
-          <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[13px] text-gray-400">
+          <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2.5 text-[13px] text-gray-400">
             {TRUST.map((t) => (
               <li key={t.label} className="inline-flex items-center gap-1.5">
                 <t.icon className={`h-4 w-4 ${t.tone}`} aria-hidden />

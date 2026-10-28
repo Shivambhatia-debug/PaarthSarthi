@@ -29,9 +29,16 @@ const SHOWCASE_CSS = `
 .psx-reveal.psx-in { opacity: 1; transform: none }
 .psx-caret { animation: psx-caret 1s steps(1) infinite }
 .psx-sheen { background-size: 200% 100%; animation: psx-sheen 6s linear infinite }
+.psf-stage { perspective: 1600px }
+.psf-tilt { transform-origin: 50% 50%; transition: transform .8s cubic-bezier(.2,.7,.2,1) }
+@media (min-width: 640px) { .psf-tilt { transform: rotateX(5deg) rotateY(-5deg) } }
+@media (min-width: 1024px) { .psf-tilt { transform: rotateY(-10deg) rotateX(4deg) } }
+/* Hover eases the tilt but keeps a little, so the flat callouts stay on the frame's corners. */
+@media (hover: hover) and (min-width: 640px) { .psf-stage:hover .psf-tilt { transform: rotateY(-3deg) rotateX(1.5deg) } }
 @media (prefers-reduced-motion: reduce) {
   .psx-anim, .psx-caret, .psx-sheen { animation: none !important }
   .psx-reveal { opacity: 1 !important; transform: none !important; transition: none !important }
+  .psf-tilt { transition: none }
 }
 `
 

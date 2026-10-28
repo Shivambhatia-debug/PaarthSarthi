@@ -39,6 +39,9 @@ export const PILLAR_LABELS: Record<PillarKey, Bi> = {
  */
 export const INTEGRITY_FLOOR = 88
 
+/** Integrity points lost per tab switch during a proctored round (one switch: 100 -> 96). */
+export const TAB_SWITCH_PENALTY = 4
+
 function cl(n: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, n))
 }

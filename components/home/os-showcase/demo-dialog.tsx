@@ -1,17 +1,44 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Pause, Play } from 'lucide-react'
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog'
 import { AIBadge } from '@/components/ai/ai-badge'
 import { ProductFilm } from './product-film'
 import { DEMO_REEL, mediaUrl } from './media'
 import { useReducedMotion } from './shared'
 
-/** "Watch 70-sec demo": the highlight reel; falls back to the six-scene film if the reel is missing. */
+const clock = (sec: number) => {
+  const s = Math.max(0, Math.floor(Number.isFinite(sec) ? sec : 0))
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+}
+
+/** "Watch 70-sec demo": the highlight reel; falls back to the six-scene film if the reel is missing.
+ * Minimal controls sit BELOW the video so they never cover the reel's burned-in captions. */
 export function DemoDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const reduced = useReducedMotion()
   const [failed, setFailed] = useState(false)
+  const [playing, setPlaying] = useState(false)
+  const [time, setTime] = useState(0)
+  const [duration, setDuration] = useState(0)
   const videoRef = useRef<HTMLVideoElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    setPlaying(false)
+    setTime(0)
+  }, [open])
+
+  const toggle = useCallback(() => {
+    const v = videoRef.current
+    if (!v) return
+    if (v.paused || v.ended) {
+      v.muted = true
+      v.play()?.catch(() => {})
+    } else {
+      v.pause()
+    }
+  }, [])
 
   // Missing sources do not always fire onError on <video>: poll the settled state briefly.
   useEffect(() => {
@@ -46,23 +73,61 @@ export function DemoDialog({ open, onOpenChange }: { open: boolean; onOpenChange
             </div>
           </div>
         ) : (
-          <video
-            ref={(el) => {
-              videoRef.current = el
-              if (el) el.muted = true
-            }}
-            className="aspect-[16/10] max-h-[calc(100vh-120px)] w-full bg-black object-contain"
-            controls
-            autoPlay={!reduced}
-            muted
-            playsInline
-            preload="metadata"
-            poster={mediaUrl(DEMO_REEL, 'jpg')}
-            onError={() => setFailed(true)}
-          >
-            <source src={mediaUrl(DEMO_REEL, 'webm')} type="video/webm" />
-            <source src={mediaUrl(DEMO_REEL, 'mp4')} type="video/mp4" onError={() => setFailed(true)} />
-          </video>
+          <>
+            <video
+              ref={(el) => {
+                videoRef.current = el
+                if (el) el.muted = true
+              }}
+              className="aspect-[16/10] max-h-[calc(100vh-170px)] w-full cursor-pointer bg-black object-contain"
+              autoPlay={!reduced}
+              muted
+              playsInline
+              disablePictureInPicture
+              preload="metadata"
+              poster={mediaUrl(DEMO_REEL, 'jpg')}
+              aria-label="Placement OS highlight reel (muted, captioned)"
+              onClick={toggle}
+              onPlay={() => setPlaying(true)}
+              onPause={() => setPlaying(false)}
+              onEnded={() => setPlaying(false)}
+              onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+              onDurationChange={(e) => setDuration(e.currentTarget.duration)}
+              onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+              onError={() => setFailed(true)}
+            >
+              <source src={mediaUrl(DEMO_REEL, 'webm')} type="video/webm" />
+              <source src={mediaUrl(DEMO_REEL, 'mp4')} type="video/mp4" onError={() => setFailed(true)} />
+            </video>
+            <div className="flex items-center gap-3 border-t border-white/[0.08] px-3 py-2 sm:px-4">
+              <button
+                type="button"
+                onClick={toggle}
+                aria-label={playing ? 'Pause demo' : 'Play demo'}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-gray-100 transition hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70"
+              >
+                {playing ? <Pause className="h-3.5 w-3.5" fill="currentColor" /> : <Play className="ml-0.5 h-3.5 w-3.5" fill="currentColor" />}
+              </button>
+              <input
+                type="range"
+                aria-label="Seek"
+                min={0}
+                max={duration > 0 && Number.isFinite(duration) ? duration : 0}
+                step={0.1}
+                value={Math.min(time, duration || 0)}
+                onChange={(e) => {
+                  const v = videoRef.current
+                  const t = Number(e.target.value)
+                  if (v && Number.isFinite(t)) v.currentTime = t
+                  setTime(t)
+                }}
+                className="h-1 min-w-0 flex-1 cursor-pointer accent-cyan-400"
+              />
+              <span className="shrink-0 text-xs tabular-nums text-gray-400">
+                {clock(time)} / {clock(duration)}
+              </span>
+            </div>
+          </>
         )}
       </DialogContent>
     </Dialog>
