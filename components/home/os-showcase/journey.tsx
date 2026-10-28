@@ -166,7 +166,7 @@ function StepPreview({ active }: { active: number }) {
             <div className="flex min-w-0 items-center gap-1.5 rounded-md bg-white/[0.05] px-2.5 py-1 text-xs text-gray-400 ring-1 ring-inset ring-white/[0.04]">
               <Lock className="h-3 w-3 shrink-0 text-emerald-400/80" aria-hidden />
               <span className="truncate">
-                {SITE_HOST}
+                {SITE_HOST ?? ''}
                 <span className="text-gray-200">{cur.route}</span>
               </span>
             </div>

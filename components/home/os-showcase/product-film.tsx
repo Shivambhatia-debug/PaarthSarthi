@@ -1,19 +1,20 @@
 'use client'
 
-/* ProductFilm: a browser-framed player for the six recorded Placement OS scenes with a
- * story-style segmented progress bar and a streaming caption.
- * Fallbacks, per scene: video -> poster with a slow Ken Burns zoom (on error, stall, or blocked
- * autoplay) -> animated mock (AIOrb + bars) if the poster is missing too. Never a broken box. */
+/* ProductFilm: the hero "product stage". A browser frame with the six recorded Placement OS scenes
+ * shown FULL-FRAME (whole app screen, 16:10, no punch-in), a soft 3D tilt on larger screens, crisp
+ * HTML callouts synced to each scene's key moment, and a story-style segmented progress bar.
+ * Fallbacks, per scene: video -> poster (on error, stall, or data saver) -> animated mock (AIOrb + bars)
+ * if the poster is missing too. Never a broken box.
+ * `compact` (used inside the demo dialog): flat frame, no glow, no callouts. */
 
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
-import { ChevronRight, Lock, Pause, Play, Sparkles } from 'lucide-react'
-import { AIOrb } from '@/components/ai/ai-orb'
+import { Lock, Pause, Play } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { MockVisual, useReducedMotion } from './shared'
-import { MOBILE_CUT_SUFFIX, SCENES, SCENE_MS, SITE_HOST, mediaUrl } from './media'
+import { SceneCallout } from './film-callouts'
+import { SCENES, SITE_HOST, mediaUrl, sceneMs, type CueSlot } from './media'
 
 const N = SCENES.length
-const SMALL_MQ = '(max-width: 639px)'
 /** How long an active clip may sit without frames before we switch to its poster. */
 const STALL_MS = 2600
 
@@ -30,39 +31,25 @@ function isLiteConnection(): boolean {
   }
 }
 
-function useStreamed(text: string, enabled: boolean, msPerChar = 20): number {
-  const [n, setN] = useState(text.length)
-  const shownText = useRef(text)
-  useEffect(() => {
-    // The first caption renders complete (SSR and first paint); only a new caption streams in.
-    if (!enabled || shownText.current === text) {
-      shownText.current = text
-      setN(text.length)
-      return
-    }
-    shownText.current = text
-    setN(0)
-    let i = 0
-    const id = window.setInterval(() => {
-      i += 1
-      setN(i)
-      if (i >= text.length) window.clearInterval(id)
-    }, msPerChar)
-    return () => window.clearInterval(id)
-  }, [text, enabled, msPerChar])
-  return Math.min(n, text.length)
+/** Callouts straddle the frame's corners; the overhang shrinks where the container gutter is narrow
+ * (at 1280px the right gutter is ~20px, so the full overhang waits for 1360px). */
+const SLOT: Record<CueSlot, { pos: string; hidden: string }> = {
+  tr: { pos: '-top-6 -right-2 md:-right-6 lg:-right-3 xl:-right-2 min-[1360px]:-right-8', hidden: '-translate-y-2' },
+  bl: { pos: '-bottom-6 -left-2 md:-left-6 lg:-left-9 xl:-left-12', hidden: 'translate-y-2' },
+  br: { pos: '-bottom-6 -right-2 md:-right-6 lg:-right-3', hidden: 'translate-y-2' },
 }
 
 export interface ProductFilmProps {
   className?: string
   /** Pause from outside (e.g. while the demo dialog is open). */
   externalPause?: boolean
-  /** Lighter chrome for use inside a dialog: no glow, orb or floating chip. */
+  /** Lighter chrome for use inside a dialog: no tilt, glow or callouts. */
   compact?: boolean
 }
 
 export function ProductFilm({ className, externalPause = false, compact = false }: ProductFilmProps) {
   const reduced = useReducedMotion()
+  const stage = !compact
   const [mounted, setMounted] = useState(false)
   const [idx, setIdx] = useState(0)
   const [prevIdx, setPrevIdx] = useState<number | null>(null)
@@ -74,18 +61,23 @@ export function ProductFilm({ className, externalPause = false, compact = false 
   const [videoFailed, setVideoFailed] = useState<Flags>({})
   const [stalled, setStalled] = useState<Flags>({})
   const [posterFailed, setPosterFailed] = useState<Flags>({})
-  /** '' = desktop cut; MOBILE_CUT_SUFFIX = tighter punch-in cut for small screens. */
-  const [variant, setVariant] = useState('')
   const [lite, setLite] = useState(false)
-  /** Client facts (variant, connection) known: until then render posters only, so no clip is fetched twice. */
+  /** The browser refused muted autoplay: show a play button on the poster instead of a silent timer. */
+  const [blocked, setBlocked] = useState(false)
+  /** How many of the active scene's callouts have been revealed (0-2). */
+  const [step, setStep] = useState(0)
+  /** Client facts (connection) known: until then render posters only, so no clip is fetched twice. */
   const [ready, setReady] = useState(false)
 
   const rootRef = useRef<HTMLDivElement | null>(null)
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([])
   const fillRefs = useRef<(HTMLSpanElement | null)[]>([])
   const elapsedRef = useRef(0)
+  /** ms the active clip has rested on its last frame (scene.hold). */
+  const heldRef = useRef(0)
   const waitRef = useRef(0)
   const noSrcRef = useRef(0)
+  const stepRef = useRef(0)
 
   const nextIdx = (idx + 1) % N
   const paused = !mounted || userPaused || hoverPaused || externalPause || !inView || docHidden
@@ -93,10 +85,10 @@ export function ProductFilm({ className, externalPause = false, compact = false 
   const scene = SCENES[idx]
 
   // Latest values for the rAF loop and media event handlers.
-  const live = useRef({ idx, paused, useVideo })
-  live.current = { idx, paused, useVideo }
+  const live = useRef({ idx, paused, useVideo, userPaused })
+  live.current = { idx, paused, useVideo, userPaused }
 
-  // Mount: reduced motion means no autoplay (posters + manual next). Save-Data / 2G: posters until play.
+  // Mount: reduced motion means no autoplay (poster + play button). Save-Data / 2G: posters until play.
   useEffect(() => {
     setMounted(true)
     try {
@@ -108,16 +100,7 @@ export function ProductFilm({ className, externalPause = false, compact = false 
       setLite(true)
       setUserPaused(true)
     }
-    // Small screens get the tighter punch-in cut of each scene.
-    let mq: MediaQueryList | null = null
-    const apply = () => setVariant(mq?.matches ? MOBILE_CUT_SUFFIX : '')
-    if (MOBILE_CUT_SUFFIX && typeof window.matchMedia === 'function') {
-      mq = window.matchMedia(SMALL_MQ)
-      apply()
-      mq.addEventListener?.('change', apply)
-    }
     setReady(true)
-    return () => mq?.removeEventListener?.('change', apply)
   }, [])
   useEffect(() => {
     if (reduced) setUserPaused(true)
@@ -144,21 +127,31 @@ export function ProductFilm({ className, externalPause = false, compact = false 
   const markStalled = useCallback((i: number) => {
     setStalled((f) => (f[i] ? f : { ...f, [i]: true }))
   }, [])
-
-  const goTo = useCallback((j: number) => {
-    const target = ((j % N) + N) % N
-    const cur = live.current.idx
-    if (cur !== target) setPrevIdx(cur)
-    setIdx(target)
-    // Point the rAF loop at the new scene right away so it cannot double-advance before re-render.
-    live.current = { ...live.current, idx: target }
-    setActivation((a) => a + 1)
-    // A fresh activation retries the clip (unless it hard-failed).
-    setStalled((f) => (f[target] ? { ...f, [target]: false } : f))
-    elapsedRef.current = 0
-    waitRef.current = 0
-    noSrcRef.current = 0
+  const setCueStep = useCallback((n: number) => {
+    if (stepRef.current === n) return
+    stepRef.current = n
+    setStep(n)
   }, [])
+
+  const goTo = useCallback(
+    (j: number) => {
+      const target = ((j % N) + N) % N
+      const cur = live.current.idx
+      if (cur !== target) setPrevIdx(cur)
+      setIdx(target)
+      // Point the rAF loop at the new scene right away so it cannot double-advance before re-render.
+      live.current = { ...live.current, idx: target }
+      setActivation((a) => a + 1)
+      // A fresh activation retries the clip (unless it hard-failed).
+      setStalled((f) => (f[target] ? { ...f, [target]: false } : f))
+      setCueStep(0)
+      elapsedRef.current = 0
+      heldRef.current = 0
+      waitRef.current = 0
+      noSrcRef.current = 0
+    },
+    [setCueStep],
+  )
 
   const advance = useCallback(() => goTo(live.current.idx + 1), [goTo])
 
@@ -188,19 +181,24 @@ export function ProductFilm({ className, externalPause = false, compact = false 
       v.pause()
       return
     }
+    // Resting on the last frame (hold): play() would restart the clip; the clock advances instead.
+    if (v.ended) return
     v.muted = true
     const p = v.play()
     if (p && typeof p.catch === 'function') {
       p.catch((err: unknown) => {
         const name = (err as { name?: string } | null)?.name
-        if (name === 'NotAllowedError') markStalled(idx) // autoplay blocked: poster + timer
-        else if (name === 'NotSupportedError') markFailed(idx)
+        if (name === 'NotAllowedError') {
+          // Autoplay genuinely blocked: rest on the poster with a play button.
+          setBlocked(true)
+          setUserPaused(true)
+        } else if (name === 'NotSupportedError') markFailed(idx)
         // AbortError: a pause() raced the play() promise; harmless.
       })
     }
-  }, [idx, activation, paused, useVideo, variant, markFailed, markStalled])
+  }, [idx, activation, paused, useVideo, markFailed])
 
-  // Progress clock: video time when the clip plays, else a 7.2 s timer (Ken Burns poster).
+  // Progress clock: video time when the clip plays, else a 7 s timer on the poster.
   useEffect(() => {
     if (!mounted || !inView) return
     let raf = 0
@@ -213,6 +211,11 @@ export function ProductFilm({ className, externalPause = false, compact = false 
         el.style.transform = `scaleX(${f.toFixed(4)})`
       }
     }
+    const cues = (i: number, sec: number) => {
+      let n = 0
+      for (const c of SCENES[i].cues) if (sec >= c.at) n += 1
+      setCueStep(n)
+    }
     const tick = (now: number) => {
       const dt = Math.min(120, now - last)
       last = now
@@ -220,14 +223,19 @@ export function ProductFilm({ className, externalPause = false, compact = false 
       if (!isPaused) elapsedRef.current += dt
       let p = 0
       const v = videoRefs.current[i]
+      const hold = SCENES[i].hold ?? 0
       if (viaVideo && v) {
         const d = v.duration
         if (v.error) {
           markFailed(i)
         } else if (Number.isFinite(d) && d > 0 && (v.readyState >= 2 || v.currentTime > 0)) {
           waitRef.current = 0
-          p = v.currentTime / d
-          if ((v.ended && elapsedRef.current > 400) || elapsedRef.current > d * 1000 + 2500) {
+          // Rest on the last frame for `hold` s so a late callout stays readable.
+          if (v.ended && !isPaused) heldRef.current += dt
+          p = (v.currentTime + heldRef.current / 1000) / (d + hold)
+          cues(i, v.currentTime)
+          const done = v.ended && elapsedRef.current > 400 && heldRef.current >= hold * 1000
+          if (done || elapsedRef.current > (d + hold) * 1000 + 2500) {
             advance()
             raf = requestAnimationFrame(tick)
             return
@@ -243,7 +251,8 @@ export function ProductFilm({ className, externalPause = false, compact = false 
           }
         }
       } else if (!viaVideo) {
-        p = elapsedRef.current / SCENE_MS
+        p = elapsedRef.current / sceneMs(SCENES[i])
+        cues(i, elapsedRef.current / 1000)
         if (p >= 1) {
           advance()
           raf = requestAnimationFrame(tick)
@@ -255,15 +264,24 @@ export function ProductFilm({ className, externalPause = false, compact = false 
     }
     raf = requestAnimationFrame(tick)
     return () => cancelAnimationFrame(raf)
-  }, [mounted, inView, advance, markFailed, markStalled])
+  }, [mounted, inView, advance, markFailed, markStalled, setCueStep])
 
   const togglePlay = useCallback(() => {
+    const wasPaused = live.current.userPaused
     // Lite connection: the first explicit play is the opt-in to fetch video.
     setLite(false)
-    setUserPaused((p) => {
-      if (p) setStalled((f) => (f[live.current.idx] ? { ...f, [live.current.idx]: false } : f))
-      return !p
-    })
+    setBlocked(false)
+    if (wasPaused) {
+      const i = live.current.idx
+      setStalled((f) => (f[i] ? { ...f, [i]: false } : f))
+      // Start inside the gesture so a browser that blocked autoplay accepts it now.
+      const v = videoRefs.current[i]
+      if (v && !v.ended) {
+        v.muted = true
+        v.play()?.catch(() => {})
+      }
+    }
+    setUserPaused(!wasPaused)
   }, [])
 
   const onFrameKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -283,193 +301,215 @@ export function ProductFilm({ className, externalPause = false, compact = false 
     if (e.pointerType === 'mouse') setHoverPaused(false)
   }
 
-  const posterOf = (file: string) => mediaUrl(file + variant, 'jpg')
-  const streamed = useStreamed(scene.caption, mounted && !reduced)
-  const showPausedUi = mounted && (userPaused || hoverPaused)
+  // Reduced motion rests on the poster with every callout already in place.
+  const shownCues = reduced ? 2 : step
+  /** Big centered play button only when the film cannot (or should not) start by itself. */
+  const bigPlay = mounted && userPaused && (blocked || reduced || lite)
+  const cornerPause = mounted && !bigPlay && (userPaused || hoverPaused)
+  const chipCue = shownCues >= 2 ? 1 : 0
 
-  return (
-    <div ref={rootRef} className={cn('relative isolate', className)}>
-      {!compact && (
-        <>
-          {/* Glow + orb behind the frame */}
-          <div aria-hidden className="pointer-events-none absolute -inset-x-6 -inset-y-8 -z-10 sm:-inset-x-10 sm:-inset-y-12">
-            <div
-              className="psx-anim absolute left-1/2 top-1/2 aspect-square w-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.28] blur-3xl"
-              style={{
-                background: 'conic-gradient(from 0deg, #3b82f6, #22d3ee, #34d399, #8b5cf6, #3b82f6)',
-                animation: 'psx-spin 22s linear infinite',
-              }}
-            />
-            <div className="absolute inset-x-[15%] bottom-0 h-1/3 rounded-full bg-cyan-400/10 blur-3xl" />
-          </div>
-          <div
-            aria-hidden
-            className="psx-anim pointer-events-none absolute -right-6 -top-8 z-20 hidden md:block"
-            style={{ animation: 'psx-float 6s ease-in-out infinite' }}
-          >
-            <AIOrb state={paused ? 'idle' : 'speaking'} size={58} label="" />
-          </div>
-        </>
+  const frame = (
+    <div
+      className={cn(
+        'rounded-[14px] bg-gradient-to-b from-white/25 via-white/[0.08] to-white/[0.04] p-px',
+        stage
+          ? 'shadow-[0_50px_90px_-40px_rgba(2,6,23,0.95),0_24px_70px_-36px_rgba(34,211,238,0.55)]'
+          : 'shadow-[0_30px_80px_-40px_rgba(34,211,238,0.4)]',
       )}
+    >
+      <div className="overflow-hidden rounded-[13px] bg-[#0a101c]">
+        {/* Browser chrome */}
+        <div className="flex h-8 items-center gap-3 border-b border-white/[0.06] bg-[#0d1525] px-3">
+          <div aria-hidden className="flex w-12 shrink-0 gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+          </div>
+          {/* Stage: URL pill sits left like a real browser (clear of the corner callout; its x never moves as
+              the route changes, so no layout shift). */}
+          <div
+            className={cn(
+              'flex min-w-0 items-center gap-1.5 rounded-md bg-white/[0.05] px-2.5 py-[3px] text-[11.5px] text-gray-400 ring-1 ring-inset ring-white/[0.05]',
+              !stage && 'mx-auto',
+            )}
+          >
+            <Lock className="h-3 w-3 shrink-0 text-emerald-400/80" aria-hidden />
+            <span className="truncate">
+              {SITE_HOST && (
+                <span className={stage ? 'hidden md:inline lg:hidden xl:inline' : 'hidden sm:inline'}>{SITE_HOST}</span>
+              )}
+              <span key={scene.id} className="psx-anim text-gray-200" style={{ animation: 'psx-fade .5s ease-out' }}>
+                {scene.route}
+              </span>
+            </span>
+          </div>
+          <span aria-hidden className={cn('w-12 shrink-0', stage && 'ml-auto')} />
+        </div>
 
-      {/* Browser frame */}
-      <div className="rounded-[18px] bg-gradient-to-b from-white/20 via-white/[0.07] to-white/[0.03] p-px shadow-[0_40px_100px_-40px_rgba(34,211,238,0.45)]">
-        <div className="overflow-hidden rounded-[17px] bg-[#0a101c]">
-          <div className="flex h-9 items-center gap-3 border-b border-white/[0.06] bg-[#0d1525] px-3 sm:px-3.5">
-            <div aria-hidden className="flex shrink-0 gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-            </div>
-            <div className={cn('mx-auto flex min-w-0 items-center gap-1.5 rounded-md bg-white/[0.05] px-2.5 py-1 text-xs text-gray-400 ring-1 ring-inset ring-white/[0.04]', !compact && 'md:mx-0')}>
-              <Lock className="h-3 w-3 shrink-0 text-emerald-400/80" aria-hidden />
-              <span className="truncate">
-                <span className="hidden sm:inline">{SITE_HOST}</span>
-                <span key={scene.id} className="psx-anim text-gray-200" style={{ animation: 'psx-fade .5s ease-out' }}>
-                  {scene.route}
+        {/* Footage: exact 16:10 box, full frame (object-contain), nothing cropped */}
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label={paused && mounted ? 'Play product film' : 'Pause product film'}
+          aria-roledescription="video player"
+          onClick={togglePlay}
+          onKeyDown={onFrameKey}
+          className="group/film relative aspect-[16/10] w-full cursor-pointer overflow-hidden bg-[#070b14] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/70"
+        >
+          {SCENES.map((s, i) => {
+            const isActive = i === idx
+            const isPrev = i === prevIdx
+            const keep = isActive || i === nextIdx || isPrev
+            const fallback = !ready || lite || videoFailed[i] || (isActive && stalled[i])
+            return (
+              <div
+                key={s.id}
+                aria-hidden={!isActive}
+                className={cn(
+                  'absolute inset-0 transition-opacity duration-700 ease-out',
+                  isActive ? 'z-[2] opacity-100' : isPrev ? 'z-[1] opacity-0' : 'z-0 opacity-0',
+                )}
+              >
+                {fallback ? (
+                  (isActive || isPrev) &&
+                  (posterFailed[i] ? (
+                    <MockVisual label={s.lead === s.label ? s.label : `${s.lead} · ${s.label}`} orb={compact ? 64 : 84} />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={mediaUrl(s.file, 'jpg')}
+                      alt={isActive ? `${s.label}: ${s.caption}` : ''}
+                      onError={() => setPosterFailed((f) => ({ ...f, [i]: true }))}
+                      className="h-full w-full object-contain"
+                    />
+                  ))
+                ) : keep ? (
+                  <video
+                    ref={(el) => {
+                      videoRefs.current[i] = el
+                      if (el) el.muted = true
+                    }}
+                    className="h-full w-full object-contain"
+                    muted
+                    playsInline
+                    disablePictureInPicture
+                    preload={isActive || i === nextIdx ? 'auto' : 'none'}
+                    poster={mediaUrl(s.file, 'jpg')}
+                    aria-label={`${s.label}: ${s.caption}`}
+                    onEnded={() => {
+                      // Scenes with a hold rest on the last frame; the progress clock advances them.
+                      if (live.current.idx === i && !s.hold) advance()
+                    }}
+                    onError={() => markFailed(i)}
+                  >
+                    <source src={mediaUrl(s.file, 'webm')} type="video/webm" />
+                    <source src={mediaUrl(s.file, 'mp4')} type="video/mp4" onError={() => markFailed(i)} />
+                  </video>
+                ) : null}
+              </div>
+            )
+          })}
+
+          {/* Faint glass glare */}
+          {stage && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-[3] bg-[linear-gradient(118deg,rgba(255,255,255,0.045),transparent_26%,transparent_74%,rgba(255,255,255,0.02))]"
+            />
+          )}
+
+          {/* Play / pause affordances */}
+          {bigPlay && (
+            <div aria-hidden className="pointer-events-none absolute inset-0 z-[4] flex items-center justify-center bg-[#050912]/25">
+              <span className="flex flex-col items-center gap-2">
+                <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/25 bg-black/50 text-white shadow-2xl backdrop-blur-md transition-transform group-hover/film:scale-105">
+                  <Play className="ml-0.5 h-6 w-6" fill="currentColor" />
+                </span>
+                <span className="rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-xs font-medium text-gray-100 backdrop-blur-md">
+                  {lite ? 'Data saver on · tap to play video' : 'Play the product tour'}
                 </span>
               </span>
             </div>
-            <span className={cn('hidden shrink-0 items-center gap-1.5 text-xs text-gray-400 md:inline-flex', !compact && 'md:hidden')}>
-              <span aria-hidden className="relative flex h-1.5 w-1.5">
-                <span className="psx-anim absolute inset-0 rounded-full bg-emerald-400" style={{ animation: 'psx-ping 1.6s ease-out infinite' }} />
-                <span className="relative h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              </span>
-              Real product
-            </span>
-          </div>
-
-          <div
-            role="button"
-            tabIndex={0}
-            aria-label={paused && mounted ? 'Play product film' : 'Pause product film'}
-            aria-roledescription="video player"
-            onClick={togglePlay}
-            onKeyDown={onFrameKey}
-            onPointerEnter={onEnter}
-            onPointerLeave={onLeave}
-            className="group/film relative aspect-[16/10] w-full cursor-pointer overflow-hidden bg-[#070b14] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cyan-300/70"
-          >
-            {SCENES.map((s, i) => {
-              const isActive = i === idx
-              const isPrev = i === prevIdx
-              const keep = isActive || i === nextIdx || isPrev
-              const fallback = !ready || lite || videoFailed[i] || (isActive && stalled[i])
-              return (
-                <div
-                  key={s.id}
-                  aria-hidden={!isActive}
-                  className={cn(
-                    'absolute inset-0 transition-opacity duration-700 ease-out',
-                    isActive ? 'z-[2] opacity-100' : isPrev ? 'z-[1] opacity-0' : 'z-0 opacity-0',
-                  )}
-                >
-                  {fallback ? (
-                    (isActive || isPrev) &&
-                    (posterFailed[i] ? (
-                      <MockVisual label={s.lead === s.label ? s.label : `${s.lead} · ${s.label}`} orb={compact ? 64 : 84} />
-                    ) : (
-                      <picture key={`${s.id}-${activation}`} className="block h-full w-full">
-                        {/* Responsive without JS, so first paint already fetches the right poster. */}
-                        {MOBILE_CUT_SUFFIX && <source media={SMALL_MQ} srcSet={mediaUrl(s.file + MOBILE_CUT_SUFFIX, 'jpg')} />}
-                        <img
-                          src={mediaUrl(s.file, 'jpg')}
-                          alt={isActive ? `${s.label}: ${s.caption}` : ''}
-                          onError={() => setPosterFailed((f) => ({ ...f, [i]: true }))}
-                          className="psx-anim h-full w-full object-cover"
-                          style={{
-                            animation: `psx-kenburns ${SCENE_MS}ms ease-out forwards`,
-                            animationPlayState: paused ? 'paused' : 'running',
-                          }}
-                        />
-                      </picture>
-                    ))
-                  ) : keep ? (
-                    <video
-                      key={variant}
-                      ref={(el) => {
-                        videoRefs.current[i] = el
-                        if (el) el.muted = true
-                      }}
-                      className="h-full w-full object-cover"
-                      muted
-                      playsInline
-                      disablePictureInPicture
-                      preload={isActive || i === nextIdx ? 'auto' : 'none'}
-                      poster={posterOf(s.file)}
-                      aria-label={`${s.label}: ${s.caption}`}
-                      onEnded={() => {
-                        if (live.current.idx === i) advance()
-                      }}
-                      onError={() => markFailed(i)}
-                    >
-                      <source src={mediaUrl(s.file + variant, 'webm')} type="video/webm" />
-                      <source src={mediaUrl(s.file + variant, 'mp4')} type="video/mp4" onError={() => markFailed(i)} />
-                    </video>
-                  ) : null}
-                </div>
-              )
-            })}
-
-            {/* Soft vignette for depth */}
-            <div
+          )}
+          {cornerPause && (
+            <span
               aria-hidden
-              className="pointer-events-none absolute inset-0 z-[3] bg-[radial-gradient(ellipse_at_center,transparent_60%,rgba(3,6,12,0.45))]"
-            />
-
-            {/* Pause affordances */}
-            {showPausedUi && (
-              <div aria-hidden className="pointer-events-none absolute inset-0 z-[4] flex items-center justify-center">
-                {userPaused ? (
-                  <span className="flex flex-col items-center gap-2">
-                    <span className="flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-black/45 text-white shadow-2xl backdrop-blur-md">
-                      <Play className="ml-0.5 h-6 w-6" fill="currentColor" />
-                    </span>
-                    {lite && (
-                      <span className="rounded-full border border-white/15 bg-black/60 px-2.5 py-1 text-xs font-medium text-gray-100 backdrop-blur-md">
-                        Data saver on · tap to play video
-                      </span>
-                    )}
-                  </span>
-                ) : (
-                  <span className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/15 bg-black/55 px-3 py-1 text-xs font-medium text-gray-100 backdrop-blur-md">
-                    <Pause className="h-3 w-3" fill="currentColor" /> Paused
-                  </span>
-                )}
-              </div>
-            )}
-          </div>
+              className="pointer-events-none absolute bottom-2 right-2 z-[4] inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 p-1.5 text-[11px] sm:bottom-2.5 sm:right-2.5 sm:px-2.5 sm:py-1 font-medium text-gray-100 shadow-lg backdrop-blur-md"
+            >
+              {userPaused ? <Play className="h-3 w-3" fill="currentColor" /> : <Pause className="h-3 w-3" fill="currentColor" />}
+              <span className="hidden sm:inline">{userPaused ? 'Paused · tap to play' : 'Paused'}</span>
+            </span>
+          )}
         </div>
       </div>
+    </div>
+  )
 
-      {!compact && (
-        // Metric chip sits astride the frame's top edge (over the browser bar), never over the footage.
-        <div
-          key={scene.id}
-          aria-hidden
-          className="psx-anim absolute -top-6 right-14 z-20 hidden max-w-[260px] items-center gap-2.5 rounded-xl border border-white/10 bg-[#0b1322]/95 px-3 py-2 shadow-2xl shadow-black/50 backdrop-blur-md md:flex"
-          style={{ animation: 'psx-pop .55s cubic-bezier(.2,.8,.2,1) both' }}
-        >
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500/30 to-emerald-400/30 ring-1 ring-inset ring-white/10">
-            <Sparkles className="h-3.5 w-3.5 text-cyan-200" />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-xs text-gray-400">Sarthi AI</span>
-            <span className="block truncate text-[13px] font-semibold text-white">{scene.metric}</span>
-          </span>
+  return (
+    <div ref={rootRef} className={cn('relative isolate', className)}>
+      {stage ? (
+        <div className="psf-stage relative" onPointerEnter={onEnter} onPointerLeave={onLeave}>
+          {/* Glow behind the stage */}
+          <div aria-hidden className="pointer-events-none absolute -inset-x-6 -inset-y-10 -z-10 sm:-inset-x-12 sm:-inset-y-14">
+            <div className="absolute left-1/2 top-1/2 h-[78%] w-[88%] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(closest-side,rgba(34,211,238,0.22),rgba(59,130,246,0.12)_55%,transparent)] blur-2xl" />
+            <div className="absolute bottom-[6%] left-[14%] right-[10%] h-16 rounded-[50%] bg-cyan-400/[0.05] blur-3xl" />
+          </div>
+
+          <div className="psf-tilt relative">
+            {frame}
+            {/* Contact shadow */}
+            <div aria-hidden className="pointer-events-none absolute inset-x-[8%] -bottom-7 -z-10 h-10 rounded-[50%] bg-black/60 blur-xl" />
+          </div>
+
+          {/* Floating callouts (sm+), flat so the text stays crisp */}
+          {SCENES.map((s, i) =>
+            i === idx || i === prevIdx
+              ? s.cues.map((c, k) => {
+                  const shown = i === idx && shownCues > k
+                  return (
+                    <div
+                      key={`${s.id}-${k}`}
+                      aria-hidden
+                      className={cn(
+                        'pointer-events-none absolute z-30 hidden transition-[opacity,transform] duration-300 ease-out sm:block',
+                        SLOT[c.slot].pos,
+                        shown ? 'translate-y-0 opacity-100' : cn('opacity-0', SLOT[c.slot].hidden),
+                      )}
+                    >
+                      <SceneCallout sceneId={s.id} cue={k} />
+                    </div>
+                  )
+                })
+              : null,
+          )}
+        </div>
+      ) : (
+        frame
+      )}
+
+      {/* Mobile: one callout chip under the frame */}
+      {stage && (
+        <div aria-hidden className="mt-3 flex h-[76px] items-center justify-center sm:hidden">
+          <div
+            key={`${scene.id}-${chipCue}`}
+            className="psx-anim max-w-full"
+            style={{ animation: 'psx-pop .35s cubic-bezier(.2,.8,.2,1) both' }}
+          >
+            <SceneCallout sceneId={scene.id} cue={chipCue} />
+          </div>
         </div>
       )}
 
       {/* Story progress bar */}
-      <div className="mt-4 flex items-start gap-2.5 sm:gap-3">
+      <div className={cn('flex items-start gap-2.5', stage ? 'mt-2 sm:mt-9' : 'mt-4')}>
         <button
           type="button"
           onClick={togglePlay}
           aria-pressed={!userPaused}
           aria-label={userPaused ? 'Play' : 'Pause'}
-          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-gray-200 transition hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-gray-200 transition hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 sm:mt-1"
         >
-          {userPaused ? <Play className="ml-0.5 h-3.5 w-3.5" fill="currentColor" /> : <Pause className="h-3.5 w-3.5" fill="currentColor" />}
+          {userPaused ? <Play className="ml-0.5 h-3 w-3" fill="currentColor" /> : <Pause className="h-3 w-3" fill="currentColor" />}
         </button>
         <div className="flex min-w-0 flex-1 gap-1.5" role="group" aria-label="Scenes">
           {SCENES.map((s, i) => (
@@ -479,7 +519,7 @@ export function ProductFilm({ className, externalPause = false, compact = false 
               onClick={() => goTo(i)}
               aria-label={`Scene ${i + 1}: ${s.label}`}
               aria-current={i === idx ? 'step' : undefined}
-              className="group/seg min-w-0 flex-1 rounded py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 sm:pb-1 sm:pt-3"
+              className="group/seg min-w-0 flex-1 rounded py-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70 sm:py-1"
             >
               <span className="block h-[3px] overflow-hidden rounded-full bg-white/[0.12] transition-colors group-hover/seg:bg-white/25">
                 <span
@@ -492,7 +532,7 @@ export function ProductFilm({ className, externalPause = false, compact = false 
               </span>
               <span
                 className={cn(
-                  'mt-2 hidden truncate text-xs transition-colors sm:block',
+                  'mt-1.5 hidden truncate text-[11.5px] transition-colors sm:block',
                   i === idx ? 'font-medium text-white' : 'text-gray-400 group-hover/seg:text-gray-200',
                 )}
               >
@@ -501,35 +541,23 @@ export function ProductFilm({ className, externalPause = false, compact = false 
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={() => goTo(idx + 1)}
-          aria-label="Next scene"
-          className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-gray-200 transition hover:border-white/25 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-300/70"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
       </div>
 
-      {/* Streaming caption */}
-      <div className="mt-2 flex min-h-[64px] items-center gap-2.5 rounded-2xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 backdrop-blur-sm sm:px-3.5">
-        <span className="shrink-0 self-start rounded-md bg-cyan-400/10 px-2 py-0.5 text-xs font-semibold text-cyan-200 ring-1 ring-inset ring-cyan-300/15">
-          {scene.lead}
-          <span className="sm:hidden"> · {scene.label}</span>
-        </span>
-        <p aria-hidden className="grid min-w-0 text-[13px] leading-5 text-gray-200 sm:text-sm">
-          <span className="invisible col-start-1 row-start-1">{scene.caption}</span>
-          <span className="col-start-1 row-start-1">
-            {scene.caption.slice(0, streamed)}
-            {streamed < scene.caption.length && (
-              <span className="psx-caret ml-0.5 inline-block h-3.5 w-[2px] translate-y-0.5 bg-cyan-300" />
-            )}
+      {/* Current scene caption */}
+      {/* One line from sm up (the segment label above already names the scene, so only the lead shows). */}
+      <p className="mt-1.5 min-h-[60px] pl-[38px] text-[13px] leading-5 text-gray-400 sm:mt-2 sm:min-h-[20px] sm:text-[13.5px]">
+        <span key={scene.id} className="psx-anim block sm:truncate" style={{ animation: 'psx-fade .45s ease-out' }}>
+          <span className="font-medium text-gray-100">
+            <span className="sm:hidden">{scene.lead === scene.label ? scene.label : `${scene.lead} · ${scene.label}`}</span>
+            <span className="hidden sm:inline">{scene.lead}</span>
           </span>
-        </p>
-        <p className="sr-only" aria-live="polite">
-          {scene.lead}: {scene.caption}
-        </p>
-      </div>
+          <span className="text-gray-600"> — </span>
+          {scene.caption}
+        </span>
+      </p>
+      <p className="sr-only" aria-live="polite">
+        {scene.lead}: {scene.caption}
+      </p>
     </div>
   )
 }

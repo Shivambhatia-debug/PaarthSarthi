@@ -67,7 +67,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { officerLang, tr, type Bi, type Lang } from '@/lib/os/i18n'
-import { INTEGRITY_FLOOR } from '@/lib/os/scoring'
+import { INTEGRITY_FLOOR, TAB_SWITCH_PENALTY } from '@/lib/os/scoring'
 import type { RoundId } from '@/lib/os/rounds'
 import type { Attempt, Blueprint, Persona, PersonaRunId } from '@/lib/mock/types'
 import { PRIYA, RAHUL, latestAttempt, previousAttempt } from '@/lib/mock/personas'
@@ -474,7 +474,7 @@ export function DemoProvider({ children }: { children: ReactNode }) {
             let tabSwitches = ig.tabSwitches
             let pasteBlocks = ig.pasteBlocks
             if (e.kind === 'tab') {
-              score -= 4
+              score -= TAB_SWITCH_PENALTY
               tabSwitches += 1
             } else if (e.kind === 'paste') {
               score -= 2
